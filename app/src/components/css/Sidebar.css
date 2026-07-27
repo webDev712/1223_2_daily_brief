@@ -166,7 +166,9 @@ teams-and-roles */
     overflow: auto;
 }
 
-
+.sidebar .flex > div > h1{
+    display: none;
+}
 
 @media (max-width: 500px) {
     .sidebar [data-img="burger"]{
