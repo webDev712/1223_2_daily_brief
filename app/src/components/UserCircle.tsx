@@ -2,7 +2,7 @@ import getColorsFromName from "@/lib/color"
 import './css/UserCircle.css'
 
 
-export default function UserCircle ({user_name, size, onClick}: {user_name: string, size: number, onClick?: () => {}}) {
+export default function UserCircle ({user_name, size, onClick}: {user_name: string, size: number, onClick?: () => void}) {
     const colors = getColorsFromName(user_name)
     let AB_name = "";
       try{
