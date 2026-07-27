@@ -45,6 +45,10 @@ const roleLevel: Record<UserRole, number> = {
 
 export async function requireRole(role: UserRole) {
     const user = await getCurrentUser();
+    
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
 
     if (roleLevel[user.role] < roleLevel[role]) {
         throw new Error("Forbidden");
