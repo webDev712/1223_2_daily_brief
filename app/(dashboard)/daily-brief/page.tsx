@@ -675,7 +675,7 @@ export default function DailyBrief() {
                         </div>
                         <div>
                           {b.tasks && b.tasks?.length > 0 ? b.tasks.map(t => (
-                            <label key={`${t.id}-task`} className={noAccessEdit(b) ? 'task d' : 'task'}>
+                            <label key={crypto.randomUUID()} className={noAccessEdit(b) ? 'task d' : 'task'}>
                               <input key={`${t.id}-task-input`} type='checkbox' checked={t.checked} onChange={() => { if (!noAccessEdit(b)) changeTask(b, {...t, checked: !t.checked});
                                 }}/>
                               <div key={`${t.id}-task-text`}>{t.text}</div>

@@ -164,3 +164,26 @@ div:has( > #today){
     color: #98A2B3;
     margin: 0;
 }
+
+@media (max-width: 500px) {
+    #back, #forward{
+        display: none;
+    }
+
+    div:has( > #today){
+        height: 40px;
+        width: 150px;
+    }
+    
+    .react-datepicker-wrapper *{
+        line-height: 15px !important;
+    }
+
+    #user_name > *{
+        margin: auto 0;
+    }
+
+    .header p{
+        line-height: 13px;
+    }
+}

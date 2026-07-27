@@ -28,7 +28,7 @@
 }
 
 .sidebar > div,
-.sidebar > a{
+.sidebar  a{
     /* overflow: hidden; */
     display: block;
     width: 40px;
@@ -43,7 +43,13 @@
     z-index: 1000;
 }
 
-.sidebar > a:hover::before{
+.sidebar > div:first-child{
+    padding: 0;
+    width: 50px;
+    margin-bottom: 20px;
+}
+
+.sidebar a:hover::before{
     content: attr(data-hover);
     position: absolute;
     top: 10px;
@@ -56,15 +62,15 @@
     border-radius: 5px;
 }
 
-.sidebar > a::before{
+.sidebar a::before{
     z-index: 1000;
 }
 
-.sidebar > a.selected{
+.sidebar a.selected{
     background-color: #4361EE;
 }
 
-.sidebar > a:hover{
+.sidebar a:hover{
     background-color: #4362ee76;
 }
 
@@ -131,3 +137,78 @@ brief-history"
 reports" data
 reports-scheduling"
 teams-and-roles */
+
+.sidebar [data-img="burger"]{
+    width: 50px;
+    height: 50px;
+    background-size: 100%;
+    background-image: url('../../../../public/burger.svg');
+    display: none;
+}
+
+.sidebar > div.flex{
+    display: flex;
+    position: relative;
+    height: max-content;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    gap: 15px;
+}
+
+.sidebar span{
+    font-weight: 600;
+    font-size: 16px;
+    display: none;
+}
+
+:has(> .sidebar){
+    overflow: auto;
+}
+
+
+
+@media (max-width: 500px) {
+    .sidebar [data-img="burger"]{
+        display: block !important;
+        width: 50px !important;
+        min-width: 50px !important;
+        z-index: 1000;
+        margin-left: auto;
+    }
+
+    .sidebar{
+        width: 100vw;
+        max-width: unset;
+        min-width: unset;
+        position: absolute;
+        height: max-content;
+    }
+
+    .sidebar > div:first-child{
+        margin: 0;
+        display: flex;
+        width: 100% !important;
+        gap: 10px;
+        padding: 0 !important;
+        height: 50px !important;
+    }
+    .sidebar > div:first-child > span:nth-child(2){
+        margin: auto 0;
+        line-height: 10px;
+        height: max-content;
+        display: block;
+    }
+
+    .sidebar .flex > div{
+        display: flex;
+        gap: 10px;
+    }
+
+    .sidebar .flex > div > h1{
+        font-size: 16px;
+        margin: auto 0;
+        min-width: max-content;
+        display: block;
+    }
+}

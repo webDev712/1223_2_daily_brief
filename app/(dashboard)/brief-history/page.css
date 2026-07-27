@@ -190,3 +190,23 @@
     padding: 5px 8px;
     padding-right: 10px;
 }
+
+@media (max-width: 500px) {
+    .brief-history .filters{
+        flex-direction: column;
+    }
+
+    .brief-history .filters > select{
+        width: 100% !important;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        width: max-content;
+    }
+}

@@ -166,12 +166,19 @@ export default function Dashboard() {
                 <div className={b.freezed || !isToday ? "brief submitted" : "brief"} key={`b_${b.id}`}>
                   <div className="lane"></div>
                   <div className="header-sm">
-                    <UserCircle user_name={b.lead_name} size={45} />
-                    <div>{b.lead_name}
-                    {b.lead_id !== b.original_lead_id && leads.find((el: User) => el.id == b.lead_id)?.name && '('}
+                    <div className="user">
+                      <UserCircle user_name={b.lead_name} size={45} />
+                      <div>{b.lead_name}</div>
+                    </div>
+                    <div className="arrow">{b.lead_id !== b.original_lead_id && leads.find((el: User) => el.id == b.lead_id)?.name && '>'}</div>
+
                     {leads.length > 0 && b.lead_id !== b.original_lead_id && leads.find((el: User) => el.id == b.lead_id)?.name ? 
-                    (<div>{`Handed Off to `}<UserCircle user_name={leads.find(el => el.id == b.lead_id)?.name || ''} size={45}></UserCircle>{` ${leads.find(el => el.id == b.lead_id)?.name}`})</div>) : ''}</div>
-                    {b.freezed || !isToday ? (<div className="submitted">● Submitted</div>) : (<div>● In Progress</div>)}
+                      (<div className="user">
+                        <UserCircle user_name={leads.find(el => el.id == b.lead_id)?.name || ''} size={45}></UserCircle>
+                        <div>{` ${leads.find(el => el.id == b.lead_id)?.name}`}</div>
+                      </div>) : ''}
+                    <div>{b.freezed || !isToday ? (<div className="submitted">● Submitted</div>) : (<div>● In Progress</div>)}</div>
+                    
                   </div>
                   <div>
                     <div className="shift">{b.shift || "No shift selected"}</div>
@@ -208,37 +215,40 @@ export default function Dashboard() {
           </div>) : (<h4>No briefs in progress for this day</h4>)}
           <div style={{marginTop: 20}}>
             <h3>Today's Route Coverage</h3>
-            <div className="covered-container">
-              <div>
-                <span>LEAD</span>
-                <span>COVERING FOR</span>
-                <span>ROUTE</span>
-                <span>VAN</span>
-                <span>STOPS</span>
-                <span>WINDOW</span>
-                <span>STATUS</span>
-              </div>
+            <div className="table-wrapper">
 
-             {briefs.map((b: SavedBrief) => {
-              const briefDate = new Date(b.date);
-
-              const isToday =
-                briefDate.getFullYear() === today.getFullYear() &&
-                briefDate.getMonth() === today.getMonth() &&
-                briefDate.getDate() === today.getDate();
-
-              if (b.driving === true) return b.covered?.map((route: Covered, route_i: number) => (
-                <div className="covered" key={`${b.id}_route_${route_i}`}>
-                  <div><UserCircle user_name={b.lead_name} size={20}></UserCircle> {b.lead_name}</div>
-                  <div>{route.covering_for || "-"}</div>
-                  <div>{route.route_zone || "-"}</div>
-                  <div>{route.van || "-"}</div>
-                  <div>{route.stops || "-"}</div>
-                  <div>{route.windows || "-"}</div>
-                  <div><div className={b.freezed || !isToday ? "submitted" : ""}>{b.freezed || !isToday ? "Submitted" : "In Progress"}</div></div>
+              <div className="covered-container">
+                <div>
+                  <span>LEAD</span>
+                  <span>COVERING FOR</span>
+                  <span>ROUTE</span>
+                  <span>VAN</span>
+                  <span>STOPS</span>
+                  <span>WINDOW</span>
+                  <span>STATUS</span>
                 </div>
-              ));
-            })}
+
+              {briefs.map((b: SavedBrief) => {
+                const briefDate = new Date(b.date);
+
+                const isToday =
+                  briefDate.getFullYear() === today.getFullYear() &&
+                  briefDate.getMonth() === today.getMonth() &&
+                  briefDate.getDate() === today.getDate();
+
+                if (b.driving === true) return b.covered?.map((route: Covered, route_i: number) => (
+                  <div className="covered" key={`${b.id}_route_${route_i}`}>
+                    <div><UserCircle user_name={b.lead_name} size={20}></UserCircle> {b.lead_name}</div>
+                    <div>{route.covering_for || "-"}</div>
+                    <div>{route.route_zone || "-"}</div>
+                    <div>{route.van || "-"}</div>
+                    <div>{route.stops || "-"}</div>
+                    <div>{route.windows || "-"}</div>
+                    <div><div className={b.freezed || !isToday ? "submitted" : ""}>{b.freezed || !isToday ? "Submitted" : "In Progress"}</div></div>
+                  </div>
+                ));
+              })}
+            </div>
             </div>
           </div>
           <div style={{marginTop: 20}}>
@@ -249,7 +259,7 @@ export default function Dashboard() {
               </div>
               <div>{attentionCount} items</div>
             </div>
-            {attentionCount === 0 && (<h3>No tasks requiers attention today</h3>)}
+            {attentionCount === 0 && (<h3>No tasks requires attention today</h3>)}
             <div className="attention-container">
              {briefs.map((b: SavedBrief) => {
               return b.findings?.map((finding: Finding, finding_i: number) => {

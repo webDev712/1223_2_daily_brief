@@ -75,19 +75,22 @@
     gap: 10px;
 }
 
-.dashboard .briefs .brief .header-sm > :nth-child(2){
-    line-height: 45px;
-    font-weight: 600;
-    color: #0A0C10;
+.dashboard .briefs .brief .header-sm > div:nth-child(1) > div:nth-child(3){
     display: flex;
+    text-wrap-mode: nowrap;
 }
 
-.dashboard .briefs .brief .header-sm > :nth-child(2) > div{
+.dashboard .briefs .brief .header-sm .user{
     display: flex;
+    gap: 8px;
 }
 
-.dashboard .briefs .brief .header-sm > :nth-child(2) > div > div {
-    margin: 0 10px;
+.dashboard .briefs .brief .header-sm .arrow{
+    margin: auto 0;
+}
+
+.dashboard .briefs .brief .header-sm .user div{
+    margin: auto 0;
 }
 
 .dashboard .briefs .brief .header-sm > :last-child{
@@ -439,6 +442,36 @@ h3:has(+ .attention-container){
     display: block;
     height: 20px !important;
     min-height: 20px !important;
+}
+
+@media (max-width: 500px) {
+    .dashboard .attention-container > div > div:first-child > div:nth-child(2){
+        flex-wrap: wrap;
+    }
+
+    .dashboard .briefs .brief .header-sm{
+        flex-wrap: wrap;
+    }
+
+
+    .dashboard .briefs .brief .header-sm > .submitted:last-child{
+        margin: 0 auto;
+    }
+
+    .dashboard .briefs .brief .header-sm > :last-child{
+        width: 100%;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-wrapper > .covered-container{
+        width: max-content;
+        min-width: 600px
+    }
 }
 
 @media (max-width: 1200px) {

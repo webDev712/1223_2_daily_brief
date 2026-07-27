@@ -125,59 +125,61 @@ export default function BriefHistory() {
               </div>
               {/* TODO: CHECK FILTERS */}
               <div></div>
-              <div className="table">
-                <div>
-                  <div>DATE</div>
-                  <div>LEAD</div>
-                  <div>SHIFT</div>
-                  <div>WORK STATUS</div>
-                  <div>REPORTS</div>
-                  <div>FINDINGS</div>
-                  <div>TASKS</div>
-                  {/* <div>HANDOFF</div> */}
-                  <div>STATUS</div>
-                  {/* <div>VIEW</div> */}
-                </div>
-                {briefs.map((b: SavedBrief) => {
-                  const briefDate = new Date(b.date);
-                  const isToday =
-                    briefDate.getFullYear() === today.getFullYear() &&
-                    briefDate.getMonth() === today.getMonth() &&
-                    briefDate.getDate() === today.getDate();
-                  const reportsPercentage = b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100;
-                  return (
-                    <div key={b.id}>
-              {/* {JSON.stringify(Object.keys(b))} */}
-                      <div>
-                        <div>{isToday ? 'Today' : format(b.date, 'MMM d')}</div>
-                        <span>{format(b.date, 'MMMM d, yyyy')}</span>
-                      </div>
-                      <div>
-                        {b.lead_id !== b.original_lead_id && (
-                          <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
-                        )}
-                        {b.lead_id !== b.original_lead_id && (<div>{'>>'}</div>)}
-                        <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'} size={25} />
-                        {}
-                      </div>
-                      <div>{b.shift || "-"}</div>
-                      <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? '🚐 Driving' : '🏢 On-site'}</div>
-                      <div style={{color: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '')}}>
-                        {b.reports.filter(r => r.checked === true).length}/{b.reports.length}
-                        <div className="progress-bar">
-                          <span style={{ width: reportsPercentage + "%", backgroundColor: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '') }}></span>
+              <div className="table-wrapper">
+                <div className="table">
+                  <div>
+                    <div>DATE</div>
+                    <div>LEAD</div>
+                    <div>SHIFT</div>
+                    <div>WORK STATUS</div>
+                    <div>REPORTS</div>
+                    <div>FINDINGS</div>
+                    <div>TASKS</div>
+                    {/* <div>HANDOFF</div> */}
+                    <div>STATUS</div>
+                    {/* <div>VIEW</div> */}
+                  </div>
+                  {briefs.map((b: SavedBrief) => {
+                    const briefDate = new Date(b.date);
+                    const isToday =
+                      briefDate.getFullYear() === today.getFullYear() &&
+                      briefDate.getMonth() === today.getMonth() &&
+                      briefDate.getDate() === today.getDate();
+                    const reportsPercentage = b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100;
+                    return (
+                      <div key={b.id}>
+                {/* {JSON.stringify(Object.keys(b))} */}
+                        <div>
+                          <div>{isToday ? 'Today' : format(b.date, 'MMM d')}</div>
+                          <span>{format(b.date, 'MMMM d, yyyy')}</span>
                         </div>
+                        <div>
+                          {b.lead_id !== b.original_lead_id && (
+                            <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
+                          )}
+                          {b.lead_id !== b.original_lead_id && (<div>{'>>'}</div>)}
+                          <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'} size={25} />
+                          {}
+                        </div>
+                        <div>{b.shift || "-"}</div>
+                        <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? '🚐 Driving' : '🏢 On-site'}</div>
+                        <div style={{color: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '')}}>
+                          {b.reports.filter(r => r.checked === true).length}/{b.reports.length}
+                          <div className="progress-bar">
+                            <span style={{ width: reportsPercentage + "%", backgroundColor: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '') }}></span>
+                          </div>
+                        </div>
+                        <div className={b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : ''}>{b.findings ? b.findings.length : "None"}</div>
+                        <div>{b.tasks.length}</div>
+                        {/* <div>HANDOFF</div> */}
+                        <div style={{color: (b.freezed === true || !isToday ? '#12B76A' : '#F79009')}}>
+                          ● {b.freezed === true || !isToday ? 'Submitted' : 'In progress'}
+                        </div>
+                        {/* <div>VIEW</div> */}
                       </div>
-                      <div className={b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : ''}>{b.findings ? b.findings.length : "None"}</div>
-                      <div>{b.tasks.length}</div>
-                      {/* <div>HANDOFF</div> */}
-                      <div style={{color: (b.freezed === true || !isToday ? '#12B76A' : '#F79009')}}>
-                        ● {b.freezed === true || !isToday ? 'Submitted' : 'In progress'}
-                      </div>
-                      {/* <div>VIEW</div> */}
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
           </div>
         )}

@@ -88,3 +88,14 @@
     display: block;
     width: 100%;
 }
+
+@media (max-width: 500px) {
+    .login{
+        flex-direction: column;
+    }
+
+    .login > div:nth-child(2){
+        padding: 10vh 7vh 25vh 7vw;
+        min-height: 80vh;
+    }
+}

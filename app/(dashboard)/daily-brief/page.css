@@ -773,3 +773,79 @@
 .daily-brief .no-briefs > div{
     margin: auto;
 }
+
+@media (max-width: 500px) {
+    .daily-brief .no-briefs > h1{
+        margin: 0 20vw;
+        width: 60vw;
+    }
+
+    .daily-brief .shift-info > div:first-child{
+        flex-direction: column;
+    }
+
+    .daily-brief .shift-info > div:first-child > div:nth-child(2){
+        margin: 0 !important;
+    }
+    .daily-brief .shift-info > div:first-child > div{
+        width: 100% !important;
+    }
+
+    .daily-brief .shift-info > div:nth-child(2){
+        flex-direction: column;
+    }
+
+    .daily-brief .shift-info > div:nth-child(3) > div:nth-child(n+2){
+        flex-direction: column;
+    }
+
+    .daily-brief .report{
+        flex-direction: column;
+    }
+
+    .daily-brief .report > :nth-child(3){
+        margin: 0;
+    }
+
+    .daily-brief .report input[type="checkbox"]{
+        width: 20px;
+        height: 20px;
+        margin-top: 10px;
+    }
+
+    .daily-brief .report:has( + .report){
+        padding-bottom: 15px;
+    }
+
+    .daily-brief div:has(> .findings + .tasks){
+        flex-direction: column !important;
+    }
+
+    .daily-brief .findings,
+    .daily-brief .tasks{
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .daily-brief .add-task{
+        flex-direction: column;
+    }
+
+    .daily-brief .leads .choose span{
+        line-height: 13px;
+    }
+
+    .daily-brief .brief{
+        width: 90%;
+    }
+
+    .daily-brief .brief + .brief::before{
+        height: 4px;
+        transform: translateX(0%);
+        width: 100%;
+    }
+
+    .daily-brief .confirm > div{
+        width: 90%;
+    }
+}
