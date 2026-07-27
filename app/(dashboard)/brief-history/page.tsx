@@ -101,7 +101,7 @@ export default function BriefHistory() {
                     <span>Awaiting submission today</span>
                   </div>
                   <div img-id="error">
-                    <h1>{allBriefs.reduce((a, b) => b.findings ? a + b.findings.length : a + 0, 0)}</h1>
+                    <h1>{allBriefs.reduce((a: number, b: SavedBrief) => b.findings ? a + b.findings.length : a + 0, 0)}</h1>
                     <div>Total Findings</div>
                     <span>Across all briefs last {days} days</span>
                   </div>
@@ -109,7 +109,7 @@ export default function BriefHistory() {
                 <div className="filters">
                   <select defaultValue={selectedLead} name="leads" id="leads" onChange={(e) => setSelectedLead(e.target.value)}>
                     <option value="">All Leads</option>
-                    {leads.map(l => (<option key={l.id} value={l.id}>{l.name}</option>))}
+                    {leads.map((l: User) => (<option key={l.id} value={l.id}>{l.name}</option>))}
                   </select>
                   <select name="status" id="status" defaultValue={status} onChange={(e) => setStatus(e.target.value)}>
                     <option value="">All Statuses</option>
@@ -138,7 +138,7 @@ export default function BriefHistory() {
                   <div>STATUS</div>
                   {/* <div>VIEW</div> */}
                 </div>
-                {briefs.map(b => {
+                {briefs.map((b: SavedBrief) => {
                   const briefDate = new Date(b.date);
                   const isToday =
                     briefDate.getFullYear() === today.getFullYear() &&
@@ -154,10 +154,10 @@ export default function BriefHistory() {
                       </div>
                       <div>
                         {b.lead_id !== b.original_lead_id && (
-                          <UserCircle user_name={leads.find(el => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
+                          <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
                         )}
                         {b.lead_id !== b.original_lead_id && (<div>{'>>'}</div>)}
-                        <UserCircle user_name={leads.find(el => el.id === b.lead_id)?.['name'] || 's'} size={25} />
+                        <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'} size={25} />
                         {}
                       </div>
                       <div>{b.shift || "-"}</div>
