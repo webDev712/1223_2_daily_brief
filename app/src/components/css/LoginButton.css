@@ -1,0 +1,27 @@
+.loginGoogle{
+    cursor: pointer;
+    border: 1px solid #E9EAEB;
+    border-radius: 6px;
+    
+}
+
+.loginGoogle > div{
+    background-image: url('../../../../public/google.png');
+    background-size: 15px;
+    background-repeat: no-repeat;
+    background-position: left 27px center;
+    padding: 4px 30px 4px 50px;
+    color: #717680;
+    font-weight: 600;
+    background-color: white;
+    width: max-content;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    margin: 0 auto;
+}
+
+
+.loginGoogle:hover{
+    
+    box-shadow: 0 0 5px #00000036;
+}

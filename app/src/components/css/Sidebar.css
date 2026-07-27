@@ -1,0 +1,133 @@
+.sidebar{
+    /* position: absolute; */
+    top: 0;
+    padding: 14px;
+    font-size: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+
+    flex-direction: column;
+    left: 0;
+    border: 1px solid;
+    background-color: #0A0C12;
+    height: 100vh;
+    max-height: 100vh;
+
+    transition: all 0.5s ease;
+    max-width: max-content;
+
+    position: sticky;
+    z-index: 10000;
+}
+
+.sidebar * {
+    background-color: #0A0C12;
+    color: white;
+    transition: all 0.5s ease;
+}
+
+.sidebar > div,
+.sidebar > a{
+    /* overflow: hidden; */
+    display: block;
+    width: 40px;
+    height: 40px;
+    background-size: 30px;
+    background-position: center;
+    margin: 0 auto;
+    background-repeat: no-repeat;
+    padding: 25px;
+    border-radius: 14px;
+    position: relative;
+    z-index: 1000;
+}
+
+.sidebar > a:hover::before{
+    content: attr(data-hover);
+    position: absolute;
+    top: 10px;
+    left: 50px;
+    width: max-content;
+    z-index: 1000;
+    background-color: #383839bb;
+    font-size: 14px;
+    padding: 3px 7px;
+    border-radius: 5px;
+}
+
+.sidebar > a::before{
+    z-index: 1000;
+}
+
+.sidebar > a.selected{
+    background-color: #4361EE;
+}
+
+.sidebar > a:hover{
+    background-color: #4362ee76;
+}
+
+
+[data-img="dashboard"]{
+    background-image: url('../../../../public/dashboard_0.svg');
+}
+[data-img="daily-brief"]{
+    background-image: url('../../../../public/brief_0.svg');
+}
+[data-img="brief-history"]{
+    background-image: url('../../../../public/brief_history_0.svg');
+}
+[data-img="reports"]{
+    background-image: url('../../../../public/reports_0.svg');
+}
+[data-img="reports-scheduling"]{
+    background-image: url('../../../../public/report_scheduling_0.svg');
+}
+[data-img="teams-and-roles"]{
+    background-image: url('../../../../public/teams_and_roles_0.svg');
+}
+[data-img="settings"]{
+    background-image: url('../../../../public/settings_0.svg');
+    margin-top: auto !important;
+}
+
+[data-img="dashboard"].selected{
+    background-image: url('../../../../public/dashboard_1.svg');
+}
+[data-img="daily-brief"].selected{
+    background-image: url('../../../../public/brief_1.svg');
+}
+[data-img="brief-history"].selected{
+    background-image: url('../../../../public/brief_history_1.svg');
+}
+[data-img="reports"].selected{
+    background-image: url('../../../../public/reports_1.svg');
+}
+[data-img="reports-scheduling"].selected{
+    background-image: url('../../../../public/report_scheduling_1.svg');
+}
+[data-img="teams-and-roles"].selected{
+    background-image: url('../../../../public/teams_and_roles_1.svg');
+}
+[data-img="settings"].selected{
+    background-image: url('../../../../public/settings_1.svg');
+}
+
+[data-img="photo_sidebar"]{
+    background-image: url('../../../../public/photo_sidebar.svg');
+    background-color: #4361EE;
+    padding: 25px;
+    background-size: 30px !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 14px;
+    margin-bottom: 20px !important;
+}
+
+/* dashboard" data
+daily-brief"
+brief-history"
+reports" data
+reports-scheduling"
+teams-and-roles */

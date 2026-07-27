@@ -1,0 +1,12 @@
+.reports .how-to-use{
+    border: 1px solid #C7D2FE;
+    border-radius: 16px;
+    background-color: #EEF1FD;
+    padding: 15px;
+    color: #5B73CC;
+    background-image: url('../../../public/info_round.svg');
+    background-position: left 20px center;
+    padding-left: 55px;
+    background-size: 20px;
+    margin-bottom: 30px;
+}

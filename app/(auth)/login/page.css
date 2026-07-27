@@ -1,0 +1,90 @@
+.login {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(180deg, #FAF9FB 0%, #F3F3F8 100%);
+}
+
+.login > div:nth-child(1) {
+    height: 100%;
+    flex: 10;
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10vh 10vw 15vh 10vw;
+}
+
+.login > div:nth-child(1) > div:nth-child(1) {
+    display: flex;
+    gap: 10px;
+}
+.login > div:nth-child(1) > div:nth-child(1) > span{
+    background-image: url('../../../public/photo_sidebar.svg');
+    width: 40px;
+    height: 40px;
+    background-color: #4361EE;
+    background-size: 65%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 8px;
+    display: block;
+}
+
+.login > div:nth-child(1) > div:nth-child(1) > div{
+    margin: auto 0;
+    color: #4361EE;
+    font-weight: 600;
+}
+
+.login > div:nth-child(1) > div:nth-child(2){
+    background-image: url('../../../public/login_bg.webp');
+    background-size: 100%;
+    width: 100%;
+    height: 50vh;
+    background-repeat: no-repeat;
+    background-position: top 50% left 50%;
+}
+
+.login > div:nth-child(1) > div:nth-child(3) h1{
+    color: #4361EE;
+    font-weight: 600;
+    font-size: 30px;
+}
+
+.login > div:nth-child(1) > div:nth-child(3) p {
+    color: #3B3B3B;
+    font-size: 16px;
+}
+
+.login > div:nth-child(2){
+    flex: 6;
+    background: white;
+    height: 100%;
+    padding: 10vh 10vw 25vh 10vw;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+}
+
+.login > div:nth-child(2) > div:nth-child(1){
+    font-size: 20px;
+    font-weight: 600;
+    color: #101828;
+}
+
+.login > div:nth-child(2) p{
+    font-size: 14px;
+    font-weight: 400;
+    color: #181D27;
+    margin: 0;
+}
+
+.login > div:nth-child(2) span{
+    font-size: 12px;
+    font-weight: 400;
+    color: #181d276c;
+    display: block;
+    width: 100%;
+}

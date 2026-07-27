@@ -1,0 +1,448 @@
+.dashboard h1{
+    color: #101828;
+    font-weight: 700;
+    font-style: Bold;
+    font-size: 28px;
+    line-height: 35px;
+    letter-spacing: 0.38px;
+}
+
+.dashboard p{
+    color: #667085;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 25px;
+    letter-spacing: -0.15px;
+}
+
+.dashboard h3{
+    color: #101828;
+    font-weight: 700;
+    font-style: Bold;
+    font-size: 22px;
+    line-height: 20px;
+    letter-spacing: 0.38px;
+}
+
+.dashboard .j-s-b > div:nth-child(2){
+    width: max-content;
+    height: max-content;
+    color: #4361EE;
+    font-weight: 600;
+    font-size: 12px;
+    background-color: #EEF1FD;
+    border-radius: 20px;
+    padding: 4px 9px;
+}
+
+.dashboard .briefs{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.dashboard .briefs .brief{
+    background-color: white;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-radius: 16px;
+    box-shadow: 0px 4px 16px 0px #0000000F;
+    overflow: hidden;
+}
+
+.dashboard .briefs .brief.submitted{
+    box-shadow: 0px 0px 0px 3px #FCD34D26;
+}
+
+.dashboard .briefs .brief .lane{
+    background: #E8EAED;
+    width: calc(100% + 30px);
+    height: 5px;
+    margin-left: -15px;
+    margin-top: -15px;
+}
+
+.dashboard .briefs .brief.submitted .lane{
+    background: linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%);
+}
+
+
+.dashboard .briefs .brief .header-sm{
+    display: flex;
+    gap: 10px;
+}
+
+.dashboard .briefs .brief .header-sm > :nth-child(2){
+    line-height: 45px;
+    font-weight: 600;
+    color: #0A0C10;
+    display: flex;
+}
+
+.dashboard .briefs .brief .header-sm > :nth-child(2) > div{
+    display: flex;
+}
+
+.dashboard .briefs .brief .header-sm > :nth-child(2) > div > div {
+    margin: 0 10px;
+}
+
+.dashboard .briefs .brief .header-sm > :last-child{
+    padding: 4px 12px;
+    color: #B45309;
+    background-color: #FFFBEB;
+    font-weight: 600;
+    border-radius: 20px;
+    font-size: 14px;
+    height: max-content;
+    margin: auto 0 auto auto;
+}
+
+
+.dashboard .briefs .brief .header-sm > .submitted:last-child{
+    color: #059669 !important;
+    background-color: #ECFDF5 !important;
+}
+
+.dashboard .briefs .brief .header-sm + div{
+    display: flex;
+}
+
+.dashboard .briefs .brief .header-sm + div > div{
+    padding: 0px 10px;
+}
+
+.dashboard .briefs .brief .header-sm + div > div:nth-child(2){
+    border-left: 1px solid #E8EAED;
+}
+
+
+.dashboard .briefs .brief > div:nth-child(4) > div:first-child{
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #F1F2F4;
+    padding-top: 18px;
+}
+
+.dashboard .briefs .brief > div:nth-child(4) > div:first-child > div:first-child{
+    background-image: url('../../../public/file.svg');
+    color: #6B7280;
+    font-size: 14px;
+    font-weight: 400;
+    background-size: 12px;
+    background-repeat: no-repeat;
+    background-position: left 0 top 35%;
+    padding-left: 20px;
+}
+
+.dashboard .briefs .brief > div:nth-child(4) > div:first-child > div:nth-child(2){
+    font-weight: 600;
+}
+
+.dashboard .briefs .brief > div:nth-child(5) {
+    display: flex;
+    gap: 12px;
+}
+
+.dashboard .briefs .brief > div:nth-child(5) > div > span{
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.dashboard .briefs .brief > div:nth-child(5) > div{
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 12px;
+    flex: 1;
+    padding: 16px 16px 16px 52px;
+    background-repeat: no-repeat;
+    background-size: 26px;
+    background-position: left 14px center;
+    text-align: left;
+}
+
+.dashboard .briefs .brief > div:nth-child(5) > div:nth-child(1){
+    border: 1px solid #FDE68A;
+    background-color: #FFFBEB;
+    background-image: url('../../../public/error-yellow-wo-b.svg');
+}
+
+.dashboard .briefs .brief > div:nth-child(5) > div:nth-child(1) > span{
+    color: #92400E;
+}
+
+
+.dashboard .briefs .brief > div:nth-child(5) > div:nth-child(1) > div{
+    color: #B45309;
+}
+
+.dashboard .briefs .brief > div:nth-child(5) > div:nth-child(2) {
+    border: 1px solid #C7D2FE;
+    background-color: #F0F4FF;
+    background-image: url('../../../public/tasks-blue-wo-b.svg');
+}
+
+.dashboard .briefs .brief > div:nth-child(5) > div:nth-child(2) > span{
+    color: #1E3A8A;
+}
+
+
+.dashboard .briefs .brief > div:nth-child(5) > div:nth-child(2) > div{
+    color: #4361EE;
+}
+
+.dashboard .briefs .brief .driving{
+    color: #4361EE;
+    background-image: url('../../../public/car-blue.svg');
+    background-position: left center;
+    padding-left: 18px;
+}
+
+.dashboard .briefs .brief .on-site{
+    color: #6B7280;
+    background-image: url('../../../public/house-grey.svg');
+    background-position: left center;
+    padding-left: 18px;
+}
+
+.dashboard .briefs .brief > :last-child{
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    margin-top: 15px;
+    display: block;
+}
+
+.dashboard .covered{
+    display: flex;
+}
+
+.dashboard .covered-container {
+    margin: 20px 0 0 0;
+    background-color: #FFFFFF;
+    box-shadow: 0px 1px 4px 0px #1018280A;
+    border: 1px solid #EAECF0;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.dashboard .covered-container > div:first-child{
+    background-color: #F7F8FC;
+    border-bottom: 1px solid #F2F4F7;
+    color: #98A2B3;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dashboard .covered-container:not(:has(> div + div))::after{
+    content: "No coverage this day";
+    color: #6b7280;
+    text-align: center;
+    font-size: 14px;
+    font-style: italic;
+    overflow: hidden;
+    width: 100%;
+    display: block;
+    padding: 10px 0;
+}
+
+
+.dashboard .covered-container > div{
+    display: flex;
+    padding: 10px 15px;
+}
+
+.dashboard .covered-container > div > *{
+    flex: 1;
+    display: flex;
+    gap: 10px;
+}
+
+.dashboard .covered-container > div > :first-child{
+    flex: 2;
+}
+
+.dashboard .covered-container > div:nth-child(n + 2) > div:first-child{
+    font-weight: 600;
+    color: #101828;
+    font-size: 14px;
+}
+
+.dashboard .covered-container > div:nth-child(n + 2) > div:nth-child(n + 2) {
+    font-size: 14px;
+    color: #667085;
+}
+
+.dashboard .covered-container > div:nth-child(n + 2) > div:last-child > div{
+    color: #b45309;
+    background-color: #fffbeb;
+    border-radius: 20px;
+    height: max-content;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.dashboard .covered-container > div:nth-child(n + 2) > div:last-child > div.submitted{
+    color: #059669;
+    background-color: #ECFDF5;
+}
+
+.dashboard .covered-container > div:nth-child(n + 2) > div:nth-child(4){
+    background-image: url('../../../public/van.svg');
+    background-position: left top 32%;
+    padding-left: 18px;
+}
+
+.dashboard .attention-container{
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: white;
+    box-shadow: 0px 1px 4px 0px #1018280A;
+    border: 1px solid #EAECF0;
+    padding: 10px 0;
+}
+
+.dashboard .attention-container > div{
+    display: flex;
+    padding: 5px 20px;
+}
+
+.dashboard .attention:has(+ .attention){
+    border-bottom: 1px solid #F2F4F7;
+}
+
+.dashboard .attention-container > div > div:first-child{
+    flex: 5;
+}
+
+.dashboard .attention-container > div > div:first-child > div:first-child{
+    display: flex;
+    gap: 10px;
+}
+
+.dashboard .attention-container > div > div:first-child > div:first-child p{
+    color: #101828;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dashboard .attention-container > div > div:first-child > div:nth-child(2){
+    color: #667085;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.dashboard .attention-container .high,
+.dashboard .attention-container .moderate{
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin: auto 0;
+}
+
+.dashboard .attention-container .high{
+    color: #F04438;
+    background-color: #FEF3F2;
+}
+
+.dashboard .attention-container .moderate{
+    color: #F79009;
+    background-color: #FFFAEB;
+}
+
+.dashboard .attention-container > div > div:nth-child(2){
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    min-width: 70px;
+}
+
+.dashboard .attention-container > div > div:nth-child(2) > div:first-child{
+    display: flex;
+    gap: 7px;
+    flex-direction: row-reverse;
+}
+
+.dashboard .attention-container > div > div:nth-child(2) > div:first-child > div{
+    margin: auto 0;
+}
+
+.dashboard .attention-container > div > div:nth-child(2) > div:first-child > div:first-child > div{
+    border-radius: 50px !important;
+    line-height: 2.3 !important;
+}
+
+.dashboard .attention-container > div > div:nth-child(2) > div:first-child > div:nth-child(2){
+    color: #667085;
+    font-weight: 400;
+    font-size: 12px;
+    text-align: right;
+    width: 100%;
+}
+
+.dashboard .attention-container > div > div:nth-child(2) > div:nth-child(2){
+    color: #98A2B3;
+    font-size: 12px;
+    font-weight: 400;
+    text-align: right;
+}
+
+.dashboard .attention_handoff > div:first-child > div:nth-child(2){
+    display: flex;
+    gap: 7px;
+}
+
+.dashboard .attention_handoff > div:first-child > div:nth-child(2) .user-circle > div{
+    border-radius: 50px !important;
+}
+
+.dashboard div:has(+ .attention-container) > div:nth-child(2){
+    color: #F04438;
+    background-color: #FEF3F2;
+}
+
+
+.dashboard .attention-container:empty{
+    padding: 0;
+    height: 0;
+    border: none;
+}
+
+h3:has(+ .attention-container){
+    color: #6b7280;
+    text-align: center;
+    width: 100%;
+    font-size: 14px;
+    font-style: italic;
+    display: block;
+    padding: 10px 0px;
+    height: 20px !important;
+    min-height: 20px !important;
+    font-weight: 40;
+}
+
+.dashboard h4{
+    color: #6b7280;
+    text-align: center;
+    width: 100%;
+    padding: 10px 0;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 40;
+    display: block;
+    height: 20px !important;
+    min-height: 20px !important;
+}
+
+@media (max-width: 1200px) {
+    .dashboard .briefs{
+        grid-template-columns: repeat(1, 1fr);
+    }
+}

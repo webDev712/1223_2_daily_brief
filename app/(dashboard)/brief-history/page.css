@@ -1,0 +1,192 @@
+.brief-history .table {
+    border-radius: 16px;
+    border: 1px solid #F2F4F7;
+    box-shadow: 0 0 4px 1px #1018280a;
+    overflow: hidden !important;
+}
+
+.brief-history .table > div{
+    display: flex;
+    padding: 10px 20px;
+    background-color: white;
+}
+
+.brief-history .table > div + div:has(+ div){
+    border-bottom: 2px solid #F2F4F7;
+}
+
+.brief-history .table > div:first-child{
+    background-color: #F7F8FC;
+    border: 2px solid #F2F4F7;
+}
+
+.brief-history .table > div:first-child > div{
+    color: #98A2B3 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    background-image: none !important;
+    justify-content: left !important;
+}
+
+.brief-history .table > div > div{
+    text-align: left;
+    flex: 1;
+    margin: auto 0;
+}
+
+.brief-history .table > div > div:nth-child(1){
+    width: 140px;
+    color: #101828;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.brief-history .table > div > div:nth-child(1) span{
+    color: #98A2B3;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.brief-history .table > div > div:nth-child(2){
+    width: 100px;
+    display: flex;
+    gap: 10px;
+    justify-content: start;
+}
+
+.brief-history .table > div > div:nth-child(2) > div:nth-child(2){
+    color: #98a2b3;
+}
+
+.brief-history .table > div > div:nth-child(2) > div:first-child{
+    margin-left: 30px;
+}
+
+.brief-history .table > div > div:nth-child(2) > div:first-child:has(+ div + div){
+    margin-left: 0;
+}
+
+
+.brief-history .table > div:first-child > div:nth-child(2){
+    flex: 0.5;
+    display: block;
+    text-align: center;
+}
+
+.brief-history .table > div > div:nth-child(3){
+    width: 100px;
+    color: #667085;
+    font-weight: 400;
+    font-size: 14px
+}
+
+.brief-history .table > div:first-child > div:nth-child(3){
+    display: block;
+    text-align: center;
+}
+
+.brief-history .table > div > div:nth-child(4){
+    width: 100px;
+    font-size: 14px
+}
+
+.brief-history .table > div > div:nth-child(5){
+    display: flex;
+    width: 100px;
+    padding: 0 10px;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.brief-history .table > div:first-child > div:nth-child(5){
+    display: block;
+    text-align: center;
+}
+
+
+.brief-history .table > div > div:nth-child(5) .progress-bar{
+    width: 50px;
+    margin: auto 0;
+    height: 6px !important;
+}
+
+.brief-history .table > div > div:nth-child(6){
+    width: 100px;
+    background-repeat: no-repeat;
+    background-position: left center;
+    padding-left: 20px;
+    color: #98A2B3;
+    font-size: 12px;
+}
+
+.brief-history .table > div:first-child > div:nth-child(6){
+    padding-left: 0;
+}
+
+.brief-history .table > div > div:nth-child(6).yellow{
+    color: #F79009;
+    background-image: url('../../../public/medium.svg');
+    font-size: 14px;
+}
+
+
+.brief-history .table > div > div:nth-child(6).red{
+    color: #F04438;
+    background-image: url('../../../public/high.svg');
+    font-size: 14px;
+}
+
+.brief-history .table > div > div:nth-child(7){
+    width: 100px;
+    background-image: url('../../../public/task.svg');
+    background-repeat: no-repeat;
+    background-position: left center;
+    padding-left: 20px;
+    color: #667085;
+}
+
+.brief-history .table > div:first-child > div:nth-child(7){
+    padding-left: 0;
+}
+
+
+.brief-history .table > div > div:nth-child(8){
+    width: 100px;
+    font-size: 14px
+}
+
+
+.brief-history .table > div:first-child > div:nth-child(8){
+    display: block;
+    text-align: center;
+}
+
+.brief-history .table > div:first-child > div:nth-child(9){
+    display: block;
+    text-align: center;
+}
+
+
+.brief-history .table > div > div:nth-child(9){
+    text-align: center;
+}
+
+
+.brief-history .filters{
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.brief-history .filters select:first-child{
+    width: 250px;
+}
+
+.brief-history .filters select{
+    width: 150px;
+    background-color: white;
+    border: 1px solid #EAECF0;
+    border-radius: 10px;
+    padding: 5px 8px;
+    padding-right: 10px;
+}

@@ -1,0 +1,775 @@
+.daily-brief{
+    padding: 0 !important;
+}
+
+.daily-brief > div:first-child{
+    border-bottom: 2px solid #E8EAED;
+    background: white;
+    padding: 15px 35px;
+    display: flex;
+    gap: 22px;
+}
+
+.daily-brief > div:first-child:empty{
+    display: none;
+}
+
+.daily-brief > div:first-child > div:first-child{
+    background-image: url('../../../public/arrow_grey.svg');
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    background-position: left center;
+    background-size: 1.1rem;
+    color: #667085;
+    cursor: pointer;
+}
+
+.daily-brief > div:first-child > div:nth-child(2){
+    font-weight: 700;
+    font-style: Bold;
+    color: #0A0C10;
+}
+
+.daily-brief .lead{
+    padding: 5px 10px;
+    width: max-content;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    border-radius: 13px;
+    background-color: attr(data-light);
+    user-select: none;
+    cursor: pointer;
+    height: max-content;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.daily-brief .lead:hover{
+    box-shadow: 0px 0px 10px 1px #9696968f;
+}
+
+.daily-brief input[type="radio"]{
+    display: none;
+}
+
+.daily-brief .lead span{
+    height: 25px;
+    width: 25px;
+    display: block;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 25px;
+    margin-left: 3px;
+}
+
+.daily-brief .leads{
+    display: flex;
+    gap: 10px;
+    background: white;
+    padding: 10px 32px;
+    border-bottom: 2px solid #e8eaed;
+}
+
+
+.daily-brief .leads .choose{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.daily-brief .leads .choose span{
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #9CA3AF;
+    line-height: 1;
+    display: block;
+}
+
+.daily-brief .project {
+    display: flex;
+    gap: 10px;
+}
+
+.daily-brief .project input[type="checkbox"]{
+    display: block;
+}
+
+.daily-brief .report{
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+}
+
+.daily-brief .report:has(+ .report){
+    border-bottom: 1px solid #E8EAED;
+}
+
+
+.daily-brief .report > :nth-child(3) {
+    margin-left: auto;
+    color: #9CA3AF;
+}
+
+.daily-brief .report > :nth-child(4) {
+    background-color: #F5F7FA;
+    padding: 4px 10px;
+    border-radius: 10px;
+    color: #9CA3AF;
+    font-weight: 600;
+    font-size: 12px;
+    width: 80px;
+    text-align: center;
+    text-wrap-mode: nowrap;
+}
+
+.daily-brief .report > :nth-child(4).done {
+    background-color: #ECFDF5;
+    color: #059669;
+}
+
+
+.daily-brief .report input[type="checkbox"]{
+    display: block;
+    width: 14px;
+}
+
+.daily-brief .briefs{
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+    padding-bottom: 40px;
+}
+
+.daily-brief .briefs > div:nth-child(1):empty:before,
+.daily-brief .briefs:empty::before{
+    content: "No Briefs for this day for this lead";
+    margin: auto;
+    width: max-content;
+    display: block;
+    font-size: 20px;
+}
+
+.daily-brief .tasks,
+.daily-brief .findings,
+.daily-brief .handoff,
+.daily-brief .reports{
+    background-color: white;
+    border: 2px solid #E8EAED;
+    border-radius: 14px;
+    flex: 1;
+    height: max-content;
+}
+
+.daily-brief .tasks h3,
+.daily-brief .findings h3{
+    color: #6b7280;
+    text-align: center;
+    font-size: 14px;
+    font-style: italic;
+    overflow: hidden;
+}
+
+.daily-brief .tasks div:has(> h3:empty),
+.daily-brief .findings div:has(> h3:empty):not(:has(.add-finding)){
+    height: 0;
+    padding: 4px 0;
+}
+
+.daily-brief .tasks div,
+.daily-brief .findings div{
+    transition: none;
+}
+
+.daily-brief div:has(>  .findings + .tasks) > div{
+    width: 45%;
+}
+
+.daily-brief .reports > div:first-child{
+    color: #0a0c10;
+    background-image: url('../../../public/book.svg');
+    background-position: 15px 50%;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding: 10px 15px 10px 40px;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 2px solid #E8EAED;
+}
+
+.daily-brief .reports > div:first-child > span{
+    color: #6B7280;
+    padding-left: 10px;
+}
+
+.daily-brief .reports > div:nth-child(2){
+    padding: 12px 15px;
+}
+
+.daily-brief .shift-info > div{
+    display: flex;
+}
+
+.daily-brief .shift-info .user{
+    width: 25px;
+    height: 25px;
+    display: flex;
+    border-radius: 20px;
+}
+
+
+.daily-brief .shift-info .user > div{
+    width: max-content;
+    line-height: 10px;
+    margin: auto;
+    font-size: 12px;
+    color: white;
+    font-weight: 600;
+}
+
+.daily-brief .shift-info{
+    background-color: white;
+    border: 2px solid #E8EAED;
+    border-radius: 14px;
+}
+
+
+.daily-brief .tasks h1,
+.daily-brief .findings h1,
+.daily-brief .handoff h1,
+.daily-brief .shift-info h1{
+    background-image: url('../../../public/person.svg');
+    font-size: 14px;
+    background-repeat: no-repeat;
+    background-position: left center;
+    padding-left: 22px;
+    font-weight: 600;
+    height: max-content;
+    margin: auto 0;
+}
+
+.daily-brief .tasks h1 + div,
+.daily-brief .findings h1 + div{
+    margin-left: auto;
+    color: #4361EE;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.daily-brief .tasks h1 + div:hover,
+.daily-brief .findings h1 + div:hover{
+    text-shadow: 0 0 1px #6881ff;
+}
+
+
+
+.daily-brief .tasks h1 {
+    background-image: url('../../../public/task.svg');
+}
+
+.daily-brief .findings h1 {
+    background-image: url('../../../public/caution.svg');
+}
+
+.daily-brief .handoff h1 {
+    background-image: url('../../../public/tg_grey.svg');
+}
+
+
+.daily-brief .tasks > div:first-child,
+.daily-brief .findings > div:first-child{
+    display: flex;
+    padding: 12px 16px;
+    border-bottom: 2px solid #F1F2F4;
+}
+
+
+.daily-brief .handoff > div:nth-child(2),
+.daily-brief .tasks > :nth-child(2),
+.daily-brief .findings > :nth-child(2){
+    padding: 12px 16px;
+}
+
+
+.daily-brief .findings > :nth-child(2){
+    gap: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.daily-brief .high,
+.daily-brief .moderate,
+.daily-brief .info{
+    width: max-content;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+
+.daily-brief .high{
+    color: #DC2626;
+    background-color: #FEE2E2;
+}
+
+.daily-brief .moderate{
+    color: #D97706;
+    background-color: #FFFBEB;
+}
+
+.daily-brief .info{
+    color: #7184FF;
+    background-color: #e2e3fe;
+}
+
+
+.daily-brief .high-container,
+.daily-brief .moderate-container,
+.daily-brief .info-container{
+    background-repeat: no-repeat;
+    background-position: left 15px top 18px;
+}
+
+
+.daily-brief .high-container{
+    background-image: url('../../../public/high.svg');
+}
+
+.daily-brief .moderate-container{
+    background-image: url('../../../public/medium.svg');
+}
+
+.daily-brief .info-container{
+    background-image: url('../../../public/info.svg');
+}
+
+
+
+
+
+.daily-brief .shift-info > div:first-child{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 2px solid #e8eaed;
+    padding: 20px;
+}
+
+.daily-brief .shift-info > div:nth-child(2){
+    display: flex;
+    justify-content: left;
+    gap: 10px;
+    padding: 20px;
+}
+
+.daily-brief .shift-info > div:nth-child(3){
+    background-color: #EEF1FD;
+    margin: 15px;
+    border: 1px solid #C7D2FE;
+    border-radius: 16px;
+    flex-direction: column;
+    padding: 10px 0px 15px 0px;
+    position: relative;
+}
+
+.daily-brief .shift-info > div:nth-child(3) * {
+    overflow: hidden;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:first-child{
+    color: #4361EE;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: right;
+    margin-right: 25px;
+    cursor: pointer;
+    margin-left: auto;
+    width: max-content;
+    overflow: hidden;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > h3{
+    font-size: 14px;
+    color: #6b7280;
+    text-align: center;
+    font-style: italic;
+    overflow: hidden;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2){
+    display: flex;
+    padding: 4px 20px;
+    gap: 15px;
+    width: 100%;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div{
+    flex: 5;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div:nth-child(1){
+    min-width: 20px !important;
+    flex: 0.2;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div:nth-child(1) input{
+    background-image: url('../../../public/krzyz.svg');
+    background-color: transparent;
+    border: none;
+    background-position: center;
+    width: 10px !important;
+    height: 100% !important;
+    display: block;
+    padding: 0;
+}
+
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div:nth-child(2){
+    flex: 8;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div:last-child{
+    flex: 1;
+    min-width: 60px;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div input {
+    width: 100%;
+    border: 1px solid #E8EAED;
+    background-color: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div input[type="button"]{
+    width: max-content;
+}
+
+
+.daily-brief .shift-info div:has(> span + select),
+.daily-brief .shift-info div:has(> span + div),
+.daily-brief .shift-info div:has(> span + label){
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 130px;
+}
+
+
+.daily-brief .shift-info div:has(> span + label) > span,
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div span,
+.daily-brief .handoff span,
+.daily-brief .add-finding > div > span,
+.daily-brief .add-task span,
+.daily-brief .shift-info div:has(> span + select) > span,
+.daily-brief .shift-info div:has(> span + div) > span{
+    font-size: 12px;
+    color: #9CA3AF;
+    margin-bottom: 5px;
+}
+
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div span{
+    color: #6B7280;
+}
+
+.daily-brief .shift-info div:has(> span + select) > span{
+    padding-left: 4px;
+}
+
+.daily-brief .shift-info div:has(> span + label) > label {
+    display: flex;
+    gap: 10px;
+    background-image: url('../../../public/checkbox_0.svg');
+    padding-left: 35px;
+    background-size: 30px;
+    background-position: left center;
+    cursor: pointer;
+}
+
+.daily-brief .shift-info div:has(> span + label) > label input{
+    display: none;
+}
+
+.daily-brief .shift-info div:has(> span + label) > label.driving{
+    background-image: url('../../../public/checkbox_1.svg');
+}
+
+.daily-brief .shift-info div:has(> span + label) > label div{
+    user-select: none;
+}
+
+.daily-brief .brief{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 70%;
+    margin: auto;
+    position: relative;
+}
+
+.daily-brief .brief + .brief::before{
+    content: " ";
+    display: block;
+    width: 110%;
+    height: 2px;
+    background-color: rgba(0, 0, 0, 0.073);
+    position: absolute;
+    top: -40px;
+    transform: translateX(-5%);
+    border-radius: 5px;
+}
+
+.daily-brief .tasks .task{
+    display: flex;
+    gap: 10px;
+    background-image: url('../../../public/round_select_0.png');
+    background-size: 14px;
+    background-position: left center;
+    padding-left: 20px !important;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    padding: 8px 0;
+}    
+
+
+.daily-brief .tasks .task input{
+    display: none;
+}
+
+.daily-brief .tasks .task:has(input:checked){
+    background-image: url('../../../public/round_select_1.png');
+}
+
+
+.daily-brief .tasks .task.d:has(input:checked){
+    background-image: url('../../../public/round_select_1.png');
+}
+
+
+.daily-brief .tasks .task:has(+ .task){
+    border-bottom: 2px solid #F1F2F4;
+}
+
+.daily-brief .tasks .task > div:nth-child(3){
+    margin-left: auto;
+    color: #9CA3AF;
+    font-size: 12px;
+    line-height: 24px;
+}
+
+.daily-brief .add-task{
+    display: flex;
+    padding: 0px 20px 12px 20px;
+    gap: 10px;
+}
+
+.daily-brief .add-task .cancel{
+    background-image: url('../../../public/krzyz.svg');
+    min-width: 16px;
+    min-height: 16px;
+    margin-top: auto;
+    margin-bottom: auto;
+    cursor: pointer;
+}
+
+.daily-brief .add-task select,
+.daily-brief .add-task input::placeholder{
+    color: grey;
+}
+
+.daily-brief .add-task select{
+    border: 1px solid #E8EAED;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+
+}
+
+.daily-brief .add-task > div:nth-child(2){
+    flex: 1;
+}
+
+
+.daily-brief .add-task > :last-child{
+    margin-top: auto;
+}
+
+.daily-brief .add-task input{
+    border: 1px solid #4361EE;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+.daily-brief .add-task > div{
+    display: flex;
+    flex-direction: column;
+}
+
+.daily-brief .finding{
+    display: flex;
+    background-color: #F5F7FA;
+    border: 1px solid #E8EAED;
+    padding: 12px 12px 12px 40px;
+    border-radius: 14px;
+}
+
+.daily-brief .finding > div:last-child{
+    margin-left: auto;
+    margin-top: auto;
+    color: #9CA3AF;
+    font-size: 12px;
+}
+
+.daily-brief .finding > :first-child > :first-child{
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #0A0C10;
+}
+
+.daily-brief .add-finding{
+    display: flex;
+    flex-direction: column;
+    background-color: #F5F7FA;
+    border: 1px solid #E8EAED;
+    padding: 12px 12px 12px 12px;
+    border-radius: 14px;
+    gap: 10px;
+}
+
+.daily-brief .add-finding > div{
+    display: flex;
+    flex-direction: column;
+}
+
+
+.daily-brief .add-finding > div:last-child{
+    display: flex;
+    flex-direction: row;
+    justify-content: right;
+    gap: 10px;
+}
+
+.daily-brief .handoff select,
+.daily-brief .handoff input[type="text"],
+.daily-brief .handoff textarea,
+.daily-brief .add-finding select,
+.daily-brief .add-finding textarea{
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+    background-color: white;
+}
+
+.daily-brief .add-finding .cancel{
+    color: #6b7280;
+    font-weight: 600;
+    line-height: 34px;
+    cursor: pointer;
+}
+
+.daily-brief .handoff h1{
+    padding: 12px 16px 12px 40px;
+    background-position: left 17px center;
+    border-bottom: 2px solid #f1f2f4;
+}
+
+.daily-brief .handoff > div:nth-child(2){
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.daily-brief .handoff > div:nth-child(2) > div:first-child{
+    display: flex;
+    gap: 10px;
+}
+
+.daily-brief .handoff > div:nth-child(2) > div:nth-child(2),
+.daily-brief .handoff > div:nth-child(2) > div:first-child > div{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.daily-brief .handoff > div:nth-child(2) > div:nth-child(2){
+    width: 100%;
+}
+
+.daily-brief .confirm{
+    position: fixed;
+    background-color: #0a0c101c;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+
+.daily-brief .confirm > div{
+    width: 50%;
+    height: 40%;
+    background-color: white;
+    left: 50%;
+    top: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    gap: 20px;
+    flex-direction: column;
+    min-height: max-content;
+}
+
+.daily-brief .confirm > div > h1{
+    width: max-content;
+    margin: auto;
+    font-size: 18px;
+    background-size: 18px;
+}
+
+.daily-brief .confirm > div > p{
+    text-align: center;
+    width: 80%;
+    margin: auto;
+}
+
+
+.daily-brief .confirm > div > div:last-child{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+}
+
+.daily-brief .no-briefs{
+    width: max-content;
+    margin: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+
+.daily-brief .no-briefs > h1{
+    font-size: 20px;
+}
+
+.daily-brief .no-briefs > div{
+    margin: auto;
+}
