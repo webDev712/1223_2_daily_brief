@@ -17,6 +17,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     if (!session?.user?.email) {
         return null;
     }
+    
 
     const users = await sql`
         SELECT
