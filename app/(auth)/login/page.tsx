@@ -18,7 +18,7 @@ export default async function Login() {
       </div>
       <div>
         <div>Welcome!</div>
-        <p>Sign in your account with Google</p>
+        <p>Sign in to your account with Google</p>
         <LoginButton></LoginButton>
         <span>Can't log in? Contact your manager</span>
       </div>
