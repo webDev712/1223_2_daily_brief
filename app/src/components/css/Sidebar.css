@@ -21,7 +21,7 @@
     z-index: 10000;
 }
 
-.sidebar * {
+.sidebar {
     background-color: #0A0C12;
     color: white;
     transition: all 0.5s ease;
@@ -184,13 +184,16 @@ teams-and-roles */
     }
 
     .sidebar{
-        width: 100vw;
+        isolation: isolate;
+        width: 100.4vw;
+        margin-left: -0.2vw;
+        margin-top: -0.2vw;
         max-width: unset;
         min-width: unset;
         position: fixed;
         height: max-content;
         min-height: max-content !important;
-        height: max-content !important;
+        height: auto !important;
     }
 
     .sidebar > div:first-child{
