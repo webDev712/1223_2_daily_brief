@@ -57,6 +57,7 @@ export default function BriefHistory() {
 
 
         const users_res = await fetch(`/api/users`);
+        
         if (!users_res.ok) {
           console.error("Failed to load leads");
           setLoading(false)
@@ -148,7 +149,6 @@ export default function BriefHistory() {
                     const reportsPercentage = b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100;
                     return (
                       <div key={b.id}>
-                {/* {JSON.stringify(Object.keys(b))} */}
                         <div>
                           <div>{isToday ? 'Today' : format(b.date, 'MMM d')}</div>
                           <span>{format(b.date, 'MMMM d, yyyy')}</span>

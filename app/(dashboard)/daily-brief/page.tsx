@@ -2,7 +2,7 @@
 
 import { useDate } from '../../src/components/DateContext';
 import Loader from '../../src/components/Loader';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import getColorsFromName from '@/lib/color';
 import { format, parse } from "date-fns";
 import { toast } from 'sonner';
@@ -27,7 +27,7 @@ export default function DailyBrief() {
     return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) && true };
   const [showSubmit, setShowSubmit] = useState(false)
   const [showHandoff, setShowHandoff] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false);
   const [savingCover, setSavingCover] = useState(false)
   const [showAddCover, setShowAddCover] = useState(false)
 
@@ -108,8 +108,11 @@ export default function DailyBrief() {
     if (res.status === 200) setReload(prev => prev + 1);
   }
   const addFinding = async ( b: any, finding: any ) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+
+    
     setShowAddFinding(false)
     const updatedBrief = {
       ...b,
@@ -136,12 +139,14 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
-    setSaving(false)
+    savingRef.current = false;
   };
 
   const changeTask = async (b: any, task: any) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    
 
     setShowAddTask(false);
 
@@ -165,12 +170,14 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
-    setSaving(false)
+    savingRef.current = false;
   };
 
   const addTask = async ( b: any, task: any ) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    
 
     setShowAddTask(false)
     const updatedBrief = {
@@ -178,7 +185,7 @@ export default function DailyBrief() {
       tasks: [
         ...(b.tasks || []),
         {
-          ...task,
+          ...task, custom_id: undefined,
         }
       ]
     };
@@ -196,12 +203,14 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
-    setSaving(false)
+    savingRef.current = false;
   };
 
   const changeShift = async ( b: any, shift: string) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    
     const updatedBrief = {
       ...b,
       shift: shift
@@ -220,12 +229,14 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
-    setSaving(false)
+    savingRef.current = false;
   };
 
   const changeDrivingStatus = ( b: SavedBrief, driving_status: boolean) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    
     const updatedBrief = {
       ...b,
       driving: driving_status
@@ -244,13 +255,15 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
-    setSaving(false)
+    savingRef.current = false;
   };
 
 
   const updateReports = async ( b: any, r: any, checked: boolean ) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    
     const reportExists = b.reports.some((report: any) => report.id === r.id);
     const updatedBrief = {
       ...b,
@@ -288,12 +301,14 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
-    setSaving(false)
+    savingRef.current = false;
   };
 
   const handoffBrief = async (b: any) => {
-    if (saving) return;
-    setSaving(true)
+    if (savingRef.current) return;
+
+    savingRef.current = true;
+    
     setLoading(true)
     const res = await fetch("/api/handoffBrief", {
       method: "PATCH",
@@ -308,7 +323,7 @@ export default function DailyBrief() {
         notes: (document.getElementById(`handoff_notes_${b.id}`) as HTMLTextAreaElement)?.value,      
       }),
     });
-    setSaving(false)
+    savingRef.current = false;
     setShowHandoff(false)
     if (res.ok) { setReload(prev => prev + 1); }
   }
@@ -636,7 +651,7 @@ export default function DailyBrief() {
                           <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) setShowAddFinding(true)}}>+ Add Finding</div>
                         </div>
                         <div>{b.findings && b.findings?.length > 0 ? b.findings.map(f => (
-                          <div key={JSON.stringify(f)} className={`finding ${f.type}-container`}>
+                          <div key={`finding_div_${f.id}`} className={`finding ${f.type}-container`}>
                             <div>
                               <div>{f.description}</div>
                               <div className={f.type}>{f.type}</div>
@@ -675,8 +690,11 @@ export default function DailyBrief() {
                         </div>
                         <div>
                           {b.tasks && b.tasks?.length > 0 ? b.tasks.map(t => (
-                            <label key={crypto.randomUUID()} className={noAccessEdit(b) ? 'task d' : 'task'}>
-                              <input key={`${t.id}-task-input`} type='checkbox' checked={t.checked} onChange={() => { if (!noAccessEdit(b)) changeTask(b, {...t, checked: !t.checked});
+                            <label key={`task_label_${t.id}`} id={`task_label_${t.id}`} className={noAccessEdit(b) ? 'task d' : 'task'}>
+                              <input key={`${t.id}-task-input`} type='checkbox' checked={t.checked ?? false} onChange={() => { if (!noAccessEdit(b)) changeTask(b, {
+                                    ...t,
+                                    checked: !(t.checked ?? false),
+                                  });
                                 }}/>
                               <div key={`${t.id}-task-text`}>{t.text}</div>
                               <div key={`${t.id}-task-type`}>{t.task_type}</div>
@@ -700,6 +718,7 @@ export default function DailyBrief() {
                               </select>
                             </div>
                             <input disabled={noAccessEdit(b)} type="button" value="Add" className='button-d-bl-sm' onClick={() => { addTask(b, {
+                                custom_id: crypto.randomUUID(),
                                 task_type: (document.getElementById(`new_t_type_${b.id}`) as HTMLTextAreaElement)?.value || '',
                                 text: (document.getElementById(`new_t_name_${b.id}`) as HTMLTextAreaElement)?.value || '',
                               });

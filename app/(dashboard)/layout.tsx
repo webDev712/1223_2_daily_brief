@@ -26,7 +26,7 @@ export default async function DashboardLayout({
     <UserProvider user={user}>
       <DateProvider>
 
-        <Sidebar />
+        <Sidebar user_role={user.role} />
 
         <div>
           <Header

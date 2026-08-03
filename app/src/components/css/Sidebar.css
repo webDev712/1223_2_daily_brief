@@ -95,6 +95,9 @@
 }
 [data-img="settings"]{
     background-image: url('../../../../public/settings_0.svg');
+}
+
+div:has(> [data-img="settings"]){
     margin-top: auto !important;
 }
 
@@ -149,7 +152,8 @@ teams-and-roles */
 .sidebar > div.flex{
     display: flex;
     position: relative;
-    height: max-content;
+    min-height: max-content;
+    height: 100%;
     flex-direction: column;
     padding: 0;
     margin: 0;
@@ -183,7 +187,7 @@ teams-and-roles */
         width: 100vw;
         max-width: unset;
         min-width: unset;
-        position: absolute;
+        position: fixed;
         height: max-content;
     }
 

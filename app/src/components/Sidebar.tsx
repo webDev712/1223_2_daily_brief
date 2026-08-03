@@ -4,8 +4,13 @@ import { usePathname } from 'next/navigation';
 import './css/Sidebar.css'
 import Link from "next/link";
 import { useState, useEffect } from 'react';
+import { UserRole } from '@/lib/auth';
 
-export default function Sidebar({}) {
+export default function Sidebar({
+  user_role,
+}: {
+  user_role: UserRole;
+}) {
   const pathname = usePathname();
   const selected = pathname.split("/")[1];
   const [mobileShow, setMobileShow] = useState(false)
@@ -16,7 +21,7 @@ export default function Sidebar({}) {
       setIsMobile(window.innerWidth <= 500);
     };
 
-    update(); // при первом рендере
+    update();
     window.addEventListener("resize", update);
     setLoading(false)
     return () => window.removeEventListener("resize", update);
@@ -42,10 +47,20 @@ export default function Sidebar({}) {
               <Link onClick={() => {setMobileShow(prev => !prev)}} href="/brief-history" className={selected === 'brief-history' ? 'selected' : ''} data-img="brief-history" data-hover="Briefs History"></Link>
               <h1>Brief History</h1>
             </div>
-            {/* <Link href="/reports" className={selected === 'reports' ? 'selected' : ''} data-img="reports" data-hover="Reports"></Link> */}
-            {/* <Link href="/teams-and-roles" className={selected === 'teams-and-roles' ? 'selected' : ''} data-img="teams-and-roles" data-hover="Teams and roles"></Link> */}
-            
-            {/* <Link href="/settings" className={selected === 'settings' ? 'selected' : ''} data-img="settings" data-hover="Settings"></Link> */}
+            <div>
+              <Link href="/reports" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'reports' ? 'selected' : ''} data-img="reports" data-hover="Reports"></Link>
+              <h1>Reports</h1>
+            </div>
+            {user_role === 'manager' && (
+              <div>
+                <Link href="/teams-and-roles" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'teams-and-roles' ? 'selected' : ''} data-img="teams-and-roles" data-hover="Teams and roles"></Link>
+                <h1>Teams & Roles</h1>
+              </div>
+            )}
+            {/* <div>
+              <Link href="/settings" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'settings' ? 'selected' : ''} data-img="settings" data-hover="Settings"></Link>
+              <h1>Settings</h1>
+            </div> */}
           </div>
           
         )}

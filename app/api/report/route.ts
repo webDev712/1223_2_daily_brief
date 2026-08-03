@@ -11,7 +11,7 @@ export async function POST(request: Request) {
             name,
             source,
             once_per,
-            start_at_day="",
+            start_at_day=1,
             archived
         } = body;
 
@@ -43,18 +43,19 @@ export async function PATCH(request: Request) {
             start_at_day="",
             archived
         } = body;
-
+        console.log(body)
         const rows = await sql`
             UPDATE report
             SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}
             WHERE id = ${id};
         `
-        const rows_2 = await sql`
-            UPDATE saved_report
-            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}
-            WHERE id = ${id};
-        `
+        // const rows_2 = await sql`
+        //     UPDATE saved_report
+        //     SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}
+        //     WHERE id = ${id};
+        // `
 
+        
         return NextResponse.json({ success: true })
     }
     catch (error) {

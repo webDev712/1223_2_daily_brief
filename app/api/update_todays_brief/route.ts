@@ -86,23 +86,39 @@ export async function POST(request: Request) {
                 );
 
             // tasks
+            console.log('tasks')
+            console.log(tasks)
             await Promise.all(
                 tasks.map(async (t: any) => {
-                    if (t.id == null) {
-                        await sql`
-                            INSERT INTO saved_task (
-                                text,
-                                checked,
-                                task_type,
-                                saved_brief_id
-                            )
-                            VALUES (
-                                ${t.text},
-                                ${t.checked ?? false},
-                                ${t.task_type},
-                                ${id}
-                            );
-                        `;
+                    if (t.id == null || t.custom_id !== null) {
+                        if (t.custom_id !== undefined){
+                            await sql`
+                                INSERT INTO saved_task (
+                                    id,
+                                    text,
+                                    checked,
+                                    task_type,
+                                    saved_brief_id
+                                )
+                                VALUES (
+                                    ${t.custom_id},
+                                    ${t.text},
+                                    ${t.checked ?? false},
+                                    ${t.task_type},
+                                    ${id}
+                                );
+                            `;
+                        }
+                        else {
+                            await sql`
+                                UPDATE saved_task
+                                SET
+                                    text = ${t.text},
+                                    checked = ${t.checked},
+                                    task_type = ${t.task_type}
+                                WHERE id = ${t.id};
+                            `;
+                        }
                     } else {
                         await sql`
                             UPDATE saved_task

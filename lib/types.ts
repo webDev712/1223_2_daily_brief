@@ -28,6 +28,9 @@ export interface Report {
   saved_brief_id: number;
   timestamp: string | null;
   archived: boolean;
+  once_per: string | null;
+  start_at_day: string | null;
+  edit: boolean;
 }
 
 export interface Finding {
@@ -58,6 +61,8 @@ export interface User {
   role: string,
   user_role: string,
   lead_letter: string,
+  phone: string,
+  archived: boolean,
 }
 
 export interface Shift {

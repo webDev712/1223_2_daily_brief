@@ -32,12 +32,13 @@ export async function POST(request: Request) {
             name,
             user_role,
             lead_letter,
-            archived=false
+            archived=false,
+            phone='+1 111111111'
         } = body;
 
         const rows = await sql`
-            INSERT INTO website_user (email, name, user_role, lead_letter, archived)
-            VALUES (${email}, ${name}, ${user_role}, ${lead_letter}, ${archived});
+            INSERT INTO website_user (email, name, user_role, lead_letter, archived, phone)
+            VALUES (${email}, ${name}, ${user_role}, ${lead_letter}, ${archived}, ${phone});
         `
         return NextResponse.json({ success: true });
     } catch (error) {

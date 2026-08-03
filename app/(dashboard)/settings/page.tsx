@@ -1,7 +1,8 @@
 export default async function Settings() {
   return (
-    <div className="page">
+    <div className="settings">
       <div>
+        settings
       </div>
     </div>
   );

@@ -707,54 +707,6 @@
     width: 100%;
 }
 
-.daily-brief .confirm{
-    position: fixed;
-    background-color: #0a0c101c;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1000;
-}
-
-
-.daily-brief .confirm > div{
-    width: 50%;
-    height: 40%;
-    background-color: white;
-    left: 50%;
-    top: 50%;
-    position: absolute;
-    transform: translate(-50%, -50%);
-    padding: 20px;
-    border-radius: 10px;
-    display: flex;
-    gap: 20px;
-    flex-direction: column;
-    min-height: max-content;
-}
-
-.daily-brief .confirm > div > h1{
-    width: max-content;
-    margin: auto;
-    font-size: 18px;
-    background-size: 18px;
-}
-
-.daily-brief .confirm > div > p{
-    text-align: center;
-    width: 80%;
-    margin: auto;
-}
-
-
-.daily-brief .confirm > div > div:last-child{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 20px;
-}
-
 .daily-brief .no-briefs{
     width: max-content;
     margin: auto;
@@ -845,7 +797,5 @@
         width: 100%;
     }
 
-    .daily-brief .confirm > div{
-        width: 90%;
-    }
+
 }

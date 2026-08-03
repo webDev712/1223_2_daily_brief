@@ -5,7 +5,10 @@ import { requireRole } from "@/lib/auth";
 export async function GET() {
     try{
         await requireRole("lead");
-        const rows = await sql`SELECT * FROM report;`;
+        const rows = await sql`
+            SELECT * 
+            FROM report
+            ORDER BY id;`;
         return NextResponse.json(rows);
     } catch (error) {
         console.log(error);

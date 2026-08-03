@@ -10,3 +10,133 @@
     background-size: 20px;
     margin-bottom: 30px;
 }
+
+.reports .table-reports{
+    border: 1px solid #EAECF0;
+    border-radius: 16px;
+    padding: 0 0 10px 0;
+    background-color: white;
+    overflow: hidden;
+    box-shadow: 0px 1px 4px 0px #1018280A;
+}
+
+.reports .table-reports .report{
+    display: flex;
+    padding: 10px 20px;
+}
+
+
+.reports .table-reports > div:first-child{
+    display: flex;
+    background-color: #F7F8FC;
+    padding: 10px 20px;
+    color: #98A2B3;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.reports .table-reports > div > * {
+    flex: 5;
+    padding: 0 5px;
+}
+
+
+.reports .table-reports > div > :first-child,
+.reports .table-reports > div > :nth-child(2),
+.reports .table-reports > div > :nth-child(6){
+    flex: 2;
+    text-align: center;
+}
+
+.reports .table-reports > .report > div:nth-child(5){
+    width: 350px;
+}
+
+.reports .table-reports > .report > div:nth-child(5) > div > div{
+    display: flex;
+    gap: 10px;
+}
+
+
+.reports .table-reports > .report > div:nth-child(5) > div > div.show > div:nth-child(1){
+    width: 70px;
+}
+.reports .table-reports > .report > div:nth-child(5) > div > div.show > div:nth-child(2){
+    /* padding-left: 7px; */
+}
+
+.reports .table-reports > .report:has(> div:first-child input:checked) .show{
+    display: none;
+}
+
+.reports .table-reports > .report:not(:has(> div:first-child input:checked)) .edit{
+    display: none;
+}
+
+.reports .table-reports .report label{
+    display: flex;
+}
+
+.reports .table-reports .report label span{
+    margin: auto;
+}
+
+.reports .table-reports .report label input{
+    display: none;
+}
+
+.reports .table-reports .report input{
+    width: 100%;
+}
+
+.reports .table-reports > .report > div:first-child:has(input:checked) span{
+    opacity: 0.5;
+}
+
+.reports .table-reports > .report:not(:has(div:first-child input:checked)) > div:nth-child(2) span{
+    opacity: 0.5;
+}
+
+.reports .table-reports > .report > div:nth-child(5) .show{
+    text-transform: capitalize;
+}
+
+.reports .table-reports > .report .show{
+    padding-left: 11px;
+}
+
+.reports .table-reports > .report .edit input,
+.reports .table-reports > .report .edit select{
+    padding-left: 11px;
+    border: 1px solid #E8EAED;
+    border-radius: 5px;
+        box-sizing: border-box;
+
+}
+
+.reports .table-reports > .report .edit input:focus,
+.reports .table-reports > .report .edit select:focus {
+    border: 1px solid #0d6efd; /* или оставь тот же цвет */
+    outline: none;
+}
+
+.reports .add-report{
+    margin: 0px 0px 20px auto;
+}
+
+@media (max-width: 500px) {
+    .reports .table-wrapper{
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .reports .table-wrapper > .table-reports{
+        width: max-content;
+        min-width: 600px
+    }
+
+    .reports .how-to-use{
+        background-position: left 20px top 25px;
+    }
+}

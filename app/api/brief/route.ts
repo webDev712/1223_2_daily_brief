@@ -86,7 +86,7 @@ export async function POST(request: Request) {
             WHERE (
                 r.once_per = 'day'
                 OR (r.once_per = 'week'
-                    AND EXTRACT(ISODOW FROM CURRENT_DATE) = r.start_at_day::integer)
+                    AND EXTRACT(ISODOW FROM CURRENT_DATE) + 1 = r.start_at_day::integer)
                 OR (r.once_per = 'month'
                     AND EXTRACT(DAY FROM CURRENT_DATE) = r.start_at_day::integer)
             )
