@@ -189,6 +189,8 @@ teams-and-roles */
         min-width: unset;
         position: fixed;
         height: max-content;
+        min-height: max-content !important;
+        height: max-content !important;
     }
 
     .sidebar > div:first-child{
