@@ -185,9 +185,9 @@ teams-and-roles */
 
     .sidebar{
         isolation: isolate;
-        width: 100.4vw;
-        margin-left: -0.2vw;
-        margin-top: -0.2vw;
+        width: 102vw;
+        margin-left: -1vw;
+        margin-top: -1vw;
         max-width: unset;
         min-width: unset;
         position: fixed;

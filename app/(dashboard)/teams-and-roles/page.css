@@ -318,4 +318,8 @@
     .teams-and-roles .employee.archived::before{
         padding: calc(50% - 32px) 0px;;
     }
+
+    .teams-and-roles .confirm.add-user-form > div > form > div{
+        grid-template-columns: repeat(1, 1fr);
+    }
 }
