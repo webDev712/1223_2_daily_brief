@@ -80,17 +80,47 @@ export async function POST(request: Request) {
             RETURNING id;
         `
         const new_id = rows[0].id;
-        const reports_rows = await sql`
-            SELECT *
-            FROM report r
-            WHERE (
-                r.once_per = 'day'
-                OR (r.once_per = 'week'
-                    AND EXTRACT(ISODOW FROM CURRENT_DATE) + 1 = r.start_at_day::integer)
-                OR (r.once_per = 'month'
-                    AND EXTRACT(DAY FROM CURRENT_DATE) = r.start_at_day::integer)
+const reports_rows = await sql`
+    WITH params AS (
+        SELECT CAST(${lead_id} AS uuid) AS lead_uuid,
+               CAST(${lead_id} AS text) AS lead_text
+    )
+    SELECT r.*
+    FROM report r
+    JOIN website_user u
+        ON u.id = (SELECT lead_uuid FROM params)
+    WHERE (
+        r.once_per = 'day'
+        OR (
+            r.once_per = 'week'
+            AND EXTRACT(ISODOW FROM CURRENT_DATE) + 1 = r.start_at_day::integer
+        )
+        OR (
+            r.once_per = 'month'
+            AND EXTRACT(DAY FROM CURRENT_DATE) = r.start_at_day::integer
+        )
+    )
+    AND r.archived = FALSE
+    AND (
+        (r.assigned_to->'all'->>'assigned')::boolean = TRUE
+        OR (
+            (r.assigned_to->'person'->>'assigned')::boolean = TRUE
+            AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements_text(r.assigned_to->'person'->'list') AS assigned_person_id
+                WHERE assigned_person_id = (SELECT lead_text FROM params)
             )
-            AND r.archived <> TRUE;`;
+        )
+        OR (
+            (r.assigned_to->'department'->>'assigned')::boolean = TRUE
+            AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements_text(r.assigned_to->'department'->'list') AS assigned_department_id
+                WHERE assigned_department_id = CAST(u.department_id AS text)
+            )
+        )
+    );
+`;
         await Promise.all(
             reports_rows.map((r) =>
                 sql`

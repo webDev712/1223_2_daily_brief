@@ -1,19 +1,24 @@
 'use client';
 
 import Loader from "@/app/src/components/Loader";
-import { Report, SavedBrief, User } from "@/lib/types";
+import { Department, Report, SavedBrief, User } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import './page.css'
 import getReportsTypes, { getWeekDays } from "@/lib/config";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
 
 export default function Reports() {
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<Report[]>([]);
   const [briefs, setBriefs] = useState([]);
   const [user, setUser] = useState<User | null>(null);
+  const [leads, setLeads] = useState<User[]>([])
+  const [departments, setDeparments] = useState<Department[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showAssigned, setShowAssigned] = useState(false);
+  const [showAssignedReport, setShowAssignedReport] = useState<Report | null>(null)
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
   const weekDays = getWeekDays()
   const [reload, setReload] = useState(0);
@@ -38,6 +43,8 @@ export default function Reports() {
   }
 
   const saveReport = (r: Report) => {
+    console.log('saveReport Report')
+    console.log(r)
     fetch("/api/report", {
       method: "PATCH",
       headers: {
@@ -115,6 +122,29 @@ export default function Reports() {
 
       const data = await res.json();
       setBriefs(data);
+      const users_res = await fetch(`/api/users`);
+      
+      if (!users_res.ok) {
+        console.error("Failed to load leads");
+        setLoading(false)
+        return;
+      }  
+      let leads_data = await users_res.json();
+      leads_data = leads_data.filter((a: User) => a.user_role === 'lead' && a.archived !== true);
+      console.log('leads_data')
+      console.log(leads_data)
+      setLeads(leads_data);
+      let departments_res = await fetch("/api/departments");
+      if (!departments_res.ok){
+          console.error("Failed to load departments");
+          setLoading(false)
+          return;
+      }
+      let departments_data = await departments_res.json();
+      console.log('departments_data')
+      console.log(departments_data)
+      setDeparments(departments_data)
+      
 
 
       setLoading(false)
@@ -123,6 +153,19 @@ export default function Reports() {
     }
     load();
   }, [reload]);
+
+  const assignReport = (report: Report | null) => {
+    if (!report) return;
+    setReports(prev =>
+      prev.map(r =>
+        r.id === report.id
+          ? report
+          : r
+      )
+    );
+    saveReport(report)
+    setShowAssigned(false);
+  }
   
   const shouldShowReportToday = (report: Report) => {
     const date = new Date()
@@ -151,8 +194,6 @@ export default function Reports() {
       }
     });
   });
-  console.log('reports_map')
-  console.log(reports_map)
 
   const done_by_all = [...reports_map.values()].filter(
     count => count === briefs.length
@@ -162,9 +203,170 @@ export default function Reports() {
     active_reports_count === 0
       ? 100
       : Math.round((done_by_all / active_reports_count) * 100);
-  const total_reports = reports.filter(shouldShowReportToday).filter((report: Report) => report.archived !== true).length;
-// TODO: ADD VIEW BRIEF HERE AND THERE
-  return (
+  const activeReports = reports
+  .filter(shouldShowReportToday)
+  .filter((report) => report.archived !== true);
+
+const getAssignedLeadIds = (report: Report): string[] => {
+  const assigned = report.assigned_to;
+
+  if (!assigned) {
+    return [];
+  }
+
+  // Report assigned to ALL leads
+  if (assigned.all?.assigned === true) {
+    return leads.map((lead) => String(lead.id));
+  }
+
+  const assignedLeadIds = new Set<string>();
+
+  // Directly assigned leads
+  if (assigned.person?.assigned) {
+    assigned.person.list.forEach((leadId) => {
+      assignedLeadIds.add(String(leadId));
+    });
+  }
+
+  // Assigned departments
+  if (assigned.department?.assigned) {
+    leads.forEach((lead) => {
+      if (
+        assigned.department.list.includes(
+          String(lead.department)
+        )
+      ) {
+        assignedLeadIds.add(String(lead.id));
+      }
+    });
+  }
+
+  return Array.from(assignedLeadIds);
+};
+
+const total_reports = activeReports.reduce((total, report) => {
+  const assignedLeadIds = getAssignedLeadIds(report);
+
+  return total + assignedLeadIds.length;
+}, 0);
+
+  const isAllAssigned = (report: Report | null) => {
+  if (!report) return false;
+
+  const personList = report.assigned_to.person.list.map(String);
+  const departmentList = report.assigned_to.department.list.map(String);
+
+  const allLeadsSelected =
+    leads.length > 0 &&
+    leads.every((lead) =>
+      personList.includes(String(lead.id))
+    );
+
+  const allDepartmentsSelected =
+    departments.length > 0 &&
+    departments.every((department) =>
+      departmentList.includes(String(department.id))
+    );
+
+  try{
+    if (showAssignedReport?.assigned_to.all.assigned === true) return true;
+  }
+  catch{}
+
+  return allLeadsSelected && allDepartmentsSelected;
+};
+
+    const toggleAll = (checked: boolean) => {
+      setShowAssignedReport((prev: Report | null) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          assigned_to: {
+            all: {
+              assigned: checked,
+              list: [],
+            },
+            person: {
+              assigned: checked,
+              list: checked ? leads.map((lead: User) => String(lead.id)) : [],
+            },
+            department: {
+              assigned: checked,
+              list: checked ? departments.map((department: Department) => String(department.id)) : [],
+            },
+          },
+        };
+      });
+    };
+const toggleLead = (
+  leadId: string,
+  checked: boolean
+) => {
+  setShowAssignedReport((prev) => {
+    if (!prev) return null;
+
+    const currentList = prev.assigned_to.person.list;
+
+    const newList = checked
+      ? [...currentList, leadId]
+      : currentList.filter((id) => id !== leadId);
+
+    return {
+      ...prev,
+      assigned_to: {
+        ...prev.assigned_to,
+
+        all: {
+          ...prev.assigned_to.all,
+          assigned: false,
+        },
+
+        person: {
+          ...prev.assigned_to.person,
+          assigned: newList.length > 0,
+          list: newList,
+        },
+      },
+    };
+  });
+};
+
+const toggleDepartment = (
+  departmentId: string,
+  checked: boolean
+) => {
+  setShowAssignedReport((prev) => {
+    if (!prev) return null;
+
+    const currentList = prev.assigned_to.department.list;
+
+    const newList = checked
+      ? [...currentList, departmentId]
+      : currentList.filter((id) => id !== departmentId);
+
+    return {
+      ...prev,
+
+      assigned_to: {
+        ...prev.assigned_to,
+
+        // ВАЖНО:
+        // ручное изменение department выключает All
+        all: {
+          ...prev.assigned_to.all,
+          assigned: false,
+        },
+
+        department: {
+          ...prev.assigned_to.department,
+          assigned: newList.length > 0,
+          list: newList,
+        },
+      },
+    };
+  });
+};
+return (
     <div className="reports">
       {showConfirmDelete && (
         <div className='confirm'>
@@ -175,6 +377,73 @@ export default function Reports() {
             <div>
               <div className='button-w-bl' onClick={() => {setShowConfirmDelete(false)}}>Cancel</div>
               <div className='button-d-bl' onClick={() => {deleteReport(reportToDelete)}}>Delete Report</div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showAssigned && (
+        <div className='confirm'>
+          <div>
+            <h1>Assign {showAssignedReport?.name ?? ''} Report to</h1>
+            <div className="select all">
+              <div>
+                <label>
+                    <input checked={isAllAssigned(showAssignedReport)} onChange={(e) => { toggleAll(e.currentTarget.checked);}} type="checkbox" />
+                    <div>All leads</div>
+                  </label>
+              </div>
+            </div>
+            <div className="select">
+              <div className="select-leads">
+                <h6>Leads</h6>
+                {leads.map((lead: User) => 
+                  <label key={`select_lead_${lead.id}`}>
+                   <input
+                      type="checkbox"
+                      checked={
+                        showAssignedReport?.assigned_to?.all?.assigned ||
+                        showAssignedReport?.assigned_to?.person.list.includes(
+                          String(lead.id)
+                        ) ||
+                        false
+                      }
+                      onChange={(e) =>
+                        toggleLead(
+                          String(lead.id),
+                          e.currentTarget.checked
+                        )
+                      }
+                    />
+                    <div>{lead.name}</div>
+                  </label>
+                )}
+              </div>
+              <div className="select-deparments">
+                <h6>Departments</h6>
+                {departments.map((department: Department) => 
+                  <label key={`select_department_${department.id}`}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        showAssignedReport?.assigned_to?.all?.assigned ||
+                        showAssignedReport?.assigned_to?.department.list.includes(String(department.id)) ||
+                        false
+                      }
+                      onChange={(e) =>
+                        toggleDepartment(
+                          String(department.id),
+                          e.currentTarget.checked
+                        )
+                      }
+                    />
+                    <div>{department.name}</div>
+                  </label>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className='button-w-bl' onClick={() => {setShowAssigned(false)}}>Cancel</div>
+              <div className='button-d-bl' onClick={() => {assignReport(showAssignedReport)}}>Assign Report</div>
             </div>
           </div>
         </div>
@@ -196,7 +465,7 @@ export default function Reports() {
             <div img-id="document-yellow">
               <h1>{total_reports - done_by_all}</h1>
               <div>Still Pending</div>
-              <span>Not reviewed by both leads</span>
+              <span>Not reviewed by all leads</span>
             </div>
           </div>
           <div className="how-to-use">
@@ -226,6 +495,7 @@ export default function Reports() {
                 <div>REPORTS</div>
                 <div>SOURCE</div>
                 <div>PERIOD</div>
+                <div>ASSIGNED TO</div>
                 <div>DELETE</div>
               </div>
               {reports.filter((r: Report) => r.archived !== true).length > 0 ? reports.map((r: Report) => {
@@ -318,14 +588,24 @@ export default function Reports() {
                       </div>
                     </div>
                     <div>
-                        <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
-                          if (user?.role !== 'manager'){
-                            toast.error("You don't have permissions for this action.")
-                            return;
-                          }
-                          setReportToDelete({...r, archived: true});
-                          setShowConfirmDelete(true)
-                        }}>Delete</div>
+                      <div className="button-d-bl-sm" onClick={() => {
+                        if (user?.role !== 'manager'){
+                          toast.error("You don't have permissions for this action.")
+                          return;
+                        }
+                        setShowAssignedReport(r);
+                        setShowAssigned(true);
+                      }}>Set</div>
+                    </div>
+                    <div>
+                      <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
+                        if (user?.role !== 'manager'){
+                          toast.error("You don't have permissions for this action.")
+                          return;
+                        }
+                        setReportToDelete({...r, archived: true});
+                        setShowConfirmDelete(true)
+                      }}>Delete</div>
                     </div>
                   </div>
                 )}) : (

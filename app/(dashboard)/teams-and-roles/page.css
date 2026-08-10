@@ -1,4 +1,4 @@
-.teams-and-roles{}
+/* .teams-and-roles{} */
 
 .teams-and-roles .employees-container{
     display: grid;
@@ -64,6 +64,12 @@
     line-height: 1;
 }
 
+.teams-and-roles .employee > div:first-child > div:nth-child(2) > div:nth-child(3){
+    color: #6e9ae7;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
+}
 
 .teams-and-roles .employee > div:first-child > div:last-child{
     margin-left: auto;

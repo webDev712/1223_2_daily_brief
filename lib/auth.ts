@@ -21,14 +21,17 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
     const users = await sql`
         SELECT
-            id,
-            email,
-            name,
-            user_role AS role,
-            lead_letter
-        FROM website_user
+            w.id,
+            w.email,
+            w.name,
+            w.user_role AS role,
+            w.lead_letter,
+            w.phone,
+            d.name AS department
+        FROM website_user w, department d
         WHERE email = ${session.user.email}
           AND archived = false
+          AND d.id = w.department_id
         LIMIT 1;
     `;
 

@@ -3,15 +3,17 @@
 import UserCircle from '@/app/src/components/UserCircle';
 import Loader from '@/app/src/components/Loader';
 import { useEffect, useState } from 'react';
-import { SavedBrief, User } from '@/lib/types';
+import { Department, SavedBrief, User } from '@/lib/types';
 import { format } from "date-fns";
 import './page.css';
 import { toast } from 'sonner';
+import generatePhoneNumber from '@/lib/phone';
 
 
 export default function TeamsAndRoles() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDeparments] = useState<Department[]>([]);
   const [briefs, setBriefs] = useState<SavedBrief[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showConfirmGiveAccess, setShowConfirmGiveAccess] = useState(false);
@@ -44,7 +46,10 @@ export default function TeamsAndRoles() {
       user_role: (document.getElementById('role') as HTMLInputElement)?.value || '',
       lead_letter: (document.getElementById('letter') as HTMLInputElement)?.value || '',
       phone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
+      department_id: (document.getElementById('department') as HTMLInputElement)?.value || '',
     }
+    console.log('user')
+    console.log(user)
     fetch("/api/user", {
       method: "POST",
       headers: {
@@ -100,10 +105,23 @@ export default function TeamsAndRoles() {
       setBriefs(briefs_data)
       const users_res = await fetch("/api/users");
       let users_data = await users_res.json();
-      users_data = await users_data.sort((a: User, b: User) => {return b.user_role.length - a.user_role.length})
+      users_data = await users_data.sort((a: User, b: User) => { if (a.archived !== b.archived) { return Number(a.archived) - Number(b.archived);}
+          return b.user_role.length - a.user_role.length;})
       console.log('users_data')
       console.log(users_data)
       setUsers(users_data)
+
+      let departments_res = await fetch("/api/departments");
+      if (!departments_res.ok){
+          console.error("Failed to load departments");
+          setLoading(false)
+          return;
+      }
+      let departments_data = await departments_res.json();
+      console.log('departments_data')
+      console.log(departments_data)
+      setDeparments(departments_data)
+      
 
       setLoading(false)
     }
@@ -156,7 +174,7 @@ export default function TeamsAndRoles() {
                     </label>
                     <label>
                       <div>Phone</div>
-                      <input type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" required />
+                      <input onChange={(e) => e.target.value = generatePhoneNumber(e.target.value)} type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" required />
                     </label>
                     <label>
                       <div>Role</div>
@@ -168,6 +186,14 @@ export default function TeamsAndRoles() {
                     <label>
                       <div>Lead Letter (1 symbol A-Z)</div>
                       <input type="text" id='letter' pattern="[A-Za-z]" required />
+                    </label>
+                    <label>
+                      <div>Department</div>
+                      <select id='department'>
+                        {departments.map((dep: Department) => (
+                          <option key={`department_${dep.id}`} value={dep.id}>{dep.name}</option>
+                        ))}
+                      </select>
                     </label>
                   </div>
 
@@ -190,13 +216,14 @@ export default function TeamsAndRoles() {
                     <div>
                       <div>{user.name}</div>
                       <div>{user.user_role === 'manager' ? 'Route Manager' : 'Route Lead'}</div>
+                      <div>{user.department}</div>
                     </div>
                     <div>
                       <div className={user.user_role === 'manager' ? 'manager' : 'lead'}>{user.user_role === 'manager' ? '• Manager' : '• Lead'}</div>
                     </div>
                   </div>
                   <div>
-                    <div data-img="email">{user.email === 'maksimkruglik2@gmail.com' ? 'serafin@helenascleaners.com' : user.email === 'alla.gasdev712@gmail.com' ? 'ariel@helenascleaners.com' : user.email}</div>
+                    <div data-img="email">{user.email}</div>
                     <div data-img="phone">{user.phone}</div>
                   </div>
                   {user.user_role === 'lead' && (

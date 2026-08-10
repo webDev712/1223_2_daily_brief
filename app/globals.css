@@ -63,6 +63,7 @@ body > .sidebar + div > div:last-child{
   display: none !important;
 }
 
+.button-w-r-sm,
 .button-r-sm,
 .button-d-bl-sm,
 .button-d-bl,
@@ -84,6 +85,7 @@ body > .sidebar + div > div:last-child{
   box-shadow: 0px 0px 6px 1px #6881ff;
 }
 
+.button-w-r-sm:hover,
 .button-r-sm:hover{
   box-shadow: 0px 0px 6px 1px #ff4848ad;
 }
@@ -106,6 +108,14 @@ body > .sidebar + div > div:last-child{
   border: red;
   padding: 6px 14px;
   border-radius: 10px;
+}
+
+.button-w-r-sm{
+  background-color: #FECACA;
+  border: 2px solid #ff9f9f;
+  padding: 6px 14px;
+  border-radius: 10px;
+  color: #F04438;
 }
 
 .tg{

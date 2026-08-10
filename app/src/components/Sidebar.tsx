@@ -57,10 +57,10 @@ export default function Sidebar({
                 <h1>Teams & Roles</h1>
               </div>
             )}
-            {/* <div>
+            <div>
               <Link href="/settings" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'settings' ? 'selected' : ''} data-img="settings" data-hover="Settings"></Link>
               <h1>Settings</h1>
-            </div> */}
+            </div>
           </div>
           
         )}

@@ -341,7 +341,7 @@ export default function DailyBrief() {
   }
 
   const [reload, setReload] = useState(0);
-  const [leads, setLeads] = useState([])
+  const [leads, setLeads] = useState<User[]>([])
   const [briefs, setRealBriefs] = useState([])
   const [allBriefs, setAllBriefs] = useState([])
   const dateString = format(date, "yyyy-MM-dd");
@@ -511,7 +511,7 @@ export default function DailyBrief() {
                           <span>Lead</span>
                           <div style={{display: 'flex', gap: 10}}>
                             <div className='user' style={{ backgroundColor: getColorsFromName(b.lead_name).medium }}><div>{AB_name}</div></div>
-                            <div>{b.lead_id !== b.original_lead_id ? `Handed Off from` : ''} {b.letter} - {b.lead_name}</div>
+                            <div>{b.lead_id !== b.original_lead_id ? `Handed Off from` : ''} {b.lead_name} - {leads.find((el: User) => el.id == b.lead_id)?.department || ""}</div>
                           </div>
                         </div>
                         <div>

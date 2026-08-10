@@ -1,0 +1,391 @@
+.settings{
+    padding: 0 !important;
+}
+
+.settings > div{
+    display: flex;
+    min-height: 100vh;
+}
+
+.settings > div > div:first-child:not(.spinner-border):not(.confirm){
+    background-color: white;
+    padding: 20px;
+    border-right: 2px solid #EAECF0;
+}
+
+.settings > div > div:first-child > div{
+    cursor: pointer;
+    color: #667085;
+    font-size: 14px;
+    padding: 5px 10px;
+    background-position: left 10px center;
+    padding-left: 36px;
+    background-size: 16x;
+    margin-bottom: 10px;
+    user-select: none;
+    width: 100%;
+    min-width: 200px;
+}
+
+.settings > div > div:first-child > div.selected{
+    color: #4361EE;
+    background-color: #EEF1FD;
+    border-radius: 10px;
+    background-size: 18px;
+    background-position: left 8px center;
+}
+
+.settings > div > div:first-child > div[data-img="house"]{
+    background-image: url('../../../public/house-grey.svg');
+}
+
+.settings > div > div:first-child > div.selected[data-img="house"]{
+    background-image: url('../../../public/house-blue.svg');
+}
+
+
+.settings > div > div:first-child > div[data-img="bell"]{
+    background-image: url('../../../public/bell-grey.svg');
+}
+
+.settings > div > div:first-child > div.selected[data-img="bell"]{
+    background-image: url('../../../public/bell-blue.svg');
+}
+
+
+.settings > div > div:first-child > div[data-img="shield"]{
+    background-image: url('../../../public/shield-grey.svg');
+}
+
+.settings > div > div:first-child > div.selected[data-img="shield"]{
+    background-image: url('../../../public/shield-blue.svg');
+}
+
+
+
+
+.settings > div > div:nth-child(2){
+    padding: 22px 25px;
+    width: 100%;
+}
+
+.settings .user-circle > div{
+    position: relative;
+}
+
+.settings .user-circle > div::before{
+    content: " ";
+    background-image: url('../../../public/online.svg') !important;
+    background-repeat: no-repeat;
+    width: 20px;
+    height: 20px;
+    display: block;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+.settings .schmall .user-circle > div::before{
+    width: 10px;
+    height: 10px;
+    background-size: 10px;
+}
+
+.settings .my > div:first-child{
+    display: flex;
+    gap: 25px;
+    background-color: #FFFFFF;
+    border: 1px solid #EAECF0;
+    box-shadow: 0px 1px 4px 0px #1018280A;
+    padding: 20px 25px;
+    border-radius: 22px;
+}
+
+.settings .my > div:first-child > div:nth-child(2){
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.settings .my > div:first-child > div:nth-child(2) > div:nth-child(1){
+    color: #101828;
+    font-weight: 700;
+    font-size: 22px;
+}
+
+.settings .my > div:first-child > div:nth-child(2) > div:nth-child(2){
+    color: #4361EE;
+    font-size: 16px;
+    background-color: #EEF1FD;
+    padding: 4px 18px;
+    border-radius: 20px;
+    width: max-content;
+}
+
+.settings .my > div:first-child > div:nth-child(2) > div:nth-child(3){
+    color: #667085;
+    font-size: 14px;
+    font-weight: 400;
+    background-image: url('../../../public/email.svg');
+    background-position: left center;
+    padding-left: 18px;
+}
+
+.settings .my > div:nth-child(2){
+    border: 2px solid #EAECF0;
+    background-color: #FFFFFF;
+    box-shadow: 0px 1px 4px 0px #1018280A;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.settings .my > div:nth-child(2) > div:nth-child(1){
+    border-bottom: #F2F4F7;
+    padding: 10px 20px;
+    background-color: #F7F8FC;
+    color: #98A2B3;
+    font-weight: 600;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.settings .my > div:nth-child(2) > div:nth-child(1) > div{
+    margin: auto 0;
+}
+
+.settings .my > div:nth-child(2) > div:nth-child(2){
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 30px;
+}
+
+.settings .my > div:nth-child(2) > div:nth-child(2) label{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.settings .my > div:nth-child(2) > div:nth-child(2) label span{
+    color: #667085;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.settings .my > div:nth-child(2) > div:nth-child(2) label input{
+    border: 1px solid #EAECF0;
+    padding: 8px 17px;
+    border-radius: 14px;
+    color: #101828;
+    font-size: 14px;
+}
+
+
+.settings .my > div:nth-child(2) > div:nth-child(2) label input.d{
+    border: 1px solid #EAECF0;
+    background-color: #F7F8FC;
+    color: #667085;
+}
+
+.settings .my > div:nth-child(3){
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    border: 2px solid #FECACA;
+    padding: 25px 17px;
+    border-radius: 14px;
+    margin-top: 25px;
+    box-shadow: 0px 1px 10px 0px #e958581a;
+}
+
+.settings .my > div:nth-child(3) > div{
+    margin: auto 0;
+}
+
+.settings .my > div:nth-child(3) > div:first-child > div:first-child {
+    color: #F04438;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.settings .my > div:nth-child(3) > div:first-child > div:nth-child(2) {
+    color: #667085;
+    font-size: 13px;
+}
+
+.settings .my > div:first-child > div:nth-child(2) > div:first-child > div:first-child{
+    display: none;
+}
+
+.settings h1{
+    color: #101828;
+    font-weight: 700;
+    font-style: Bold;
+    letter-spacing: .38px;
+    font-size: 28px;
+    line-height: 35px;
+}
+
+.settings p{
+    color: #667085;
+    letter-spacing: -.15px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 25px;
+}
+
+.settings .data > div:nth-child(3),
+.settings .data > div:nth-child(4) {
+    background-color: #fff;
+    border: 2px solid #eaecf0;
+    border-radius: 20px;
+    margin-top: 20px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px #1018280a;
+}
+
+.settings .data > div:nth-child(3) > div:first-child,
+.settings .data > div:nth-child(4) > div:first-child{
+    color: #98a2b3;
+    background-color: #f7f8fc;
+    border-bottom: #f2f4f7;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px 20px;
+    font-weight: 600;
+    display: flex;
+}
+
+.settings .data > div:nth-child(3) > div:nth-child(2),
+.settings .data > div:nth-child(4) > div:nth-child(2){
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.settings .data > div:nth-child(3) > div:nth-child(2) > div:first-child,
+.settings .data > div:nth-child(4) > div:nth-child(2) > div:first-child{
+    flex: 2;
+}
+
+.settings .data > div:nth-child(3) > div:nth-child(2) > div:first-child > div:first-child,
+.settings .data > div:nth-child(4) > div:nth-child(2) > div:first-child > div:first-child{
+    color: #101828;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.settings .data > div:nth-child(4) > div:nth-child(2) > div:first-child > div:first-child{
+    color: #F04438;
+}
+
+.settings .data > div:nth-child(3) > div:nth-child(2) > div:first-child > div:nth-child(2),
+.settings .data > div:nth-child(4) > div:nth-child(2) > div:first-child > div:nth-child(2){
+    color: #98A2B3;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.settings .data > div:nth-child(3) > div:nth-child(2) > div,
+.settings .data > div:nth-child(4) > div:nth-child(2) > div{
+    margin: auto 0;
+}
+
+
+@media (max-width: 500px) {
+    .settings > div{
+        flex-direction: column;
+    }
+
+    .settings .my > div:first-child{
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .settings .my > div:first-child > div:nth-child(2){
+        gap: 10px;
+    }
+
+    .settings .my > div:first-child > div:nth-child(2) > div:nth-child(3){
+        text-wrap-mode: wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .settings .my > div:nth-child(2) > div:first-child{
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .settings .my > div:nth-child(2) > div:first-child > div:nth-child(2){
+        width: 100%;
+        display: flex;
+        min-width: 100%;
+        justify-content: center;
+    }
+
+    .settings .my > div:nth-child(2) > div:nth-child(2){
+        grid-template-columns: repeat(1, 1fr);
+    }
+
+    /* .settings .my > div:nth-child(2) > div:nth-child(2) label{
+        max-width: calc(100% - 48px);
+    } */
+    
+    .settings .my > div:nth-child(3){
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .settings .my > div:nth-child(3) > div:first-child{
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .settings .my > div:nth-child(3) > div:nth-child(2){
+        margin-left: auto;
+    }
+    
+    .settings .my > div:first-child > div:nth-child(2) > div:first-child{
+        display: flex;
+        gap: 10px;
+    }
+
+    .settings .my > div:first-child > div:nth-child(2) > div:first-child > div:first-child{
+        display: block;
+    }
+
+    .settings .my > div:first-child > div:first-child{
+        display: none;
+    }
+
+    .settings .my > div:first-child > div:nth-child(2) > div:first-child > div:nth-child(2){
+        margin: auto 0;
+    }
+    
+
+    .settings .data > div:nth-child(3) > div:nth-child(2), .settings .data > div:nth-child(4) > div:nth-child(2) {
+        flex-direction: column;
+    }
+
+
+    .settings .data > div:nth-child(3) > div:nth-child(2) > div:nth-child(2), 
+    .settings .data > div:nth-child(4) > div:nth-child(2) > div:nth-child(2),
+    .settings .data > div:nth-child(3) > div:nth-child(2) > div:nth-child(3){
+        width: 100%;
+        display: flex;
+        min-width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+/* 
+    Added departments 8 h
+    Make reports assigned to: one person or department 5 h
+    Added possibility to create users in departments 7h
+    Added possibility to export all data in CSV and PDF, delete all data history 5h
+*/

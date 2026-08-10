@@ -21,4 +21,15 @@ export const getWeekDays = () => {
 }
 
 
+export const getRoles = (role: 'manager' | 'lead') => {
+    switch (role){
+        case 'lead':
+            return 'Route Lead'
+        case 'manager':
+            return 'Route Manager'
+    }
+    return '-'
+}
+
+
 export default getReportsTypes;

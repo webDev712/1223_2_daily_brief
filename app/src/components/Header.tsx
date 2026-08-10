@@ -62,7 +62,7 @@ export default function Header({user_name, user_role}: HeaderProps) {
       break;
     case 'settings':
       header_text = 'Settings';
-      header_description = 'Route Department configuration';
+      header_description = 'Configure your account';
       break;
   }
   return (

@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
-import sql from "@/lib/db"
 import { requireRole } from "@/lib/auth";
+import sql from "@/lib/db"
 
 export async function GET() {
     try{
         await requireRole("lead");
         const rows = await sql`
-            SELECT 
-                w.id,
-                w.email,
-                w.name,
-                w.user_role,
-                w.lead_letter,
-                w.archived,
-                w.phone, 
-                d.name as department
-            FROM website_user w, department d
-            WHERE d.id = w.department_id;`
+            SELECT *
+            FROM department;`
         return NextResponse.json(rows);
     } catch (error) {
         console.log(error);

@@ -41,12 +41,13 @@ export async function PATCH(request: Request) {
             source,
             once_per,
             start_at_day="",
-            archived
+            archived,
+            assigned_to
         } = body;
         console.log(body)
         const rows = await sql`
             UPDATE report
-            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}
+            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}
             WHERE id = ${id};
         `
         // const rows_2 = await sql`

@@ -4,10 +4,11 @@ import './css/UserCircle.css'
 
 export default function UserCircle ({user_name, size, onClick}: {user_name: string, size: number, onClick?: () => void}) {
     const colors = getColorsFromName(user_name)
+    let local_user_name = user_name.trim()
     let AB_name = "";
       try{
-        AB_name += user_name.split(" ")[0][0];
-        if (user_name.split(" ")[1]) AB_name += user_name.split(" ")[1][0];
+        AB_name += local_user_name.split(" ")[0][0];
+        if (local_user_name.split(" ")[1]) AB_name += local_user_name.split(" ")[1][0];
       }catch{}
     return(
         <div className={onClick ? "user-circle before" : "user-circle"} style={{
@@ -21,7 +22,7 @@ export default function UserCircle ({user_name, size, onClick}: {user_name: stri
                 lineHeight: size + "px",
                 borderRadius: size * 0.32,
                 fontSize: size * 0.45
-            }}>{AB_name}</div>
+            }}>{local_user_name.split(" ")[0] ? AB_name : ''}</div>
         </div>
     )
 }

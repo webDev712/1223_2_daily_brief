@@ -61,6 +61,7 @@
     font-size: 14px;
     padding: 3px 7px;
     border-radius: 5px;
+    color: white;
 }
 
 .sidebar a::before{
@@ -222,5 +223,9 @@ teams-and-roles */
         margin: auto 0;
         min-width: max-content;
         display: block;
+    }
+
+    .sidebar a:hover::before{
+        display: none;
     }
 }

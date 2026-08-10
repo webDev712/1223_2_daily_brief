@@ -19,6 +19,21 @@ export interface SavedBrief {
   covered: Covered[];
 }
 
+type Assignment = {
+  all: {
+    assigned: boolean;
+    list: string[];
+  };
+  person: {
+    assigned: boolean;
+    list: string[];
+  };
+  department: {
+    assigned: boolean;
+    list: string[];
+  };
+};
+
 export interface Report {
   id: number;
   text: string;
@@ -31,6 +46,7 @@ export interface Report {
   once_per: string | null;
   start_at_day: string | null;
   edit: boolean;
+  assigned_to: Assignment;
 }
 
 export interface Finding {
@@ -58,11 +74,12 @@ export interface User {
   id: string,
   email: string,
   name: string,
-  role: string,
-  user_role: string,
+  role: 'manager' | 'lead',
+  user_role: 'manager' | 'lead',
   lead_letter: string,
   phone: string,
   archived: boolean,
+  department: string,
 }
 
 export interface Shift {
@@ -77,4 +94,9 @@ export interface Covered {
   van: string,
   stops: number,
   windows: string,
+}
+
+export interface Department {
+  id: string,
+  name: string,
 }
