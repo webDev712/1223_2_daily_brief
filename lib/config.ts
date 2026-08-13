@@ -1,3 +1,5 @@
+import capitalize from "./text"
+
 const getReportsTypes = () => {
     return [
         'Ops',
@@ -21,14 +23,14 @@ export const getWeekDays = () => {
 }
 
 
-export const getRoles = (role: 'manager' | 'lead') => {
+export const getRoles = (role: string) => {
     switch (role){
         case 'lead':
             return 'Route Lead'
         case 'manager':
             return 'Route Manager'
     }
-    return '-'
+    return capitalize(role);
 }
 
 export const getPermissions = () => {
