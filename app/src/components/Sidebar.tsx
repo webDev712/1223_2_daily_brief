@@ -4,22 +4,27 @@ import { usePathname } from 'next/navigation';
 import './css/Sidebar.css'
 import Link from "next/link";
 import { useState, useEffect } from 'react';
-import { UserRole } from '@/lib/auth';
+import { User } from '@/lib/types';
+import { CurrentUser } from '@/lib/auth';
 
-export default function Sidebar({
-  user_role,
-}: {
-  user_role: UserRole;
-}) {
+
+export default function Sidebar({ user }: { user: CurrentUser}) {
+  const pages = [
+    {href: 'dashboard', text: 'Dashboard', permission_name: 'see_dashboard'},
+    {href: 'daily-brief', text: 'Daily Brief', permission_name: 'see_brief'},
+    {href: 'brief-history', text: 'Brief History', permission_name: 'see_briefs_history'},
+    {href: 'reports', text: 'Reports', permission_name: 'see_reports_page'},
+    {href: 'teams-and-roles', text: 'Teams & Roles', permission_name: 'see_team_roles'},
+    {href: 'settings', text: 'Settings', permission_name: 'see_profile_settings'},
+  ]
+
   const pathname = usePathname();
   const selected = pathname.split("/")[1];
   const [mobileShow, setMobileShow] = useState(false)
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const update = () => {
-      setIsMobile(window.innerWidth <= 500);
-    };
+    const update = () => setIsMobile(window.innerWidth <= 500);
 
     update();
     window.addEventListener("resize", update);
@@ -35,40 +40,16 @@ export default function Sidebar({
         </div>
         {!loading && (mobileShow || !isMobile) && (
           <div className='flex'>
-            <div>
-              <Link onClick={() => {setMobileShow(prev => !prev)}} href="/dashboard" className={selected === 'dashboard' ? 'selected' : ''} data-img="dashboard" data-hover="Dashboard"></Link>
-              <h1>Dashboard</h1>
-            </div>
-            <div>
-              <Link onClick={() => {setMobileShow(prev => !prev)}} href="/daily-brief" className={selected === 'daily-brief' ? 'selected' : ''} data-img="daily-brief" data-hover="Daily Brief"></Link>
-              <h1>Daily Brief</h1>
-            </div>
-            <div>
-              <Link onClick={() => {setMobileShow(prev => !prev)}} href="/brief-history" className={selected === 'brief-history' ? 'selected' : ''} data-img="brief-history" data-hover="Briefs History"></Link>
-              <h1>Brief History</h1>
-            </div>
-            <div>
-              <Link href="/reports" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'reports' ? 'selected' : ''} data-img="reports" data-hover="Reports"></Link>
-              <h1>Reports</h1>
-            </div>
-            {user_role === 'manager' && (
-              <div>
-                <Link href="/teams-and-roles" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'teams-and-roles' ? 'selected' : ''} data-img="teams-and-roles" data-hover="Teams and roles"></Link>
-                <h1>Teams & Roles</h1>
-              </div>
-            )}
-            <div>
-              <Link href="/settings" onClick={() => {setMobileShow(prev => !prev)}} className={selected === 'settings' ? 'selected' : ''} data-img="settings" data-hover="Settings"></Link>
-              <h1>Settings</h1>
-            </div>
+            {pages.map((page) => {
+              if (user.permissions[page.permission_name] === true) {
+                return (<div key={`page_${page.href}`}>
+                  <Link onClick={() => {setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}></Link>
+                  <h1>{page.text}</h1>
+                </div>)
+                }
+            })}
           </div>
-          
         )}
-
-
-
-
-        {/* <Link href="/reports-scheduling" className={selected === 'reports-scheduling' ? 'selected' : ''} data-img="reports-scheduling" data-hover="Reports Scheduling"></Link> */}
     </div>
   );
 }

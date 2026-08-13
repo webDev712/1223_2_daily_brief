@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import sql from "@/lib/db";
+import { DBPermissions } from "./types";
 
 export type UserRole = "manager" | "lead";
 
@@ -9,6 +10,7 @@ export interface CurrentUser {
     name: string;
     role: UserRole;
     lead_letter: string | null;
+    permissions: DBPermissions;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -24,20 +26,24 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
             w.id,
             w.email,
             w.name,
-            w.user_role AS role,
+            r.name AS role,
             w.lead_letter,
             w.phone,
-            d.name AS department
-        FROM website_user w, department d
+            d.name AS department,
+            r.permissions
+        FROM website_user w, department d, role r
         WHERE email = ${session.user.email}
           AND archived = false
           AND d.id = w.department_id
+          AND w.role_id = r.id
         LIMIT 1;
     `;
 
     if (users.length === 0) {
         return null;
     }
+    console.log('users[0]')
+    console.log(users[0])
 
     return users[0] as CurrentUser;
 }

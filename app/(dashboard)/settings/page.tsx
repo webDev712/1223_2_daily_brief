@@ -34,7 +34,7 @@ export default function Settings() {
     setLoading(true)
     fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, archived: false})}).then(res => {
       if (res.status === 200) {
-        setReload(prev => prev++)
+        setReload(prev => prev + 1)
         toast.success('User data saved successfully!')
       }
       else{
@@ -76,9 +76,9 @@ export default function Settings() {
             <div>
               <div data-img="bell" className={selectedSettings === 'my' ? 'selected' : ''} onClick={() => {setSelectedSettings('my')}}>My Profile</div>
               {/* <div data-img="house" className={selectedSettings === 'general' ? 'selected' : ''} onClick={() => {setSelectedSettings('general')}}>General</div> */}
-              {/* {user.role === 'manager' && (
+              {user.permissions.see_app_settings && (
                 <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>Data & Security</div>
-              )} */}
+              )}
             </div>
             {selectedSettings === 'my' && (
               <div className='my'>
@@ -96,12 +96,12 @@ export default function Settings() {
                 <div>
                   <div>
                     <div>PERSONAL INFORMATION</div>
-                    <div className={dataChanged ? "button-d-bl-sm" : "button-d-bl-sm d" } onClick={() => {if (!dataChanged) {return;} saveUser()}}>Save Changes</div>
+                    <div className={dataChanged && user.permissions.edit_app_settings ? "button-d-bl-sm" : "button-d-bl-sm d" } onClick={() => {if (!dataChanged || !user.permissions.edit_app_settings) {return;} saveUser()}}>Save Changes</div>
                   </div>
                   <div>
                     <label>
                       <span>FULL NAME</span>
-                      <input type="text" value={user.name} onChange={(e) => changeUser({...user, name: e.target.value})}/>
+                      <input className={user.permissions.edit_app_settings ? '' : 'd'} disabled={!user.permissions.edit_app_settings} type="text" value={user.name} onChange={(e) => changeUser({...user, name: e.target.value})}/>
                     </label>
                     <label>
                       <span>ROLE</span>
@@ -109,15 +109,16 @@ export default function Settings() {
                     </label>
                     <label>
                       <span>EMAIL</span>
-                      <input type="text" value={user.email} onChange={(e) => changeUser({...user, email: e.target.value})} />
+                      <input className={user.permissions.edit_app_settings ? '' : 'd'} disabled={!user.permissions.edit_app_settings} type="text" value={user.email} onChange={(e) => changeUser({...user, email: e.target.value})} />
                     </label>
                     <label>
                       <span>PHONE</span>
-                      <input
+                      <input className={user.permissions.edit_app_settings ? '' : 'd'}
                         type="tel"
                         inputMode="tel"
                         placeholder="+1 202 555 0123"
                         value={user.phone}
+                        disabled={!user.permissions.edit_app_settings}
                         onChange={(e) => {
                           changeUser({
                             ...user,
@@ -137,7 +138,7 @@ export default function Settings() {
                     <div>Danger zone</div>
                     <div>Permanently delete your profile and all associated data. This cannot be undone.</div>
                   </div>
-                  <div className='button-w-r-sm' onClick={() => {setShowSubmitArchive(true)}}>Archive my account</div>
+                  <div className={user.permissions.edit_profile_settings ? 'button-w-r-sm' : 'button-w-r-sm d' } onClick={() => {if (!user.permissions.edit_profile_settings) return; setShowSubmitArchive(true)}}>Archive my account</div>
                 </div>
                 {/* {JSON.stringify(user)} */}
               </div>)}
@@ -156,8 +157,8 @@ export default function Settings() {
                       <div>Export all briefs</div>
                       <div>Download a full archive of all Route Department briefs</div>
                     </div>
-                    <div className='button-d-bl-sm'>Export CSV</div>
-                    <div className='button-d-bl-sm' style={{display: 'none'}}>Export PDF</div>
+                    <div className='button-d-bl-sm d'>Export CSV</div>
+                    <div className='button-d-bl-sm d' style={{display: 'none'}}>Export PDF</div>
                   </div>
                 </div>
                 <div>

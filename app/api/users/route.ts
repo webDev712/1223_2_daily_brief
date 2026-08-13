@@ -10,13 +10,16 @@ export async function GET() {
                 w.id,
                 w.email,
                 w.name,
-                w.user_role,
                 w.lead_letter,
                 w.archived,
                 w.phone, 
-                d.name as department
-            FROM website_user w, department d
-            WHERE d.id = w.department_id;`
+                d.name as department,
+                r.permissions,
+                r.name AS user_role,
+                r.id AS role_id
+            FROM website_user w, department d, role r
+            WHERE d.id = w.department_id
+                AND r.id = w.role_id;`
         return NextResponse.json(rows);
     } catch (error) {
         console.log(error);

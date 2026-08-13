@@ -57,12 +57,26 @@
     line-height: 1;
 }
 
-.teams-and-roles .employee > div:first-child > div:nth-child(2) > div:nth-child(2){
+.teams-and-roles .employee > div:first-child > div:nth-child(2) > :nth-child(2){
     color: #98A2B3;
     font-size: 12px;
     font-weight: 400;
     line-height: 1;
+    padding-left: 0;
+    margin-left: -4px;
+    display: flex;
+    gap: 5px;
 }
+
+.teams-and-roles .employee > div:first-child > div:nth-child(2) > :nth-child(2) > :first-child{
+    text-transform: capitalize;
+}
+
+.teams-and-roles .employee > div:first-child > div:nth-child(2) > :nth-child(2) > :nth-child(2){
+    font-size: 10px;
+    padding: 2px 5px;
+}
+
 
 .teams-and-roles .employee > div:first-child > div:nth-child(2) > div:nth-child(3){
     color: #6e9ae7;
@@ -80,6 +94,7 @@
     color: #4361EE;
     font-size: 12px !important;
     font-weight: 600 !important;
+    text-transform: capitalize;
 }
 
 .teams-and-roles .employee > div:first-child > div:last-child > div.lead{
@@ -140,6 +155,10 @@
     top: 30px;
 }
 
+.teams-and-roles .employee > div:nth-child(3):empty:hover::before{
+    display: none;
+}
+
 .teams-and-roles .employee > div:nth-child(3) > div{
     background-color: #F7F8FC;
     flex: 1;
@@ -178,14 +197,14 @@
     font-weight: 400;
 }
 
-.teams-and-roles .employee > div:nth-child(4){
+.teams-and-roles .employee > div:last-child{
     position: absolute;
     right: 20px;
     z-index: 50;
     opacity: 1 !important;
 }
 
-.teams-and-roles .role-permissions > h3{
+.teams-and-roles .role-permissions > div h3{
     color: #101828;
     font-size: 16px;
     font-weight: 600;
@@ -193,7 +212,7 @@
     margin-top: 20px;
 }
 
-.teams-and-roles .role-permissions > p{
+.teams-and-roles .role-permissions > div p{
     color: #98A2B3;
     font-size: 12px;
     font-weight: 400;
@@ -201,59 +220,67 @@
     margin-bottom: 25px;
 }
 
-.teams-and-roles .role-permissions > div{
+.teams-and-roles .role-permissions > div:first-child{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.teams-and-roles .role-permissions > div:first-child > div:nth-child(2){
+    margin: auto 0;
+    text-wrap-mode: nowrap;
+}
+
+.teams-and-roles .role-permissions > div:nth-child(2){
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     width: 100%;
 }
 
-.teams-and-roles .role-permissions > div > div{
+.teams-and-roles .role-permissions > div:nth-child(2) > div{
     box-shadow: 0px 1px 4px 0px #1018280A;
     border-top: 1px solid #EAECF0;
     border-radius: 16px;
     background-color: white;
-    padding: 20px;
+    padding: 20px 20px 65px 20px;
     background-position: left 20px top 20px;
+    position: relative;
 }
 
-.teams-and-roles .role-permissions > div > div:hover{
+.teams-and-roles .role-permissions > div:nth-child(2) > div:hover{
     box-shadow: 0px 1px 10px 0px #1018282a;
 }
 
-.teams-and-roles .role-permissions > div > div:nth-child(1){
-    background-image: url('../../../public/shield.svg');
-}
-
-.teams-and-roles .role-permissions > div > div:nth-child(2){
-    background-image: url('../../../public/document.svg');
-}
-
-
-.teams-and-roles .role-permissions > div > div > div{
-    padding-left: 50px;
+.teams-and-roles .role-permissions > div:nth-child(2) > div > div{
     display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
+    justify-content: space-between;
     margin-bottom: 12px;
 }
 
-.teams-and-roles .role-permissions > div > div > div > h6{
+.teams-and-roles .role-permissions > div:nth-child(2) > div > div > div{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.teams-and-roles .role-permissions > div:nth-child(2) > div > div > div > h6{
     color: #101828;
     font-weight: 600;
     font-size: 14px;
     margin: 0;
+    text-transform: capitalize;
 }
 
-.teams-and-roles .role-permissions > div > div > div > span{
+.teams-and-roles .role-permissions > div:nth-child(2) > div > div > div > span{
     color: #98A2B3;
     font-weight: 400;
     font-size: 12px;
     margin: 0;
 }
 
-.teams-and-roles .role-permissions > div > div > p{
-    margin: 3px 0 0 0;
+.teams-and-roles .role-permissions > div:nth-child(2) > div > p{
+    margin: 6px 0 0 0;
     color: #667085;
     font-size: 12px;
     font-weight: 400;
@@ -262,29 +289,99 @@
     background-position: left center;
 }
 
+.teams-and-roles .role-permissions > div:nth-child(2) > div > div:last-child{
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
 .teams-and-roles .add-user{
     margin: 0 0 20px auto;
 }
 
+.confirm.add-role-form > div,
+.confirm.add-user-form > div{
+    height: max-content;
+}
+
+.confirm.add-role-form > div{
+    min-height: auto;
+    overflow-y: scroll;
+    max-height: 70vh;
+    height: auto;
+}
+
+.confirm.add-role-form > div::-webkit-scrollbar{
+    width: 5px;
+    padding: 5px 0;
+    margin: 5px 0;
+    display: block;
+}
+
+.confirm.add-role-form > div::-webkit-scrollbar-thumb{
+    background-color: #66708559;
+    cursor: pointer;
+}
+
+.confirm.add-role-form > div::-webkit-scrollbar-track{
+    margin: 7px 0;
+}
+
+.teams-and-roles .confirm.add-role-form > div > form > div,
 .teams-and-roles .confirm.add-user-form > div > form > div{
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
 }
 
+.teams-and-roles .confirm.add-role-form > div > form > div{
+    grid-template-columns: repeat(1, 1fr);
+}
 
+.teams-and-roles .confirm.add-role-form > div > form > div > label,
 .teams-and-roles .confirm.add-user-form > div > form > div > label{
     width: 100%;
 }
 
 
-
+.teams-and-roles .confirm.add-role-form > div h1,
 .teams-and-roles .confirm.add-user-form > div h1{
     font-size: 16px;
     font-weight: 600;
     text-align: center;
 }
 
+.teams-and-roles .confirm.add-role-form > div h3{
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+    margin: 10px 0;
+}
+
+.teams-and-roles .confirm.add-role-form form > div:nth-child(4){
+    gap: 3px;
+}
+
+.teams-and-roles .confirm.add-role-form form > div:nth-child(4) > label{
+    display: flex;
+    gap: 6px;
+}
+
+.teams-and-roles .confirm.add-role-form form > div:nth-child(4) > label > input{
+    margin: auto 0;
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.teams-and-roles .confirm.add-role-form form > div:last-child{
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.teams-and-roles .confirm.add-role-form > div > form > div > label > :nth-child(1),
 .teams-and-roles .confirm.add-user-form > div > form > div > label > :nth-child(1){
     color: #667085;
     background-position: 0;
@@ -292,7 +389,7 @@
     font-weight: 400;
     margin-bottom: 5px;
 }
-
+.teams-and-roles .confirm.add-role-form > div > form > div > label > :nth-child(2),
 .teams-and-roles .confirm.add-user-form > div > form > div > label > :nth-child(2){
     background-color: #fff;
     border: 1px solid #e8eaed;
@@ -302,11 +399,11 @@
     display: block;
     width: 100%;
 }
-
+.teams-and-roles .confirm.add-role-form > div > form > div > label > select:nth-child(2),
 .teams-and-roles .confirm.add-user-form > div > form > div > label > select:nth-child(2){
     padding-left: 6px;
 }
-
+.teams-and-roles .confirm.add-role-form > div > form > div:nth-child(3),
 .teams-and-roles .confirm.add-user-form > div > form > div:nth-child(3){
     display: flex;
     justify-content: center;
@@ -317,9 +414,9 @@
 
 @media (max-width: 500px) {
     .teams-and-roles .employees-container {
-    grid-template-columns: repeat(1, 1fr);}
+    grid-template-columns: repeat(1, 1fr) !important;}
     .teams-and-roles .role-permissions > div{
-        grid-template-columns: repeat(1, 1fr);
+        grid-template-columns: repeat(1, 1fr) !important;
     }
     .teams-and-roles .employee.archived::before{
         padding: calc(50% - 32px) 0px;;

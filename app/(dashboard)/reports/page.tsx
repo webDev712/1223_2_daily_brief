@@ -509,7 +509,7 @@ return (
                           type="checkbox"
                           checked={r.edit ?? false}
                           onChange={(e) => {
-                            if (user?.role !== 'manager'){
+                            if (user?.permissions.edit_reports === false){
                               toast.error("You don't have permissions for this action.")
                               return;
                             }
@@ -589,7 +589,7 @@ return (
                     </div>
                     <div>
                       <div className="button-d-bl-sm" onClick={() => {
-                        if (user?.role !== 'manager'){
+                        if (user?.permissions.edit_reports){
                           toast.error("You don't have permissions for this action.")
                           return;
                         }
@@ -599,7 +599,7 @@ return (
                     </div>
                     <div>
                       <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
-                        if (user?.role !== 'manager'){
+                        if (user?.permissions.edit_reports){
                           toast.error("You don't have permissions for this action.")
                           return;
                         }

@@ -3,23 +3,36 @@
 import UserCircle from '@/app/src/components/UserCircle';
 import Loader from '@/app/src/components/Loader';
 import { useEffect, useState } from 'react';
-import { Department, SavedBrief, User } from '@/lib/types';
+import { Department, Permission, SavedBrief, SelectedPermission, User, Role } from '@/lib/types';
 import { format } from "date-fns";
 import './page.css';
 import { toast } from 'sonner';
 import generatePhoneNumber from '@/lib/phone';
+import { getPermissions } from '@/lib/config';
+import capitalize from '@/lib/text';
+
+
 
 
 export default function TeamsAndRoles() {
   const [loading, setLoading] = useState(true);
+  const [me_user, setUser] = useState<User>();
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDeparments] = useState<Department[]>([]);
   const [briefs, setBriefs] = useState<SavedBrief[]>([]);
+  const [roles, setRoles] = useState<Role[]>()
+  const [selectedPermissionsNewRole, setSelectedPermissionsNewRole] = useState<SelectedPermission[]>();
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showConfirmGiveAccess, setShowConfirmGiveAccess] = useState(false);
+  const [showAddRoleForm, setShowAddRoleForm] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
+  const [showConfirmDeleteRole, setShowConfirmDeleteRole] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [reload, setReload] = useState(0);
+
+  const permissions = getPermissions()
+
 
   const archiveUser = (user: User | null) => {
     if (user === null) return;
@@ -35,9 +48,32 @@ export default function TeamsAndRoles() {
         setReload(prev => prev + 1);
         setShowConfirmDelete(false);
       }
+      else{
+        toast.error('Error while editing user.')
+      }
     });
 
   };
+
+  const deleteRole = (role: Role | null) => {
+    if (role === null) return;
+    fetch("/api/role", {method: "DELETE", headers: {"Content-Type": "application/json"}, body: JSON.stringify(role)})
+    .then(res => {
+      console.log('res')
+      console.log(res)
+      if (res.status === 200) {
+        toast.success(`Deleted Role ${role.name}`);
+        setReload(prev => prev + 1);
+        setShowConfirmDeleteRole(false);
+      }
+      else if (res.status === 409) {
+        toast.info('Before deleting, change roles for users who has this role.')
+      }
+      else{
+        toast.error('Error while editing role.')
+      }
+    })
+  }
 
   const addUser = () => {
     const user = {
@@ -66,6 +102,55 @@ export default function TeamsAndRoles() {
 
   };
 
+  const updateUser = (userToUpdate: User) => {
+    if (userToUpdate.role_id !== roles?.find((el: Role) => el.name === userToUpdate.user_role)?.id) userToUpdate.selectedAnotherRole = true;
+    else userToUpdate.selectedAnotherRole = false;
+    setUsers((prev: User[]) => prev.map((user: User) => {
+      return user.id === userToUpdate.id ? userToUpdate : user
+    }))
+  }
+
+  const saveUser = (user: User) => {
+    setLoading(true)
+    fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user})}).then(res => {
+      if (res.status === 200) {
+        setReload(prev => prev + 1)
+        toast.success('User data saved successfully!')
+      }
+      else{
+        toast.error('Error while saving user data. Try again later.')
+      }
+      setReload(prev => prev + 1)
+    })
+  }
+
+
+  const addRole = () => {
+    if (selectedPermissionsNewRole?.filter((permission: SelectedPermission) => permission.selected === true).length === 0) {
+      toast.error('Select at least one permission.')
+      return;
+    }
+    const role = {
+      name: (document.getElementById('new_role') as HTMLInputElement)?.value || '',
+      permissions: selectedPermissionsNewRole,
+    }
+    console.log('role')
+    console.log(role)
+    fetch("/api/role", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(role),
+    }).then(res => {
+      if (res.status === 200) {
+        toast.success(`Added role "${role.name}" with ${role.permissions?.filter((permission: SelectedPermission) => permission.selected === true).length} permission`)
+        setReload(prev => prev + 1);
+        setShowAddRoleForm(false);
+      }
+    });
+  }
+
 
   const giveUserAccess = (user: User | null) => {
     if (user === null) return;
@@ -84,11 +169,25 @@ export default function TeamsAndRoles() {
     });
 
   };
-
+ 
+  const changePermissions = (updatedPermission: SelectedPermission) => {
+    setSelectedPermissionsNewRole((prev: any) => 
+      prev.map((permission: any) => 
+        permission.id === updatedPermission.id ? updatedPermission : permission
+      )
+    )
+  }
   
   useEffect(() => {
     async function load() {
       setLoading(true)
+      const me_res = await fetch("/api/me");
+      const me_user = await me_res.json();
+      console.log('me_user')
+      console.log(me_user)
+      setUser(me_user)
+
+      setSelectedPermissionsNewRole(permissions.map((permission: Permission) => { return {...permission, selected: false} }))
       const daysAgo = new Date();
       daysAgo.setDate(daysAgo.getDate() - 7);
 
@@ -106,22 +205,34 @@ export default function TeamsAndRoles() {
       const users_res = await fetch("/api/users");
       let users_data = await users_res.json();
       users_data = await users_data.sort((a: User, b: User) => { if (a.archived !== b.archived) { return Number(a.archived) - Number(b.archived);}
-          return b.user_role.length - a.user_role.length;})
+          return Object.keys(b.permissions).filter(key => b.permissions[key] === true).length - Object.keys(a.permissions).filter(key => a.permissions[key] === true).length;})
       console.log('users_data')
       console.log(users_data)
       setUsers(users_data)
 
       let departments_res = await fetch("/api/departments");
       if (!departments_res.ok){
-          console.error("Failed to load departments");
-          setLoading(false)
-          return;
+        console.error("Failed to load departments");
+        setLoading(false)
+        return;
       }
       let departments_data = await departments_res.json();
       console.log('departments_data')
       console.log(departments_data)
       setDeparments(departments_data)
       
+      let roles_res = await fetch("/api/roles");
+      if (!roles_res.ok){
+        console.error("Failed to load roles");
+        setLoading(false);
+        return;
+      }
+      let roles_data = await roles_res.json();
+      roles_data = roles_data.sort((a: Role, b: Role) => Object.keys(b.permissions).filter(key => b.permissions[key] === true).length - Object.keys(a.permissions).filter(key => a.permissions[key] === true).length);
+      console.log('roles_data')
+      console.log(roles_data)
+      setRoles(roles_data)
+
 
       setLoading(false)
     }
@@ -140,6 +251,18 @@ export default function TeamsAndRoles() {
                 <div>
                   <div className='button-w-bl' onClick={() => {setShowConfirmDelete(false)}}>Cancel</div>
                   <div className='button-d-bl' onClick={() => {archiveUser(userToDelete)}}>Archive User</div>
+                </div>
+              </div>
+            </div>
+          )}
+          {showConfirmDeleteRole && (
+            <div className='confirm'>
+              <div>
+                <h1>Confirm Deleting this Role?</h1>
+                <p>Before deleting, change roles for users who has this role.</p>
+                <div>
+                  <div className='button-w-bl' onClick={() => {setShowConfirmDeleteRole(false)}}>Cancel</div>
+                  <div className='button-d-bl' onClick={() => { deleteRole(roleToDelete) }}>Delete Role</div>
                 </div>
               </div>
             </div>
@@ -179,8 +302,7 @@ export default function TeamsAndRoles() {
                     <label>
                       <div>Role</div>
                       <select id='role' required >
-                        <option value="lead">Route Lead</option>
-                        <option value="manager">Route Manager</option>
+                        {roles?.map(role => (<option key={`new_user_role_${role.id}`} value={role.id}>{capitalize(role.name)}</option>))}
                       </select>
                     </label>
                     <label>
@@ -206,27 +328,74 @@ export default function TeamsAndRoles() {
               </div>
             </div>
           )}
-          <div className='button-d-bl-sm add-user' onClick={() => {setShowAddUser(true)}}>Add User</div>
+          {showAddRoleForm && (
+            <div className='confirm add-role-form'>
+              <div>
+                <form id='add-role-form' onSubmit={(e) => {
+                    e.preventDefault();
+                    addRole();
+                  }}>
+                  <h1>Create new Role:</h1>
+                  <div>
+                    <label>
+                      <div>Name</div>
+                      <input type="text" name='role' id='new_role' required />
+                    </label>
+                  </div>
+                  <h3>User with this role are able to:</h3>
+                  <div style={{flexDirection: 'column'}}>
+                    {selectedPermissionsNewRole && selectedPermissionsNewRole.map((permission: SelectedPermission) => (
+                      <label key={`select_permission_role_${permission.id}`}>
+                        <input type="checkbox" checked={permission.selected ?? false} onChange={(e) => {
+                          changePermissions({...permission, selected: e.target.checked})
+                        }} />
+                        {permission.name}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div>
+                    <div className='button-w-bl' onClick={() => {setShowAddRoleForm(false)}}>Cancel</div>
+                    <button className='button-d-bl' type='submit' form="add-role-form">Add new Role</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+          {me_user?.permissions.add_users && (<div className='button-d-bl-sm add-user' onClick={() => {setShowAddUser(true)}}>Add User</div>)}
           <div className='employees-container'>
             {users.map(user => {
+              console.log('user')
+              console.log(user)
               return (
                 <div key={`user_${user.id}`} className={user.archived === true ? 'employee archived' : 'employee'}>
                   <div>
                     <UserCircle user_name={user.name} size={40} />
                     <div>
                       <div>{user.name}</div>
-                      <div>{user.user_role === 'manager' ? 'Route Manager' : 'Route Lead'}</div>
+                      <div>
+                        <select defaultValue={roles?.find((el: Role) => el.name === user.user_role)?.id} onChange={(e) => {updateUser({...user, role_id: e.target.value})}} disabled={me_user?.id === user.id ? true : false} className={me_user?.id === user.id ? 'd' : ''}>
+                          {roles?.map((role) => (
+                            <option key={`update_role_${user.id}_${role.id}`} value={role.id}>{role.name}</option>
+                          ))}
+                        </select>
+                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser(user)}}>Save</div>)}
+                      </div>
+
                       <div>{user.department}</div>
                     </div>
                     <div>
-                      <div className={user.user_role === 'manager' ? 'manager' : 'lead'}>{user.user_role === 'manager' ? '• Manager' : '• Lead'}</div>
+                      <div className={user.user_role}>{`• ${user.user_role}`}</div>
                     </div>
                   </div>
+                  {/* TODO: change selecting roles when adding new user */}
+                  {/* TODO: add possibility to change roles */}
+                  {/* TODO: create admin role */}
                   <div>
                     <div data-img="email">{user.email}</div>
                     <div data-img="phone">{user.phone}</div>
                   </div>
-                  {user.user_role === 'lead' && (
+                  {user.user_role !== 'manager' ? (
                     <div>
                       <div>
                         <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).length}</div>
@@ -241,53 +410,49 @@ export default function TeamsAndRoles() {
                         <span>Tasks</span>
                       </div>
                     </div>
-                  )}
-                  {user.user_role === 'lead' && user.archived !== true && (
+                  ) : (<div></div>)}
+                  {me_user && me_user.permissions.archive_give_access_users && user.archived !== true && (
                     <div className='button-r-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
                       setUserToDelete(user);
                       setShowConfirmDelete(true)
-                    }}>Archive Lead</div>
+                    }}>Archive User</div>
                   )}
-                  {user.user_role === 'lead' && user.archived === true && (
-                    <div className='button-r-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
+                  {me_user && me_user.permissions.archive_give_access_users && user.archived === true && (
+                    <div className='button-d-bl-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
                       setUserToDelete(user);
                       setShowConfirmGiveAccess(true)
                     }}>Give Access</div>
                   )}
-
+                  {(!me_user || !me_user.permissions.archive_give_access_users) && (<div></div>)}
                 </div>
               )
             })}
           </div>
           <div className="role-permissions">
-            <h3>Role Permissions</h3>
-            <p>What each role can see and do in the system</p>
             <div>
               <div>
-                <div>
-                  <h6>Route Manager</h6>
-                  <span>{users.filter((user: User) => user.user_role === 'manager').length} member{users.filter((user: User) => user.user_role === 'manager').length !== 1 ? 's' : ''}</span>
-                </div>
-                <p>View all Daily Briefs</p>
-                <p>Configure report scheduling</p>
-                <p>Manage team members and roles</p>
-                <p>Access full brief history</p>
-                <p>Receive handoff notifications</p>
-                <p>View all findings and tasks</p>
+                <h3>Role Permissions</h3>
+                <p>What each role can see and do in the system</p>
               </div>
-              
-              <div>
-                <div>
-                  <h6>Route Lead</h6>
-                  <span>{users.filter((user: User) => user.user_role === 'lead').length} member{users.filter((user: User) => user.user_role === 'manager').length !== 1 ? 's' : ''}</span>
-                </div>
-                <p>Submit, edit and hand off own Daily Briefs</p>
-                <p>Review assigned operational reports</p>
-                <p>Log and manage findings</p>
-                <p>Create and complete tasks</p>
-                <p>Submit shift handoffs</p>
-                <p>View own brief history</p>
-              </div>
+              {me_user?.permissions.add_roles && (<div className="button-d-bl-sm" onClick={() => setShowAddRoleForm(true)}>Add Role</div>)}
+            </div>
+            <div>
+              {roles && roles.map((role: Role) => (
+                <div key={`role_${role.id}`}>
+                  <div>
+                    <div>
+                      <h6>{role.name}</h6>
+                      <span>{users.filter((user: User) => user.user_role === role.name).length} member{users.filter((user: User) => user.user_role === role.name).length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {/* <div className='button-d-bl-sm'>Edit</div> */}
+                  </div>
+                  {permissions && permissions.map((permission: Permission) => {
+                    if (role.permissions[permission.js_name] === true) {
+                      return (<p key={`role_${role.id}_permission_${permission.id}`}>{permission.name}</p>)
+                    }
+                  })}
+                  {me_user?.permissions.add_roles && (<div className='button-r-sm' onClick={() => {setRoleToDelete(role); setShowConfirmDeleteRole(true)}}>Delete</div>)}
+                </div>))}
             </div>
           </div>
         </div>)}

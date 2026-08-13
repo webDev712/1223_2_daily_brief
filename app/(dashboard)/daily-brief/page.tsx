@@ -24,7 +24,7 @@ export default function DailyBrief() {
       briefDate.getFullYear() === today.getFullYear() &&
       briefDate.getMonth() === today.getMonth() &&
       briefDate.getDate() === today.getDate();
-    return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) && true };
+    return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) && user?.permissions.update_brief === false };
   const [showSubmit, setShowSubmit] = useState(false)
   const [showHandoff, setShowHandoff] = useState(false)
   const savingRef = useRef(false);
@@ -74,10 +74,6 @@ export default function DailyBrief() {
     setSavingCover(false)
   }
 
-
-  
-
-
   const startMyBrief = async () => {
     setLoading(true)
     const res = await fetch("/api/brief", {
@@ -109,10 +105,7 @@ export default function DailyBrief() {
   }
   const addFinding = async ( b: any, finding: any ) => {
     if (savingRef.current) return;
-
     savingRef.current = true;
-
-    
     setShowAddFinding(false)
     const updatedBrief = {
       ...b,
@@ -146,10 +139,7 @@ export default function DailyBrief() {
     if (savingRef.current) return;
 
     savingRef.current = true;
-    
-
     setShowAddTask(false);
-
     const updatedBrief = {
       ...b,
       tasks: b.tasks.map((el: any) =>
@@ -177,8 +167,6 @@ export default function DailyBrief() {
     if (savingRef.current) return;
 
     savingRef.current = true;
-    
-
     setShowAddTask(false)
     const updatedBrief = {
       ...b,
@@ -210,7 +198,6 @@ export default function DailyBrief() {
     if (savingRef.current) return;
 
     savingRef.current = true;
-    
     const updatedBrief = {
       ...b,
       shift: shift
@@ -456,16 +443,17 @@ export default function DailyBrief() {
         {loading ?
          (<Loader></Loader>)
          : (<div className='briefs'>
-            {allBriefs.filter((b: SavedBrief) => b.original_lead_id === selectedLead).length === 0 && selectedLead === user?.id && (
+            {allBriefs.filter(
+              (b: SavedBrief) => b.original_lead_id === selectedLead).length === 0 && selectedLead === user?.id && (
               <div className='no-briefs'>
                 <h1>You have not started your own Brief today</h1>
-                {selectedLead === user.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {startMyBrief()}}>Start My Brief</div>) : (<div></div>)}
+                {selectedLead === user?.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {startMyBrief()}}>Start My Brief</div>) : (<div></div>)}
               </div>
             )}
             {briefs.length == 0 || (user?.role == 'lead' && false && !briefs.some((b: SavedBrief) => b.lead_id == user?.id)) 
               ? (<div></div>) 
               : briefs.map((b: SavedBrief, b_i) => {
-                if ((shifts.length > 0) && (user?.role == "manager" || (b.lead_id == user?.id))){
+                if ((shifts.length > 0) && (user?.permissions.see_all_briefs === true || (b.lead_id == user?.id))){
                 let AB_name = "";
                 try{
                   AB_name += b.lead_name.split(" ")[0][0];
@@ -630,20 +618,6 @@ export default function DailyBrief() {
                       )}</div>
                     </div>
 
-
-                    {/* Projects:
-                    <div>
-                      {b.projects.map(
-                        (p: any, p_i: number) => (<div className='project' key={p_i}>
-                          <input type='checkbox' checked={p.checked} onChange={() => {updateProject(b, p, !p.checked, p.name, p.text)}} />
-                          <div></div>
-                          {p.name} | {p.text}
-                        </div>)
-                      )}
-                    </div> */}
-
-
-
                     <div style={{ display: 'flex', gap: 10 }}>
                       <div className="findings">
                         <div>
@@ -727,7 +701,7 @@ export default function DailyBrief() {
                           </div>)}
                       </div>
                     </div>
-                    <div className="handoff">
+                    {user.permissions.handoff_brief && (<div className="handoff">
                       <h1>Handoff:</h1>
                       <div>
                         <div>
@@ -748,7 +722,7 @@ export default function DailyBrief() {
                         </div>
                         <input className={noAccessEdit(b) ? 'button-d-bl-sm tg d' : 'button-d-bl-sm tg'} type="button" value="Complete handoff" onClick={() => { if(!noAccessEdit(b)) setShowHandoff(true) }}/>
                       </div>
-                    </div>
+                    </div>)}
                   </div>
                 )
               }

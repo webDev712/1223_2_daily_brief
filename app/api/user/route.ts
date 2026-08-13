@@ -50,7 +50,7 @@ export async function POST(request: Request) {
             INSERT INTO website_user (
                 email,
                 name,
-                user_role,
+                role_id,
                 lead_letter,
                 archived,
                 phone,
@@ -119,15 +119,14 @@ export async function PATCH(request: Request) {
             id,
             email,
             name,
-            role,
-            user_role,
             lead_letter,
-            archived
+            archived,
+            role_id
         } = body;
 
         await sql`
             UPDATE website_user
-            SET email = ${email}, name = ${name}, user_role = ${role || user_role}, lead_letter = ${lead_letter}, archived = ${archived}
+            SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}
             WHERE id = ${id};
         `
         return NextResponse.json({

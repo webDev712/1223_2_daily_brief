@@ -74,12 +74,15 @@ export interface User {
   id: string,
   email: string,
   name: string,
-  role: 'manager' | 'lead',
-  user_role: 'manager' | 'lead',
+  role: string,
+  user_role: string,
   lead_letter: string,
   phone: string,
   archived: boolean,
   department: string,
+  permissions: DBPermissions,
+  selectedAnotherRole: boolean,
+  role_id: string
 }
 
 export interface Shift {
@@ -99,4 +102,41 @@ export interface Covered {
 export interface Department {
   id: string,
   name: string,
+}
+
+export interface Permission {
+  id: number,
+  name: string,
+  js_name: keyof DBPermissions,
+}
+
+export interface SelectedPermission extends Permission {
+  selected: boolean
+}
+
+export interface DBPermissions {
+  [key: string]: boolean;
+  
+  add_users: boolean;
+  add_roles: boolean,
+  see_brief: boolean;
+  edit_reports: boolean;
+  update_brief: boolean;
+  handoff_brief: boolean;
+  see_dashboard: boolean;
+  see_all_briefs: boolean;
+  see_team_roles: boolean;
+  see_app_settings: boolean;
+  see_reports_page: boolean;
+  edit_app_settings: boolean;
+  see_briefs_history: boolean;
+  see_profile_settings: boolean;
+  edit_profile_settings: boolean;
+  archive_give_access_users: boolean;
+}
+
+export interface Role {
+  id: string,
+  name: string,
+  permissions: DBPermissions
 }
