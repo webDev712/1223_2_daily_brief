@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 
 export async function GET(request: Request) {
     try{
-        await requireRole("lead");
+        // await requireRole("lead");
         
         const { searchParams } = new URL(request.url);
 

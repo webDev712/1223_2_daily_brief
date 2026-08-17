@@ -12,6 +12,7 @@ import jsPDF from "jspdf";
 export default function Reports() {
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<Report[]>([]);
+  const [reportsObject, setReportsObject] = useState<Record<string, Report[]>>({});
   const [briefs, setBriefs] = useState([]);
   const [user, setUser] = useState<User | null>(null);
   const [leads, setLeads] = useState<User[]>([])
@@ -99,6 +100,19 @@ export default function Reports() {
       console.log(me_user)
       setUser(me_user)
 
+
+      let departments_res = await fetch("/api/departments");
+      if (!departments_res.ok){
+          console.error("Failed to load departments");
+          setLoading(false)
+          return;
+      }
+      let departments_data = await departments_res.json();
+      console.log('departments_data')
+      console.log(departments_data)
+      setDeparments(departments_data)
+
+
       const reports_res = await fetch(`/api/reports`);
 
       if (!reports_res.ok) {
@@ -108,8 +122,27 @@ export default function Reports() {
       }
       let reports_data = await reports_res.json();
       setReports(reports_data)
+
+      reports_data.forEach((report: Report) => {
+        if (report.assigned_to.department.assigned === true || report.assigned_to.all.assigned === true) {
+          departments_data.forEach((department: Department) => {
+            if (report.assigned_to.department.list.indexOf(department.id) !== -1 || report.assigned_to.all.assigned === true){
+              if (Object.keys(reportsObject).indexOf(department.name) === -1){
+                reportsObject[department.name] = [ report ];
+              }
+              else{
+                reportsObject[department.name].push(report);
+              }
+            }
+          })
+        }
+      })
+      reportsObject['Shared Reports'] = [ ...reports_data ]
       console.log('reports_data')
       console.log(reports_data)
+      
+      console.log('reportsObject')
+      console.log(reportsObject)
       const dateString = format(new Date(), "yyyy-MM-dd");
 
       const res = await fetch(`/api/brief_history?date_from=${dateString}&date_to=${dateString}`);
@@ -130,22 +163,10 @@ export default function Reports() {
         return;
       }  
       let leads_data = await users_res.json();
-      leads_data = leads_data.filter((a: User) => a.user_role === 'lead' && a.archived !== true);
+      leads_data = leads_data.filter((a: User) => a.user_role !== 'manager' && a.archived !== true);
       console.log('leads_data')
       console.log(leads_data)
       setLeads(leads_data);
-      let departments_res = await fetch("/api/departments");
-      if (!departments_res.ok){
-          console.error("Failed to load departments");
-          setLoading(false)
-          return;
-      }
-      let departments_data = await departments_res.json();
-      console.log('departments_data')
-      console.log(departments_data)
-      setDeparments(departments_data)
-      
-
 
       setLoading(false)
 
@@ -480,29 +501,35 @@ return (
               <strong>Changes made to reports will be applied starting with the next day's Daily Brief and will not affect briefs that have already been created.</strong>
             </div>
           </div>
-          <div className="button-d-bl add-report" onClick={() => {
-            if (user?.role !== 'manager'){
-              toast.error("You don't have permissions for this action.")
-              return;
-            }
-            addReport();
-          }}>Add Report</div>
-          <div className="table-wrapper">
-            <div className="table-reports">
-              <div>
-                <div>EDIT</div>
-                <div>SAVE</div>
-                <div>REPORTS</div>
-                <div>SOURCE</div>
-                <div>PERIOD</div>
-                <div>ASSIGNED TO</div>
-                <div>DELETE</div>
-              </div>
-              {reports.filter((r: Report) => r.archived !== true).length > 0 ? reports.map((r: Report) => {
-                if (r.archived !== true) return (
-                  <div className="report" key={`report_${r.id}`}>
+          {departments.map((dep: Department) => {
+            
+            return (
+              <div key={`reports_department_${dep.name}`}>
+                <div className="flex">
+                  <h3>{dep.name}</h3>
+                  <div className="button-d-bl add-report" onClick={() => {
+                    if (!user?.permissions.edit_reports){
+                      toast.error("You don't have permissions for this action.")
+                      return;
+                    }
+                    addReport();
+                  }}>Add Report</div>
+                </div>
+                <div className="table-wrapper">
+                  <div className="table-reports">
                     <div>
-                      {/* {r.archived ? 'true' : 'false'} */}
+                      <div>EDIT</div>
+                      <div>SAVE</div>
+                      <div>REPORTS</div>
+                      <div>SOURCE</div>
+                      <div>PERIOD</div>
+                      <div>ASSIGNED TO</div>
+                      <div>DELETE</div>
+                    </div>
+                    {reports.map((r: Report) => {
+                      if (!r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)) {
+                        return (<div className="report" key={`report_${r.id}`}>
+                    <div>
                       <label>
                         <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
                         <input
@@ -589,7 +616,7 @@ return (
                     </div>
                     <div>
                       <div className="button-d-bl-sm" onClick={() => {
-                        if (user?.permissions.edit_reports){
+                        if (!user?.permissions.edit_reports){
                           toast.error("You don't have permissions for this action.")
                           return;
                         }
@@ -599,7 +626,7 @@ return (
                     </div>
                     <div>
                       <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
-                        if (user?.permissions.edit_reports){
+                        if (!user?.permissions.edit_reports){
                           toast.error("You don't have permissions for this action.")
                           return;
                         }
@@ -607,14 +634,15 @@ return (
                         setShowConfirmDelete(true)
                       }}>Delete</div>
                     </div>
+                  </div>)
+                      }
+                    })}
                   </div>
-                )}) : (
-                  <h3>
-                    No reports active
-                  </h3>
-                )}
-            </div>
-          </div>
+                </div>
+                
+              </div>)
+          })}
+
         </div>)
       }
     </div>

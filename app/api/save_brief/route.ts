@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 
 export async function POST(request: Request) {
     try {
-        await requireRole("lead");
+        // await requireRole("lead");
         const body = await request.json();
 
         const {

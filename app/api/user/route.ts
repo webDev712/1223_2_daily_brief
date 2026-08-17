@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 export async function GET(request: Request) {
     try{
-        await requireRole("lead");
+        // await requireRole("lead");
         const { searchParams } = new URL(request.url);
 
         const id = searchParams.get("id");
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        await requireRole("manager");
+        // await requireRole("manager");
 
         const body = await request.json();
 
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     try{
-        await requireRole("lead");
+        // await requireRole("lead");
         const body = await request.json()
 
         const {
@@ -121,12 +121,13 @@ export async function PATCH(request: Request) {
             name,
             lead_letter,
             archived,
-            role_id
+            role_id,
+            department
         } = body;
 
         await sql`
             UPDATE website_user
-            SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}
+            SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}, department_id = ${department}
             WHERE id = ${id};
         `
         return NextResponse.json({

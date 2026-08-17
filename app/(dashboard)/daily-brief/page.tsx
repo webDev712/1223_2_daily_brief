@@ -357,7 +357,7 @@ export default function DailyBrief() {
         return;
       }  
       let leads_data = await users_res.json();
-      leads_data = leads_data.filter((a: User) => a.user_role === 'lead')
+      leads_data = leads_data.filter((a: User) => a.user_role !== 'manager')
       setLeads(leads_data)
       let lead_id = selectedLead;
       
@@ -424,7 +424,7 @@ export default function DailyBrief() {
           <div className='choose'>
             <span>Choose ROUTE Lead</span>
           </div>
-          {leads.map((u: User, i) => {
+          {leads.filter((u: User) => allBriefs.filter((brief: SavedBrief) => brief.lead_id === u.id).length > 0 || !u.archived).map((u: User, i) => {
             let colors = getColorsFromName(u.name);
             return (
               <label className='lead' style={{

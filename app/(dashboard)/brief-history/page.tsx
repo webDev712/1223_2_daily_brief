@@ -64,7 +64,7 @@ export default function BriefHistory() {
           return;
         }  
         let leads_data = await users_res.json();
-        leads_data = leads_data.filter((a: User) => a.user_role === 'lead');
+        leads_data = leads_data.filter((a: User) => a.user_role !== 'manager');
         console.log('leads_data')
         console.log(leads_data)
         setLeads(leads_data);

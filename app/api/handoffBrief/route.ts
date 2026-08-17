@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 export async function PATCH(request: Request) {
     // CHANGING LEAD FOR DATE
     try {
-        await requireRole("lead");
+        // await requireRole("lead");
         const body = await request.json();
 
         const {

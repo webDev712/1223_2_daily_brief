@@ -55,7 +55,7 @@ export default function Dashboard() {
         return;
       }  
       let leads_data = await users_res.json();
-      leads_data = leads_data.filter((a: User) => a.user_role === 'lead').filter((a: User) => a.archived !== true)
+      leads_data = leads_data.filter((a: User) => a.user_role !== 'manager').filter((a: User) => a.archived !== true)
       setLeads(leads_data)
       
       setBriefsLoading(false);

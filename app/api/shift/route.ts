@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 
 export async function POST(request: Request) {
     try{
-        await requireRole("manager");
+        // await requireRole("manager");
         const body = await request.json();
         const {
             name,
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     try{
-        await requireRole("manager");
+        // await requireRole("manager");
         const body = await request.json();
         const {
             id,

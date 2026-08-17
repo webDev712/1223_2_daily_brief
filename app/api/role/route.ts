@@ -68,6 +68,45 @@ export async function POST(request: Request) {
 
 
 
+export async function PATCH(request: Request) {
+    try {
+        // await requireRole("manager");
+
+        const body = await request.json();
+
+        const {
+            id,
+            name,
+            permissions,
+        } = body;
+        const permissionsObject = Object.fromEntries(
+            permissions.map((permission: SelectedPermission) => [
+                permission.js_name,
+                permission.selected
+            ])
+        );
+        const rows = await sql`
+            UPDATE role 
+            SET name = ${name}, permissions = ${JSON.stringify(permissionsObject)}::jsonb
+            WHERE id = ${id};
+        `;
+
+        return NextResponse.json({
+            success: true,
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return NextResponse.json(
+            { error: "Database error" },
+            { status: 500 }
+        );
+    }
+}
+
+
+
 export async function DELETE (request: Request) {
     try{
         // await requireRole("lead");

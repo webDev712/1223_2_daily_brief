@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 
 export async function GET() {
     try{
-        await requireRole("lead");
+        // await requireRole("lead");
         const rows = await sql`SELECT * FROM shift WHERE archived <> TRUE;`;
         return NextResponse.json(rows)
     }

@@ -127,7 +127,7 @@
 }
 
 .reports .add-report{
-    margin: 0px 0px 20px auto;
+    margin: 0px 0px 0px auto;
 }
 
 .reports .select{
@@ -150,6 +150,23 @@
 .reports .select.all{
     display: flex;
     justify-content: center;
+}
+
+.reports div.flex:has(+ .table-wrapper) > h3{
+    color: #101828;
+    font-weight: 700;
+    font-style: Bold;
+    letter-spacing: .38px;
+    font-size: 24px;
+    margin: auto 0;
+}
+
+.reports div.flex:has(+ .table-wrapper) {
+    margin-bottom: 20px;
+}
+
+.reports .table-wrapper{
+    margin-bottom: 30px;
 }
 
 

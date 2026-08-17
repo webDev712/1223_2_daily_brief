@@ -82,6 +82,8 @@ export interface User {
   department: string,
   permissions: DBPermissions,
   selectedAnotherRole: boolean,
+  selectedAnotherDepartment: boolean,
+  newDepartment: string | undefined,
   role_id: string
 }
 

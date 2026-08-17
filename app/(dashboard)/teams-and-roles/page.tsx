@@ -9,7 +9,7 @@ import './page.css';
 import { toast } from 'sonner';
 import generatePhoneNumber from '@/lib/phone';
 import { getPermissions } from '@/lib/config';
-import capitalize from '@/lib/text';
+import capitalize, { randomEmployeeID } from '@/lib/text';
 
 
 
@@ -25,6 +25,8 @@ export default function TeamsAndRoles() {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showConfirmGiveAccess, setShowConfirmGiveAccess] = useState(false);
   const [showAddRoleForm, setShowAddRoleForm] = useState(false);
+  const [showEditRoleForm, setShowEditRoleForm] = useState(false);
+  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null)
   const [showAddUser, setShowAddUser] = useState(false);
   const [showConfirmDeleteRole, setShowConfirmDeleteRole] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -84,8 +86,6 @@ export default function TeamsAndRoles() {
       phone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
       department_id: (document.getElementById('department') as HTMLInputElement)?.value || '',
     }
-    console.log('user')
-    console.log(user)
     fetch("/api/user", {
       method: "POST",
       headers: {
@@ -105,9 +105,22 @@ export default function TeamsAndRoles() {
   const updateUser = (userToUpdate: User) => {
     if (userToUpdate.role_id !== roles?.find((el: Role) => el.name === userToUpdate.user_role)?.id) userToUpdate.selectedAnotherRole = true;
     else userToUpdate.selectedAnotherRole = false;
+    if (userToUpdate.newDepartment) {
+      if (userToUpdate.newDepartment !== userToUpdate.department){
+        userToUpdate.selectedAnotherDepartment = true;
+        userToUpdate.department = userToUpdate.newDepartment;
+      }
+      else{
+        userToUpdate.selectedAnotherDepartment = false;
+      }
+      userToUpdate.newDepartment = undefined;
+    }
     setUsers((prev: User[]) => prev.map((user: User) => {
       return user.id === userToUpdate.id ? userToUpdate : user
     }))
+    console.log('userToUpdate')
+    console.log(userToUpdate)
+
   }
 
   const saveUser = (user: User) => {
@@ -151,6 +164,36 @@ export default function TeamsAndRoles() {
     });
   }
 
+  const editRole = () => {
+    const role = {
+      id: roleToEdit?.id,
+      name: roleToEdit?.name,
+      permissions: selectedPermissionsNewRole,
+    }
+    console.log('role')
+    console.log(role)
+    fetch("/api/role", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(role),
+    }).then(res => {
+      if (res.status === 200) {
+        toast.success(`Success! Now, role "${role.name}" has ${role.permissions?.filter((permission: SelectedPermission) => permission.selected === true).length} permissions`)
+        setReload(prev => prev + 1);
+        setShowEditRoleForm(false);
+      }
+    });
+  }
+
+  const updateRole = (roleToUpdate: Role) => {
+    setRoles(prev =>
+      prev?.map((role: Role) => 
+        role.id === roleToUpdate.id ? roleToUpdate : role
+      )
+    )
+  }
 
   const giveUserAccess = (user: User | null) => {
     if (user === null) return;
@@ -306,8 +349,8 @@ export default function TeamsAndRoles() {
                       </select>
                     </label>
                     <label>
-                      <div>Lead Letter (1 symbol A-Z)</div>
-                      <input type="text" id='letter' pattern="[A-Za-z]" required />
+                      <div>Employee ID (2 symbols XX)</div>
+                      <input type="text" id='letter' pattern="[A-Za-z][A-Za-z]" required defaultValue={randomEmployeeID()} />
                     </label>
                     <label>
                       <div>Department</div>
@@ -362,11 +405,47 @@ export default function TeamsAndRoles() {
               </div>
             </div>
           )}
+          {showEditRoleForm && (
+            <div className='confirm add-role-form'>
+              <div>
+                <form id='add-role-form' onSubmit={(e) => {
+                    e.preventDefault();
+                    editRole();
+                  }}>
+                  <h1>Edit Role:</h1>
+                  <div>
+                    <label>
+                      <div>Name</div>
+                      <input type="text" name='role' id='new_role' value={roleToEdit?.name} required onChange={(e) => {
+                        if (roleToEdit){
+                          setRoleToEdit({...roleToEdit, name: e.target.value})
+                        }
+                      }}/>
+                    </label>
+                  </div>
+                  <h3>User with this role are able to:</h3>
+                  <div style={{flexDirection: 'column'}}>
+                    {selectedPermissionsNewRole && selectedPermissionsNewRole.map((permission: SelectedPermission) => (
+                      <label key={`select_permission_role_${permission.id}`}>
+                        <input type="checkbox" checked={permission.selected ?? false} onChange={(e) => {
+                          changePermissions({...permission, selected: e.target.checked})
+                        }} />
+                        {permission.name}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div>
+                    <div className='button-w-bl' onClick={() => {setShowEditRoleForm(false)}}>Cancel</div>
+                    <button className='button-d-bl' type='submit' form="add-role-form">Submit Role Changes</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
           {me_user?.permissions.add_users && (<div className='button-d-bl-sm add-user' onClick={() => {setShowAddUser(true)}}>Add User</div>)}
           <div className='employees-container'>
             {users.map(user => {
-              console.log('user')
-              console.log(user)
               return (
                 <div key={`user_${user.id}`} className={user.archived === true ? 'employee archived' : 'employee'}>
                   <div>
@@ -381,8 +460,16 @@ export default function TeamsAndRoles() {
                         </select>
                         {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser(user)}}>Save</div>)}
                       </div>
-
-                      <div>{user.department}</div>
+                      <div>
+                        <select onChange={(e) => {updateUser({...user, newDepartment: e.target.value})}} defaultValue={departments.find((dep: Department) => dep.name === user.department)?.id} disabled={me_user?.id === user.id ? true : false} className={me_user?.id === user.id ? 'd' : ''} >
+                          {departments.map((department: Department) => {
+                            return (
+                              <option key={`update_department_${user.id}_${department.id}`} value={department.id}>{department.name}</option>
+                            )
+                          })}
+                        </select>
+                        {user.selectedAnotherDepartment === true && (<div className='button-d-bl-sm' onClick={() => {saveUser(user)}}>Save</div>)}
+                      </div>
                     </div>
                     <div>
                       <div className={user.user_role}>{`• ${user.user_role}`}</div>
@@ -444,7 +531,9 @@ export default function TeamsAndRoles() {
                       <h6>{role.name}</h6>
                       <span>{users.filter((user: User) => user.user_role === role.name).length} member{users.filter((user: User) => user.user_role === role.name).length !== 1 ? 's' : ''}</span>
                     </div>
-                    {/* <div className='button-d-bl-sm'>Edit</div> */}
+                    <div className='button-d-bl-sm' onClick={() => {setShowEditRoleForm(true); setRoleToEdit(role);
+                    setSelectedPermissionsNewRole(permissions.map((permission: Permission) => { return {...permission, selected: role.permissions[permission.js_name]} }))
+                    }}>Edit</div>
                   </div>
                   {permissions && permissions.map((permission: Permission) => {
                     if (role.permissions[permission.js_name] === true) {
