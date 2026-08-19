@@ -606,7 +606,7 @@ return (
                           </select>
                           {r.once_per !== 'day' && 'At'}
                           {r.once_per === 'week' && (
-                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}}>
+                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
                               {weekDays.map((day: {full: string, small: string}, i: number) => {
                                 return (
                                   <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
@@ -615,7 +615,7 @@ return (
                             </select>
                           )}
                           {r.once_per === 'month' && (
-                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}}>
+                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
                               {Array.from({ length: 30 }, (_, i) => (<option value={i + 1}>{i + 1}</option>))}
                             </select>
                           )}
