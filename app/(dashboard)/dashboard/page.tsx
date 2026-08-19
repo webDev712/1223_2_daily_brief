@@ -145,10 +145,10 @@ export default function Dashboard() {
           </div>
           <div className="flex j-s-b">
             <div>
-              <h3>Route Leads</h3>
+              <h3>Daily Briefs</h3>
               <p>Click a card to open the Daily Brief</p>
             </div>
-            <div>{active_leads_today.length} lead{active_leads_today.length > 1 && 's'} active this day</div>
+            <div>{active_leads_today.length} brief{active_leads_today.length > 1 && 's'} active this day</div>
           </div>
           {briefs.length > 0 ? (
             <div className="briefs">
@@ -214,12 +214,12 @@ export default function Dashboard() {
             )}
           </div>) : (<h4>No briefs in progress for this day</h4>)}
           <div style={{marginTop: 20}}>
-            <h3>Today's Route Coverage</h3>
+            <h3>Today's Coverage</h3>
             <div className="table-wrapper">
 
               <div className="covered-container">
                 <div>
-                  <span>LEAD</span>
+                  <span>EMPLOYEE</span>
                   <span>COVERING FOR</span>
                   <span>ROUTE</span>
                   <span>VAN</span>

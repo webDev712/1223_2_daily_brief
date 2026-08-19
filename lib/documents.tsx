@@ -503,7 +503,7 @@ function DailyBriefDocument({ brief }: { brief: any }) {
           </Text>
         </View>
 
-        <PdfSectionCard eyebrow={`LEAD ${brief.letter ?? ""}`} title={brief.lead_name}>
+        <PdfSectionCard eyebrow={`EMPLOYEE ${brief.letter ?? ""}`} title={brief.lead_name}>
           <View style={pdfStyles.metaRow}>
             <Text style={pdfStyles.metaText}>
               Shift — <Text style={{ color: PDF_COLORS.bodyText }}>{brief.shift || "—"}</Text>

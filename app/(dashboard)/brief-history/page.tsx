@@ -130,7 +130,7 @@ export default function BriefHistory() {
                 <div className="table">
                   <div>
                     <div>DATE</div>
-                    <div>LEAD</div>
+                    <div>EMPLOYEE</div>
                     <div>SHIFT</div>
                     <div>WORK STATUS</div>
                     <div>REPORTS</div>
@@ -159,6 +159,7 @@ export default function BriefHistory() {
                           )}
                           {b.lead_id !== b.original_lead_id && (<div>{'>>'}</div>)}
                           <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'} size={25} />
+                          {b.lead_id === b.original_lead_id && (<div>{b.lead_name}</div>)}
                           {}
                         </div>
                         <div>{b.shift || "-"}</div>
