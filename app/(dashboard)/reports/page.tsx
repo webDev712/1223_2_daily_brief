@@ -64,7 +64,7 @@ export default function Reports() {
         if (r.archived !== true) toast.success('Report Updated!');
       }
       else{
-        toast.error("You don't have permissions for this action.")
+        toast.error("Error while saving report")
       }
       console.log(r)
     });
@@ -536,7 +536,7 @@ return (
                           type="checkbox"
                           checked={r.edit ?? false}
                           onChange={(e) => {
-                            if (user?.permissions.edit_reports === false){
+                            if (!user?.permissions.edit_reports){
                               toast.error("You don't have permissions for this action.")
                               return;
                             }
@@ -605,10 +605,19 @@ return (
                             <option value="month">Month</option>
                           </select>
                           {r.once_per !== 'day' && 'At'}
-                          {r.once_per !== 'day' && (
-                            <input type="number" min={1} max={31} value={r.start_at_day || 1} onChange={(e: any) => { 
-                              if ((r.once_per === 'week' && e.target.value <= 7) || (r.once_per === 'month' && e.target.value <= 31))
-                              changeReports({...r, start_at_day: e.target.value})}} />
+                          {r.once_per === 'week' && (
+                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}}>
+                              {weekDays.map((day: {full: string, small: string}, i: number) => {
+                                return (
+                                  <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
+                                )
+                              })}
+                            </select>
+                          )}
+                          {r.once_per === 'month' && (
+                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}}>
+                              {Array.from({ length: 30 }, (_, i) => (<option value={i + 1}>{i + 1}</option>))}
+                            </select>
                           )}
                           {r.once_per === 'month' && 'day'}
                         </div>

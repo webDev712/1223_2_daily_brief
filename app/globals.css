@@ -77,6 +77,7 @@ body > .sidebar + div > div:last-child{
   cursor: pointer;
   max-width: max-content;
   transition: all 0.3s ease;
+  user-select: none !important;
 }
 
 .button-d-bl-sm:hover,
