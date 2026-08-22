@@ -1,0 +1,221 @@
+.production-dashboard{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.production-dashboard .table {
+    border-radius: 16px;
+    border: 2px solid #F2F4F7;
+    box-shadow: 0 0 4px 1px #1018280a;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.production-dashboard .table > div{
+    display: flex;
+    padding: 10px 20px;
+    background-color: white;
+    gap: 5px;
+}
+
+.production-dashboard .table > div + div{
+    border-top: 1px solid #F2F4F7;
+}
+
+.production-dashboard .table > div:first-child > div{
+    color: #98A2B3 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    background-image: none !important;
+    justify-content: center;
+    flex: 1;
+    margin: auto 0;
+    text-align: center;
+}
+
+.production-dashboard .table > div > div{
+    text-align: center;
+    flex: 1;
+    margin: auto 0;
+}
+
+.production-dashboard .table > div > div:nth-child(1){
+    width: 140px;
+    color: #101828;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.production-dashboard .table > div > div:nth-child(1) span{
+    color: #98A2B3;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+
+.production-dashboard .table > div > div:nth-child(2){
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    display: flex;
+    gap: 10px;
+    justify-content: start;
+    text-align: left;
+}
+
+.production-dashboard .table > div > div:nth-child(3){
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+    font-weight: 600;
+}
+
+
+.production-dashboard .table > div > div:last-child textarea,
+.production-dashboard .table > div > div:last-child{
+    width: 200px;
+    max-width: 200px;
+    min-width: 200px;
+    display: block;
+}
+
+.production-dashboard .table > div > div:last-child textarea{
+    border: 1px solid #E8EAED;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 10px;
+    line-height: 10px;
+    min-height: 40px;
+    transition: none;
+}
+
+
+.production-dashboard .table > div:first-child{
+    background-color: #F7F8FC;
+    display: flex;
+    gap: 5px;
+}
+
+.production-dashboard .table > div:last-child{
+    justify-content: space-between;
+    display: flex;
+    background-color: white;
+    padding: 10px 20px;
+}
+
+
+.production-dashboard .table > div:last-child > div:first-child{
+    text-align: left;
+    font-weight: 500;
+    flex-wrap: nowrap;
+    text-wrap-mode: nowrap;
+}
+
+.production-dashboard .table > div:last-child > div:nth-child(2){
+    display: flex;
+    gap: 5px;
+    flex-wrap: nowrap;
+    text-wrap-mode: nowrap;
+}
+
+
+.production-dashboard .table > div:last-child > div:nth-child(2) > div:nth-child(1),
+.production-dashboard .table > div:last-child > div:nth-child(2) > div:nth-child(3){
+    cursor: pointer;
+}
+
+
+.production-dashboard .table > div:last-child > div:nth-child(2) > div:nth-child(1):not(.d):hover,
+.production-dashboard .table > div:last-child > div:nth-child(2) > div:nth-child(3):not(.d):hover{
+    text-decoration: underline;
+}
+
+.production-dashboard > div:first-child{
+    display: flex;
+    gap: 20px;
+}
+
+.production-dashboard > div:first-child > label{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.production-dashboard > div:first-child span{
+    color: #9CA3AF;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.production-dashboard > div:first-child > label > :nth-child(2):not(:has(.picker)){
+    width: 200px;
+    color: black;
+    background-color: white;
+    border: 1px solid #EAECF0;
+    padding: 4px 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    background-image: url('../../../public/arrow_grey_bottom.svg');
+    background-position: right 8px center;
+    background-size: 18px;
+    cursor: pointer;
+}
+
+.production-dashboard > div:first-child > label > :nth-child(2) input{
+    padding: 4px 10px;
+    width: 200px !important;
+    color: black !important;
+    background-color: white !important;
+    border: 1px solid #EAECF0 !important;
+    font-size: 14px;
+    border-radius: 8px;
+    background-image: url('../../../public/arrow_grey_bottom.svg');
+    background-position: right 8px center;
+    background-size: 18px;
+    cursor: pointer;
+}
+.production-dashboard > div:first-child > :last-child{
+    margin: auto 0 auto auto;
+}
+
+.production-dashboard > div:first-child > label select{
+    appearance: none;
+}
+
+.production-dashboard .react-datepicker__tab-loop{
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+@media (max-width: 500px) {
+    
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-wrapper > .table{
+        width: max-content;
+        min-width: 600px
+    }
+
+    .production-dashboard > div:first-child{
+        flex-direction: column;
+    }
+
+    .production-dashboard .table-wrapper > div:first-child{
+        top: 74px;
+    }
+    .production-dashboard .table > div:last-child{
+        flex-direction: column;
+    }
+
+    .production-dashboard > div:first-child > label > :nth-child(2):not(:has(.picker)),
+    .production-dashboard > div:first-child > label > :nth-child(2) input{
+        width: 100% !important;
+    }
+}

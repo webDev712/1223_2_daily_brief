@@ -3,6 +3,7 @@ import sql from "@/lib/db";
 import { parse } from "csv-parse/sync";
 import fs from "fs/promises";
 import path from "path";
+import { parse as parse_date, format } from "date-fns";
 
 export async function POST() {
     return NextResponse.json({}, {status: 404})
@@ -31,7 +32,7 @@ export async function POST() {
                 
                 values.push(
                     Number(row.external_id || 0).toFixed(0),
-                    row.date,
+                    format(parse_date(row.date, 'M/d/yyyy', new Date()), 'yyyy-MM-dd'),
                     row.employee_name,
                     row.department,
                     Number(row.pieces || 0).toFixed(0),

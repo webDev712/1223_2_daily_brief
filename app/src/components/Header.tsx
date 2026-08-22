@@ -64,6 +64,9 @@ export default function Header({user_name, user_role}: HeaderProps) {
       header_text = 'Settings';
       header_description = 'Configure your account';
       break;
+    case 'production-dashboard':
+      header_text = 'Production dashboard';
+      header_description = 'See historical production KPI'
   }
   return (
     <div className={selected !== "login" ? "header" : "display-none"}>

@@ -142,3 +142,20 @@ export interface Role {
   name: string,
   permissions: DBPermissions
 }
+
+export interface ProductionRow {
+  id: string,
+  external_id: number,
+  date: Date,
+  employee_name: string,
+  department: string,
+  pieces: number,
+  value: number,
+  ppoh: number,
+  hours: number,
+  target_ppoh: number,
+  delta_ppoh: number,
+  efficiency: number,
+  notes: string,
+  waitingForEndEdit: boolean,
+}

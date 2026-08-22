@@ -502,9 +502,8 @@ return (
             </div>
           </div>
           {departments.map((dep: Department) => {
-            
             return (
-              <div key={`reports_department_${dep.name}`}>
+              <div key={`reports_department_${dep.id}`}>
                 <div className="flex">
                   <h3>{dep.name}</h3>
                   <div className="button-d-bl add-report" onClick={() => {
@@ -536,7 +535,7 @@ return (
                           type="checkbox"
                           checked={r.edit ?? false}
                           onChange={(e) => {
-                            if (user?.permissions.edit_reports === false){
+                            if (!user?.permissions.edit_reports){
                               toast.error("You don't have permissions for this action.")
                               return;
                             }

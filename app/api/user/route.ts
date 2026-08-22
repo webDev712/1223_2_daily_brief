@@ -72,11 +72,14 @@ export async function POST(request: Request) {
             await transporter.sendMail({
                 from: `"Helena's Cleaners" <${process.env.GMAIL_USER}>`,
                 to: email,
-                subject: "Your account has been created",
+                subject: "Your Daily Brief account is ready",
                 html: `
                     <h2>Welcome, ${name}!</h2>
-                    <p>Your account has been successfully created.</p>
+                    <p>Your Daily Brief account has been created successfully.</p>
+                    <p>You can sign in here:</p>
                     <a href="https://dailybrief-web.vercel.app/login">dailybrief-web.vercel.app</a>
+                    <p>If you did not expect this account, please contact your administrator.</p>
+                    <p>Best, Helena's Cleaners</p>
                 `,
             });
 
@@ -124,7 +127,7 @@ export async function PATCH(request: Request) {
             role_id,
             department
         } = body;
-
+        console.log(body)
         await sql`
             UPDATE website_user
             SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}, department_id = ${department}

@@ -43,7 +43,7 @@ export default function TeamsAndRoles() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({...user, archived: true}),
+      body: JSON.stringify({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id, archived: true}),
     }).then(res => {
       if (res.status === 200) {
         toast.success(`Archived user "${user.name}"`)
@@ -202,7 +202,7 @@ export default function TeamsAndRoles() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({...user, archived: false}),
+      body: JSON.stringify({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id, archived: false}),
     }).then(res => {
       if (res.status === 200) {
         toast.success(`Now User "${user.name}" has access!`)
@@ -458,7 +458,7 @@ export default function TeamsAndRoles() {
                             <option key={`update_role_${user.id}_${role.id}`} value={role.id}>{role.name}</option>
                           ))}
                         </select>
-                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser(user)}}>Save</div>)}
+                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id || ""})}}>Save</div>)}
                       </div>
                       <div>
                         <select onChange={(e) => {updateUser({...user, newDepartment: e.target.value})}} defaultValue={departments.find((dep: Department) => dep.name === user.department)?.id} disabled={me_user?.id === user.id ? true : false} className={me_user?.id === user.id ? 'd' : ''} >
