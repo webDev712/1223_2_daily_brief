@@ -615,7 +615,7 @@ return (
                           )}
                           {r.once_per === 'month' && (
                             <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
-                              {Array.from({ length: 30 }, (_, i) => (<option value={i + 1}>{i + 1}</option>))}
+                              {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                             </select>
                           )}
                           {r.once_per === 'month' && 'day'}
