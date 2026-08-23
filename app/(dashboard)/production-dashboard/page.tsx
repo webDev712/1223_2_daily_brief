@@ -75,11 +75,11 @@ export default function ProductionDashboard() {
                     <div>
                         <label>
                             <span>From Date</span>
-                            <DatePicker className="picker" value={format(dateFrom, 'MM-dd-yyyy')} onChange={(d: any) => d && setDateFrom(d)}></DatePicker>
+                            <DatePicker className="picker" selected={dateFrom} onChange={(d: Date | null) => d && setDateFrom(d)} dateFormat={'MM-dd-yyyy'}></DatePicker>
                         </label>
                         <label>
                             <span>To Date</span>
-                            <DatePicker className="picker" value={format(dateTo, 'MM-dd-yyyy')} onChange={(d: any) => d && setDateTo(d)}></DatePicker>
+                            <DatePicker className="picker" selected={dateTo} onChange={(d: Date | null) => d && setDateTo(d)} dateFormat={'MM-dd-yyyy'}></DatePicker>
                         </label>
                         <label>
                             <span>Employee</span>
@@ -100,7 +100,21 @@ export default function ProductionDashboard() {
                                 ))}
                             </select>
                         </label>
-                        <div className="button-d-bl-sm" onClick={() => {setPage(1); setReload(prev => prev + 1)}}>Filter</div>
+                        <div className="button-d-bl-sm" onClick={() => {
+                            console.log(dateFrom)
+                            console.log(dateTo)
+                            if (dateFrom > dateTo) {
+                                toast.error("Please select a start date before the end date"); 
+                                return 0;
+                            };
+                            if (dateFrom < new Date("2026-02-11")) {
+                                toast.error("Historical data in the Production Dashboard is available from February 11, 2026. Please select a date range starting from this date.");
+                                return 0;
+                            }
+
+                            setPage(1); 
+                            setReload(prev => prev + 1)
+                        }}>Filter</div>
                     </div>
                     <div className="table-wrapper">
                             <div className="table">
