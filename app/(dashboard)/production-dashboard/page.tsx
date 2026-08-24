@@ -111,9 +111,8 @@ export default function ProductionDashboard() {
                                 toast.error("Historical data in the Production Dashboard is available from February 11, 2026. Please select a date range starting from this date.");
                                 return 0;
                             }
-
-                            setPage(1); 
-                            setReload(prev => prev + 1)
+                            setPage(1);
+                            setReload(prev => prev + 1);
                         }}>Filter</div>
                     </div>
                     <div className="table-wrapper">
