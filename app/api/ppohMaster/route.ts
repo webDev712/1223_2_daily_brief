@@ -40,7 +40,7 @@ export async function GET(request: Request) {
                 AND external_id = ${employee}` : sql``}
             ${department ? sql`
                 AND department = ${department}` : sql``}
-            ORDER BY date DESC
+            ORDER BY date DESC, department ASC, employee_name ASC
             LIMIT ${page_size}
             OFFSET ${(Number(page) - 1) * Number(page_size)}
             ;
