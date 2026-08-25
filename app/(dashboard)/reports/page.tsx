@@ -501,20 +501,34 @@ return (
               <strong>Changes made to reports will be applied starting with the next day's Daily Brief and will not affect briefs that have already been created.</strong>
             </div>
           </div>
+          <h2>Departments:</h2>
           {departments.map((dep: Department) => {
             return (
               <div key={`reports_department_${dep.id}`}>
                 <div className="flex">
                   <h3>{dep.name}</h3>
-                  <div className="button-d-bl add-report" onClick={() => {
-                    if (!user?.permissions.edit_reports){
-                      toast.error("You don't have permissions for this action.")
-                      return;
-                    }
-                    addReport();
-                  }}>Add Report</div>
+                  {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).length === 0 ? (
+                    <div className="flex j-s-b">
+                      <span>- no reports assigned for this department</span>
+                      <div className="button-d-bl-sm add-report" onClick={() => {
+                        if (!user?.permissions.edit_reports){
+                          toast.error("You don't have permissions for this action.")
+                          return;
+                        }
+                        addReport();
+                      }}>Add Report</div>
+                      </div>
+                  ) : (
+                    <div className="button-d-bl add-report" onClick={() => {
+                      if (!user?.permissions.edit_reports){
+                        toast.error("You don't have permissions for this action.")
+                        return;
+                      }
+                      addReport();
+                    }}>Add Report</div>
+                  )}
                 </div>
-                <div className="table-wrapper">
+                {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).length > 0 && (<div className="table-wrapper">
                   <div className="table-reports">
                     <div>
                       <div>EDIT</div>
@@ -527,126 +541,295 @@ return (
                     </div>
                     {reports.map((r: Report) => {
                       if (!r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)) {
-                        return (<div className="report" key={`report_${r.id}`}>
-                    <div>
-                      <label>
-                        <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
-                        <input
-                          type="checkbox"
-                          checked={r.edit ?? false}
-                          onChange={(e) => {
-                            if (!user?.permissions.edit_reports){
-                              toast.error("You don't have permissions for this action.")
-                              return;
-                            }
-                            if (r.edit !== true)
-                              setReports(prev =>
-                                prev.map(report =>
-                                  report.id === r.id
-                                    ? { ...report, edit: e.target.checked }
-                                    : report
-                                )
-                              )
-                            }
-                          }
-                          disabled={r.edit === true}
-                        />
-                      </label>
-                    </div>
-                    <div>
-                      <label>
-                        <span
-                          className={r.edit !== true ? "button-d-bl-sm d" : "button-d-bl-sm"}
-                          onClick={() =>
-                            {
-                              if (r.edit === true){
-                                saveReport(r);
-                              }
-                            }
-                          }
-                        >
-                          Save
-                        </span>
-                      </label>
-                    </div>
-                    <div>
-                      <div className="show">{r.name}</div>
-                      <div className="edit">
-                        <input type="text" value={r.name} onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="show">{r.source}</div>
-                      <div className="edit">
-                        <input type="text" value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}} />
-                      </div>
-                    </div>
-                    <div>
-                      <div>
-                        <div className="show">
-                          <div>{r.once_per}</div>
-                          {r.once_per !== 'day' && (<div style={{display: 'flex'}}>at {r.once_per === 'week' ? weekDays[Number(r.start_at_day) - 1]?.full : r.start_at_day}
-                            {r.once_per === 'month' && ''}
-                          </div>)}
-                          {r.once_per === 'month' && 'day'}
-                        </div>
-                        <div className="edit">
-                          <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
-                            if (e.target.value === 'week') {
-                              changeReports({...r, once_per: e.target.value, start_at_day: '1'})
-                            }
-                            else {
-                              changeReports({...r, once_per: e.target.value})
-                            }
-                          }} style={{paddingLeft: 7}}>
-                            <option value="day">Day</option>
-                            <option value="week">Week</option>
-                            <option value="month">Month</option>
-                          </select>
-                          {r.once_per !== 'day' && 'At'}
-                          {r.once_per === 'week' && (
-                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
-                              {weekDays.map((day: {full: string, small: string}, i: number) => {
-                                return (
-                                  <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
-                                )
-                              })}
-                            </select>
-                          )}
-                          {r.once_per === 'month' && (
-                            <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
-                              {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
-                            </select>
-                          )}
-                          {r.once_per === 'month' && 'day'}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="button-d-bl-sm" onClick={() => {
-                        if (!user?.permissions.edit_reports){
-                          toast.error("You don't have permissions for this action.")
-                          return;
-                        }
-                        setShowAssignedReport(r);
-                        setShowAssigned(true);
-                      }}>Set</div>
-                    </div>
-                    <div>
-                      <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
-                        if (!user?.permissions.edit_reports){
-                          toast.error("You don't have permissions for this action.")
-                          return;
-                        }
-                        setReportToDelete({...r, archived: true});
-                        setShowConfirmDelete(true)
-                      }}>Delete</div>
-                    </div>
-                  </div>)
+                        return (
+                          <div className="report" key={`report_${r.id}`}>
+                            <div>
+                              <label>
+                                <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
+                                <input
+                                  type="checkbox"
+                                  checked={r.edit ?? false}
+                                  onChange={(e) => {
+                                    if (!user?.permissions.edit_reports){
+                                      toast.error("You don't have permissions for this action.")
+                                      return;
+                                    }
+                                    if (r.edit !== true)
+                                      setReports(prev =>
+                                        prev.map(report =>
+                                          report.id === r.id
+                                            ? { ...report, edit: e.target.checked }
+                                            : report
+                                        )
+                                      )
+                                    }
+                                  }
+                                  disabled={r.edit === true}
+                                />
+                              </label>
+                            </div>
+                            <div>
+                              <label>
+                                <span
+                                  className={r.edit !== true ? "button-d-bl-sm d" : "button-d-bl-sm"}
+                                  onClick={() =>
+                                    {
+                                      if (r.edit === true){
+                                        saveReport(r);
+                                      }
+                                    }
+                                  }
+                                >
+                                  Save
+                                </span>
+                              </label>
+                            </div>
+                            <div>
+                              <div className="show">{r.name}</div>
+                              <div className="edit">
+                                <input type="text" value={r.name} onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="show">{r.source}</div>
+                              <div className="edit">
+                                <input type="text" value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}} />
+                              </div>
+                            </div>
+                            <div>
+                              <div>
+                                <div className="show">
+                                  <div>{r.once_per}</div>
+                                  {r.once_per !== 'day' && (<div style={{display: 'flex'}}>at {r.once_per === 'week' ? weekDays[Number(r.start_at_day) - 1]?.full : r.start_at_day}
+                                    {r.once_per === 'month' && ''}
+                                  </div>)}
+                                  {r.once_per === 'month' && 'day'}
+                                </div>
+                                <div className="edit">
+                                  <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
+                                    if (e.target.value === 'week') {
+                                      changeReports({...r, once_per: e.target.value, start_at_day: '1'})
+                                    }
+                                    else {
+                                      changeReports({...r, once_per: e.target.value})
+                                    }
+                                  }} style={{paddingLeft: 7}}>
+                                    <option value="day">Day</option>
+                                    <option value="week">Week</option>
+                                    <option value="month">Month</option>
+                                  </select>
+                                  {r.once_per !== 'day' && 'At'}
+                                  {r.once_per === 'week' && (
+                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
+                                      {weekDays.map((day: {full: string, small: string}, i: number) => {
+                                        return (
+                                          <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
+                                        )
+                                      })}
+                                    </select>
+                                  )}
+                                  {r.once_per === 'month' && (
+                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
+                                      {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
+                                    </select>
+                                  )}
+                                  {r.once_per === 'month' && 'day'}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="button-d-bl-sm" onClick={() => {
+                                if (!user?.permissions.edit_reports){
+                                  toast.error("You don't have permissions for this action.")
+                                  return;
+                                }
+                                setShowAssignedReport(r);
+                                setShowAssigned(true);
+                              }}>Set</div>
+                            </div>
+                            <div>
+                              <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
+                                if (!user?.permissions.edit_reports){
+                                  toast.error("You don't have permissions for this action.")
+                                  return;
+                                }
+                                setReportToDelete({...r, archived: true});
+                                setShowConfirmDelete(true)
+                              }}>Delete</div>
+                            </div>
+                          </div>)
                       }
                     })}
                   </div>
+                </div>)}
+                
+              </div>)
+          })}
+          <h2 className="b-t">Users</h2>
+          {leads.sort((a: User, b: User) => {
+            let a_result = reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(a.id) !== -1 || r.assigned_to.all.assigned === true)).length;
+            let b_result = reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(b.id) !== -1 || r.assigned_to.all.assigned === true)).length;
+            return b_result - a_result
+          }).map((lead: User) => {
+            return (
+              <div key={`reports_lead_${lead.id}`}>
+                <div className="flex">
+                  <h3>{lead.name}</h3>
+                  {reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)).length === 0 ? (
+                    <div className="flex j-s-b">
+                      <span>- no reports assigned for this employee</span>
+                      <div className="button-d-bl-sm add-report" onClick={() => {
+                        if (!user?.permissions.edit_reports){
+                          toast.error("You don't have permissions for this action.")
+                          return;
+                        }
+                        addReport();
+                      }}>Add Report</div>
+                      </div>
+                  ) : (
+                    <div className="button-d-bl add-report" onClick={() => {
+                      if (!user?.permissions.edit_reports){
+                        toast.error("You don't have permissions for this action.")
+                        return;
+                      }
+                      addReport();
+                    }}>Add Report</div>
+                  )}
                 </div>
+                {reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)).length > 0 && (<div className="table-wrapper">
+                  <div className="table-reports">
+                    <div>
+                      <div>EDIT</div>
+                      <div>SAVE</div>
+                      <div>REPORTS</div>
+                      <div>SOURCE</div>
+                      <div>PERIOD</div>
+                      <div>ASSIGNED TO</div>
+                      <div>DELETE</div>
+                    </div>
+                    {reports.map((r: Report) => {
+                      if (!r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)) {
+                        return (
+                          <div className="report" key={`report_${r.id}`}>
+                            <div>
+                              <label>
+                                <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
+                                <input
+                                  type="checkbox"
+                                  checked={r.edit ?? false}
+                                  onChange={(e) => {
+                                    if (!user?.permissions.edit_reports){
+                                      toast.error("You don't have permissions for this action.")
+                                      return;
+                                    }
+                                    if (r.edit !== true)
+                                      setReports(prev =>
+                                        prev.map(report =>
+                                          report.id === r.id
+                                            ? { ...report, edit: e.target.checked }
+                                            : report
+                                        )
+                                      )
+                                    }
+                                  }
+                                  disabled={r.edit === true}
+                                />
+                              </label>
+                            </div>
+                            <div>
+                              <label>
+                                <span
+                                  className={r.edit !== true ? "button-d-bl-sm d" : "button-d-bl-sm"}
+                                  onClick={() =>
+                                    {
+                                      if (r.edit === true){
+                                        saveReport(r);
+                                      }
+                                    }
+                                  }
+                                >
+                                  Save
+                                </span>
+                              </label>
+                            </div>
+                            <div>
+                              <div className="show">{r.name}</div>
+                              <div className="edit">
+                                <input type="text" value={r.name} onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="show">{r.source}</div>
+                              <div className="edit">
+                                <input type="text" value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}} />
+                              </div>
+                            </div>
+                            <div>
+                              <div>
+                                <div className="show">
+                                  <div>{r.once_per}</div>
+                                  {r.once_per !== 'day' && (<div style={{display: 'flex'}}>at {r.once_per === 'week' ? weekDays[Number(r.start_at_day) - 1]?.full : r.start_at_day}
+                                    {r.once_per === 'month' && ''}
+                                  </div>)}
+                                  {r.once_per === 'month' && 'day'}
+                                </div>
+                                <div className="edit">
+                                  <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
+                                    if (e.target.value === 'week') {
+                                      changeReports({...r, once_per: e.target.value, start_at_day: '1'})
+                                    }
+                                    else {
+                                      changeReports({...r, once_per: e.target.value})
+                                    }
+                                  }} style={{paddingLeft: 7}}>
+                                    <option value="day">Day</option>
+                                    <option value="week">Week</option>
+                                    <option value="month">Month</option>
+                                  </select>
+                                  {r.once_per !== 'day' && 'At'}
+                                  {r.once_per === 'week' && (
+                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
+                                      {weekDays.map((day: {full: string, small: string}, i: number) => {
+                                        return (
+                                          <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
+                                        )
+                                      })}
+                                    </select>
+                                  )}
+                                  {r.once_per === 'month' && (
+                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
+                                      {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
+                                    </select>
+                                  )}
+                                  {r.once_per === 'month' && 'day'}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="button-d-bl-sm" onClick={() => {
+                                if (!user?.permissions.edit_reports){
+                                  toast.error("You don't have permissions for this action.")
+                                  return;
+                                }
+                                setShowAssignedReport(r);
+                                setShowAssigned(true);
+                              }}>Set</div>
+                            </div>
+                            <div>
+                              <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
+                                if (!user?.permissions.edit_reports){
+                                  toast.error("You don't have permissions for this action.")
+                                  return;
+                                }
+                                setReportToDelete({...r, archived: true});
+                                setShowConfirmDelete(true)
+                              }}>Delete</div>
+                            </div>
+                          </div>)
+                      }
+                    })}
+                  </div>
+                </div>)}
                 
               </div>)
           })}

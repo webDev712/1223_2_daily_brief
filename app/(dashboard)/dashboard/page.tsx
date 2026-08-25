@@ -207,7 +207,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                   {/* TODO: MAKE IT OPEN RIGHT BRIEF (DATE + LEAD) */}
-                  <a href={`/daily-brief?date=${format(b.date, 'd-M-yyyy')}&lead_id=${b.lead_id}`} className="button-d-bl">View This Daily Brief   ➯</a>
+                  <a
+                    href={`/daily-brief?date=${format(
+                      parse(b.date, "yyyy-MM-dd", new Date()),
+                      "d-M-yyyy"
+                    )}&lead_id=${b.lead_id}`}
+                    className="button-d-bl"
+                  >View This Daily Brief   ➯</a>
                 </div>
                 )
               }
@@ -221,9 +227,10 @@ export default function Dashboard() {
                 <div>
                   <span>EMPLOYEE</span>
                   <span>COVERING FOR</span>
-                  <span>ROUTE</span>
+                  <span>DEPARTMENT</span>
+                  {/* <span>ROUTE</span>
                   <span>VAN</span>
-                  <span>STOPS</span>
+                  <span>STOPS</span> */}
                   <span>WINDOW</span>
                   <span>STATUS</span>
                 </div>
@@ -240,9 +247,10 @@ export default function Dashboard() {
                   <div className="covered" key={`${b.id}_route_${route_i}`}>
                     <div><UserCircle user_name={b.lead_name} size={20}></UserCircle> {b.lead_name}</div>
                     <div>{route.covering_for || "-"}</div>
-                    <div>{route.route_zone || "-"}</div>
+                    <div>{leads.find((e: User) => e.id === b.lead_id)?.department}</div>
+                    {/* <div>{route.route_zone || "-"}</div>
                     <div>{route.van || "-"}</div>
-                    <div>{route.stops || "-"}</div>
+                    <div>{route.stops || "-"}</div> */}
                     <div>{route.windows || "-"}</div>
                     <div><div className={b.freezed || !isToday ? "submitted" : ""}>{b.freezed || !isToday ? "Submitted" : "In Progress"}</div></div>
                   </div>

@@ -2,7 +2,7 @@
 
 import Loader from "@/app/src/components/Loader";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import './page.css'
 import UserCircle from "@/app/src/components/UserCircle";
 import { SavedBrief, User } from "@/lib/types";
@@ -141,7 +141,7 @@ export default function BriefHistory() {
                     {/* <div>VIEW</div> */}
                   </div>
                   {briefs.map((b: SavedBrief) => {
-                    const briefDate = new Date(b.date);
+                    const briefDate = parse(b.date, "yyyy-MM-dd", new Date());
                     const isToday =
                       briefDate.getFullYear() === today.getFullYear() &&
                       briefDate.getMonth() === today.getMonth() &&
@@ -150,8 +150,8 @@ export default function BriefHistory() {
                     return (
                       <div key={b.id}>
                         <div>
-                          <div>{isToday ? 'Today' : format(b.date, 'MMM d')}</div>
-                          <span>{format(b.date, 'MMMM d, yyyy')}</span>
+                          <div>{isToday ? 'Today' : format(briefDate, 'MMM d')}</div>
+                          <span>{format(briefDate, 'MMMM d, yyyy')}</span>
                         </div>
                         <div>
                           {b.lead_id !== b.original_lead_id && (

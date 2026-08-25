@@ -154,13 +154,37 @@
     justify-content: center;
 }
 
+
+.reports h2,
+.reports div.flex > h3:has(+ div > span),
 .reports div.flex:has(+ .table-wrapper) > h3{
     color: #101828;
     font-weight: 700;
     font-style: Bold;
     letter-spacing: .38px;
-    font-size: 24px;
+    font-size: 20px;
     margin: auto 0;
+    text-wrap-mode: nowrap;
+    display: block;
+}
+
+
+.reports h2{
+    font-size: 22px;
+    font-style: italic;
+}
+
+.reports div.flex:has( > h3 + div > span){
+    margin-bottom: 10px !important;
+}
+
+.reports div.flex > h3 + div.flex > span{
+    margin: auto 0 auto 10px;
+}
+
+.reports div.flex > h3 + div.flex:has(> span){
+    width: 100%;
+    gap: 10px;
 }
 
 .reports div.flex:has(+ .table-wrapper) {
@@ -186,5 +210,15 @@
 
     .reports .how-to-use{
         background-position: left 20px top 25px;
+    }
+
+    .reports div.flex > h3 + div.flex > span{
+        margin: 0;
+    }
+    .reports div.flex:has(> h3 + div > span){
+        flex-direction: column;
+    }
+    .reports div.flex > h3 + div.flex:has(> span){
+        flex-direction: column;
     }
 }

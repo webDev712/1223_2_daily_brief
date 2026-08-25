@@ -73,10 +73,10 @@ export async function POST(request: Request) {
     try {
         // await requireRole("lead");
         const body = await request.json();
-        const { lead_id, lead_letter, lead_name } = body;
+        const { lead_id, lead_letter, lead_name, date } = body;
         const rows = await sql`
             INSERT INTO saved_brief (lead_id, letter, lead_name, freezed, original_lead_id, date)
-            VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, NOW())
+            VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date})
             RETURNING id;
         `
         const new_id = rows[0].id;

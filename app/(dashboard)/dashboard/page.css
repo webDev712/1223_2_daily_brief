@@ -296,9 +296,9 @@
 }
 
 .dashboard .covered-container > div:nth-child(n + 2) > div:nth-child(4){
-    background-image: url('../../../public/van.svg');
+    /* background-image: url('../../../public/van.svg'); */
     background-position: left top 32%;
-    padding-left: 18px;
+    /* padding-left: 18px; */
 }
 
 .dashboard .attention-container{

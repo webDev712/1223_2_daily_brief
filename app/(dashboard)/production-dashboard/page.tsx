@@ -15,7 +15,7 @@ import { toast } from "sonner";
 export default function ProductionDashboard() {
     const [loading, setLoading] = useState(true);
     const [tableData, setTableData] = useState([])
-    const [departments, setDeparments] = useState<Department[]>([])
+    const [departments, setDeparments] = useState([])
 
     const [page, setPage] = useState(1);
     const pageSize = 20;
@@ -51,16 +51,9 @@ export default function ProductionDashboard() {
             setTableData(ppoh_master_data.rows)
             setResultsCount(ppoh_master_data.count)
 
-            let departments_res = await fetch("/api/departments");
-            if (!departments_res.ok){
-                console.error("Failed to load departments");
-                setLoading(false)
-                return;
-            }
-            let departments_data = await departments_res.json();
-            console.log('departments_data')
-            console.log(departments_data)
-            setDeparments(departments_data)
+            console.log('ppoh_master_data.departments')
+            console.log(ppoh_master_data.departments)
+            setDeparments(ppoh_master_data.departments)
 
             setLoading(false);
         }
@@ -95,9 +88,9 @@ export default function ProductionDashboard() {
                             <span>Department</span>
                             <select defaultValue={department} onChange={(e) => setDeparment(e.target.value)}>
                                 <option value="">All</option>
-                                {departments.map((dep: Department) => (
-                                    <option key={dep.id} value={dep.name}>{dep.name}</option>
-                                ))}
+                                {departments.map((dep_name: string) => {if (dep_name !== '') return (
+                                    <option key={dep_name} value={dep_name}>{dep_name}</option>
+                                )})}
                             </select>
                         </label>
                         <div className="button-d-bl-sm" onClick={() => {
@@ -116,45 +109,47 @@ export default function ProductionDashboard() {
                         }}>Filter</div>
                     </div>
                     <div className="table-wrapper">
+                            <div className="table-header">
+                                <div>DATE</div>
+                                <div>EMPLOYEE</div>
+                                <div>DEPARTMENT</div>
+                                <div>PIECES</div>
+                                <div>VALUE</div>
+                                <div>HOURS</div>
+                                <div>PPOH</div>
+                                <div>TARGET PPOH</div>
+                                <div>Δ VS TARGET</div>
+                                <div>EFFICIENCY</div>
+                                <div>NOTES</div>
+                            </div>
+                            
                             <div className="table">
-                                <div className="table-header">
-                                    <div>DATE</div>
-                                    <div>EMPLOYEE</div>
-                                    <div>DEPARTMENT</div>
-                                    <div>PIECES</div>
-                                    <div>VALUE</div>
-                                    <div>HOURS</div>
-                                    <div>PPOH</div>
-                                    <div>TARGET PPOH</div>
-                                    <div>Δ VS TARGET</div>
-                                    <div>EFFICIENCY</div>
-                                    <div>NOTES</div>
-                                </div>
                                 {tableData.map((row: ProductionRow, i) => {
                                     return (
                                     <div key={crypto.randomUUID()}>
                                         <div>{format(row.date, 'MM-dd-yyyy')}</div>
                                         <div>{row.employee_name}</div>
                                         <div style={{color: getColorsFromName(row.department).dark}}>{row.department}</div>
-                                        <div>{row.pieces}</div>
-                                        <div>{row.value}</div>
-                                        <div>{row.hours}</div>
-                                        <div>{row.ppoh}</div>
-                                        <div>{row.target_ppoh}</div>
-                                        <div className={row.delta_ppoh < 0 ? 'red-b' : row.delta_ppoh === 0 ? 'orange-b' : 'green-b'}>{row.delta_ppoh}</div>
+                                        <div before-text='Pieces'>{row.pieces}</div>
+                                        <div before-text='Value'>{row.value}</div>
+                                        <div before-text='Hours'>{row.hours}</div>
+                                        <div before-text='PPOH'>{row.ppoh}</div>
+                                        <div before-text='Target PPOH'>{row.target_ppoh}</div>
+                                        <div before-text='Efficiency' className={row.delta_ppoh < 0 ? 'red-b' : row.delta_ppoh === 0 ? 'orange-b' : 'green-b'}>{row.delta_ppoh}</div>
                                         <div className={row.efficiency < 100 ? 'red-b' : row.efficiency === 100 ? 'orange-b' : 'green-b'}>{row.efficiency}</div>
                                         <div><textarea onBlur={(e) => {sendNotes(row.id, e.target.value)}} placeholder="Write your notes here..." defaultValue={row.notes || ""}></textarea></div>
                                     </div>)
                                 })}
+                            </div>
+                            <div className="table-footer">
+                                <div>Displayed {tableData.length} rows from {resultsCount} rows</div>
                                 <div>
-                                    <div>Displayed {tableData.length} rows from {resultsCount} rows</div>
-                                    <div>
-                                        <div className={page > 1 ? '' : 'd'} onClick={() => {if (page > 1) setPage(page - 1)}}>{`< Back`}</div>
-                                        <div>- Page {page} -</div>
-                                        <div className={page * pageSize > resultsCount ? 'd' : ''} onClick={() => {if (page * pageSize < resultsCount) setPage(page + 1)}}>{`Forward >`}</div>
-                                    </div>
+                                    <div className={page > 1 ? '' : 'd'} onClick={() => {if (page > 1) setPage(page - 1)}}>{`< Back`}</div>
+                                    <div>- Page {page} -</div>
+                                    <div className={page * pageSize > resultsCount ? 'd' : ''} onClick={() => {if (page * pageSize < resultsCount) setPage(page + 1)}}>{`Forward >`}</div>
                                 </div>
                             </div>
+
                     </div>
                 </div>)
             }

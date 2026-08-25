@@ -43,7 +43,11 @@ body{
   justify-content: space-between;
 }
 
-
+.b-t{
+  border-top: 2px solid #eaecf0;
+  margin-top: 25px;
+  padding-top: 20px;
+}
 
 body > .sidebar + div{
   flex: 1;

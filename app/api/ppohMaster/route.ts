@@ -45,6 +45,14 @@ export async function GET(request: Request) {
             OFFSET ${(Number(page) - 1) * Number(page_size)}
             ;
         `;
+        
+        const departments = await sql`
+            SELECT DISTINCT department
+            FROM ppoh_master
+            WHERE department IS NOT NULL
+            ORDER BY department ASC;
+        `;
+        console.log(departments.map(row => row.department))
 
         return NextResponse.json({
             ok: true,
@@ -64,6 +72,7 @@ export async function GET(request: Request) {
                 efficiency: row.efficiency,
                 notes: row.notes,
             })),
+            departments: departments.map(row => row.department),
         });
     }
     catch (error) {

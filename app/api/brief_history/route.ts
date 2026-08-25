@@ -14,7 +14,7 @@ export async function GET(request: Request) {
         const rows = await sql`
             SELECT
                 sb.id,
-                sb.date,
+                sb.date::text AS date,
                 sb.updated_at,
                 sb.driving,
                 sb.shift,

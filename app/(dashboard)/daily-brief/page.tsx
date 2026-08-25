@@ -81,7 +81,7 @@ export default function DailyBrief() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name}),
+      body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd")}),
     });
     if (res.status === 200) setReload(prev => prev + 1);
   }
@@ -512,7 +512,10 @@ export default function DailyBrief() {
                         </div>
                         <div>
                           <span>Date</span>
-                          <div>{format(b.date, 'MMMM d, yyyy')}</div>
+                          <div>{format(
+    parse(b.date, "yyyy-MM-dd", new Date()),
+    "MMMM d, yyyy"
+)}</div>
                         </div>
                         <div>
                             <span>Driving Status</span>
