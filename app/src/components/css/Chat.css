@@ -1,0 +1,48 @@
+.chat:has(> div){
+    position: fixed;
+    background-color: white;
+    width: 350px;
+    height: 80vh;
+    right: 0;
+    bottom: 0;
+    border: 1px solid #B1B1B1;
+    z-index: 1000000;
+    border-radius: 16px 16px 0 16px;
+}
+
+.chat:not(:has(> div)){
+    position: fixed;
+    background-color: white;
+    width: 40px;
+    height: 40px;
+    right: 20px;
+    bottom: 20px;
+    border: 1px solid #B1B1B1;
+    z-index: 1000000;
+    border-radius: 20px;
+}
+
+.chat > div:first-child > div:first-child{
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 19px;
+    border-bottom: 1px solid #B1B1B1;
+    color: #7A7A7A;
+    font-weight: 600;
+}
+
+.chat > div:first-child > div:nth-child(2){
+    padding: 10px;
+}
+
+.chat > div:first-child > div:first-child > div:nth-child(2){
+    cursor: pointer;
+}
+
+.chat > span{
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: pointer;
+}

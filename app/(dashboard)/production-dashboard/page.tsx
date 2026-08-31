@@ -4,7 +4,7 @@ import { useDate } from "@/app/src/components/DateContext";
 import Loader from "@/app/src/components/Loader";
 import { Department, ProductionRow } from "@/lib/types";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, toDate } from "date-fns";
 import './page.css'
 import { randomUUID } from "crypto";
 import DatePicker from "react-datepicker";
@@ -39,7 +39,14 @@ export default function ProductionDashboard() {
     useEffect(() => {
         const load = async () => {
             setLoading(true);
-            const ppoh_master_res = await fetch(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${dateFrom}&to_date=${dateTo}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}`);
+            console.log('dateFrom')
+            console.log(format(dateFrom, 'yyyy-MM-dd'))
+            console.log('toDate')
+            console.log(format(dateTo, 'yyyy-MM-dd'))
+            console.log('department')
+            console.log(department)
+            console.log(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${format(dateFrom, 'yyyy-MM-dd')}&to_date=${format(dateTo, 'yyyy-MM-dd')}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}`)
+            const ppoh_master_res = await fetch(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${format(dateFrom, 'yyyy-MM-dd')}&to_date=${format(dateTo, 'yyyy-MM-dd')}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}`);
             if (!ppoh_master_res.ok){
                 console.log('Failed to load ppoh_master');
                 setLoading(false);

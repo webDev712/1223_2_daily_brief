@@ -13,14 +13,27 @@ export async function GET(request: Request) {
         const department = searchParams.get('department');
         const page = searchParams.get('page') || 1;
 
+
+        console.log('page_size')
+        console.log(page_size)
+        console.log('from_date')
+        console.log(from_date)
+        console.log('to_date')
+        console.log(to_date)
+        console.log('employee')
+        console.log(employee)
+        console.log('department')
+        console.log(department)
+        console.log('page')
+        console.log(page)
         const rows_count = await sql`
             SELECT COUNT(*) 
             FROM ppoh_master
             WHERE 1=1
             ${from_date ? sql`
-                AND date >= ${format(from_date, 'yyyy-MM-dd')}` : sql``}
+                AND date >= ${from_date}` : sql``}
             ${to_date ? sql`
-                AND date <= ${format(to_date, 'yyyy-MM-dd')}` : sql``}
+                AND date <= ${to_date}` : sql``}
             ${employee ? sql`
                 AND external_id = ${employee}` : sql``}
             ${department ? sql`
@@ -33,9 +46,9 @@ export async function GET(request: Request) {
             FROM ppoh_master
             WHERE 1=1
             ${from_date ? sql`
-                AND date >= ${format(new Date(from_date), 'yyyy-MM-dd')}` : sql``}
+                AND date >= ${from_date}` : sql``}
             ${to_date ? sql`
-                AND date <= ${format(new Date(to_date), 'yyyy-MM-dd')}` : sql``}
+                AND date <= ${to_date}` : sql``}
             ${employee ? sql`
                 AND external_id = ${employee}` : sql``}
             ${department ? sql`
@@ -60,7 +73,7 @@ export async function GET(request: Request) {
             rows: rows.map(row => ({
                 id: row.id,
                 external_id: row.external_id,
-                date: row.date,
+                date: format(row.date, 'MM-dd-yyyy'),
                 employee_name: row.employee_name,
                 department: row.department,
                 pieces: row.pieces,

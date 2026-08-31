@@ -1,0 +1,10 @@
+external_id,date,employee_name,department,pieces,value,hours,ppoh,target_ppoh,delta_ppoh,efficiency,notes
+235,8/30/2026,"Lopez, Everardo (omar)",Assemble,4,,0.75,,,,,
+340,8/30/2026,"Strauss, Vince",Assemble,1,,0.25,,,,,
+340,8/30/2026,"Strauss, Vince",Deliver,431,,1,,,,,
+295,8/30/2026,"Ponce, Karla",Detail,520,,8.75,59.43,60,-0.57,99.05,
+310,8/30/2026,"Cea, Katie",Detail,507,,8.5,59.65,60,-0.35,99.42,
+340,8/30/2026,"Strauss, Vince",Detail,1,,0.25,,,,,
+363,8/30/2026,"Jimenez, Francisco",Detail,3,,0.5,,,,,
+235,8/30/2026,"Lopez, Everardo (omar)",Pick Up,1,,0.25,,,,,
+340,8/30/2026,"Strauss, Vince",Rack,431,,1,,,,,

@@ -5,6 +5,7 @@ import Sidebar from "../src/components/Sidebar";
 import Header from "../src/components/Header";
 import DateProvider from "../src/components/DateProvider";
 import { UserProvider } from "../src/components/UserProvider";
+import Chat from "../src/components/Chat";
 
 
 export default async function DashboardLayout({
@@ -32,8 +33,9 @@ export default async function DashboardLayout({
           <Header
             user_name={user.name}
             user_role={user.role}
-          />
+            />
 
+          {/* <Chat></Chat> */}
           {children}
 
         </div>

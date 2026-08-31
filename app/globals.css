@@ -136,6 +136,7 @@ body > .sidebar + div > div:last-child{
   user-select: none !important;
 }
 
+
 select.d{
   color: gray;
 }
