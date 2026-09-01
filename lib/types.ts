@@ -87,6 +87,10 @@ export interface User {
   role_id: string
 }
 
+export interface UserForChat extends User {
+  open: boolean,
+}
+
 export interface Shift {
   id: string,
   name: string
@@ -158,4 +162,13 @@ export interface ProductionRow {
   efficiency: number,
   notes: string,
   waitingForEndEdit: boolean,
+}
+
+export interface Message {
+  id: string,
+  from_user: string,
+  to_user: string,
+  text: string,
+  read: boolean,
+  timestamp: Date,
 }

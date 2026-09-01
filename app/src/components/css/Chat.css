@@ -12,7 +12,7 @@
 
 .chat:not(:has(> div)){
     position: fixed;
-    background-color: white;
+    background-color: #ffffffc4;
     width: 40px;
     height: 40px;
     right: 20px;
@@ -37,6 +37,17 @@
 
 .chat > div:first-child > div:first-child > div:nth-child(2){
     cursor: pointer;
+    user-select: none;
+    width: 20px;
+    height: 20px;
+    display: block;
+    line-height: 17px;
+    text-align: center;
+    border-radius: 10px;
+}
+
+.chat > div:first-child > div:first-child > div:nth-child(2):hover{
+    background-color: #7a7a7a2f;
 }
 
 .chat > span{
@@ -45,4 +56,26 @@
     height: 100%;
     overflow: hidden;
     cursor: pointer;
+    background-image: url('../../../../public/bell-grey.svg');
+    background-size: 50%;
+    background-position: center;
+    transition: all 0.1s ease;
+    background-color: transparent;
+}
+
+.chat > span:hover{
+    background-size: 60%;
+}
+
+.chat .messages > div{
+    width: 100%;
+}
+
+.chat .messages > div.left{
+    padding-right: 50px;
+    text-align: left;
+}
+.chat .messages > div.right{
+    padding-left: 50px;
+    text-align: right;
 }
