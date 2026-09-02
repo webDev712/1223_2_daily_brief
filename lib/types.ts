@@ -170,5 +170,12 @@ export interface Message {
   to_user: string,
   text: string,
   read: boolean,
-  timestamp: Date,
+  timestamp: string,
 }
+
+export interface NewMessage {
+  text: string;
+  from_user: string;
+  to_user: string;
+  timestamp: Date;
+};
