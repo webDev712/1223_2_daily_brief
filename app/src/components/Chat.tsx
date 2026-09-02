@@ -333,7 +333,7 @@ const Chat = () => {
                     </div>
                 </div>
             ) : (
-                <span onClick={() => setOpenChat(true)} className={chats.filter((message: Message) => message.read === false).length > 0 ? "unread" : ""}></span>
+                <span onClick={() => setOpenChat(true)} className={chats.filter((message: Message) => message.to_user === me_user.id && message.read === false).length > 0 ? "unread" : ""}></span>
             )}
         </div>
     )
