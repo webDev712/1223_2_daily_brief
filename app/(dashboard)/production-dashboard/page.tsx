@@ -12,11 +12,6 @@ import getColorsFromName from "@/lib/color";
 import { toast } from "sonner";
 
 export default function ProductionDashboard() {
-     return (
-        <div>
-            HELLO PRODUCTION
-        </div>
-    );
     const [loading, setLoading] = useState(true);
     const [tableData, setTableData] = useState([])
     const [departments, setDeparments] = useState([])
@@ -138,7 +133,8 @@ export default function ProductionDashboard() {
                                 {tableData.map((row: ProductionRow, i) => {
                                     return (
                                     <div key={row.id}>
-                                        <div>{format(row.date, 'MM-dd-yyyy')}</div>
+                                        <div>{String(row.date)}</div>
+                                        {/* <div>{format(row.date, 'MM-dd-yyyy')}</div> */}
                                         <div>{row.employee_name}</div>
                                         <div style={{color: getColorsFromName(row.department).dark}}>{row.department}</div>
                                         <div before-text='Pieces'>{row.pieces}</div>
