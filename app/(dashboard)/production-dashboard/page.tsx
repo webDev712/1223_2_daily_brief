@@ -12,6 +12,11 @@ import getColorsFromName from "@/lib/color";
 import { toast } from "sonner";
 
 export default function ProductionDashboard() {
+     return (
+        <div>
+            HELLO PRODUCTION
+        </div>
+    );
     const [loading, setLoading] = useState(true);
     const [tableData, setTableData] = useState([])
     const [departments, setDeparments] = useState([])
