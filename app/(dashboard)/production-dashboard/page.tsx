@@ -6,7 +6,6 @@ import { Department, ProductionRow } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { format, toDate } from "date-fns";
 import './page.css'
-import { randomUUID } from "crypto";
 import DatePicker from "react-datepicker";
 import { getTestEmployees } from "@/lib/config";
 import getColorsFromName from "@/lib/color";
@@ -133,7 +132,7 @@ export default function ProductionDashboard() {
                             <div className="table">
                                 {tableData.map((row: ProductionRow, i) => {
                                     return (
-                                    <div key={crypto.randomUUID()}>
+                                    <div key={row.id}>
                                         <div>{format(row.date, 'MM-dd-yyyy')}</div>
                                         <div>{row.employee_name}</div>
                                         <div style={{color: getColorsFromName(row.department).dark}}>{row.department}</div>
