@@ -35,7 +35,7 @@ export default async function DashboardLayout({
             user_role={user.role}
             />
 
-          <Chat></Chat>
+          {/* <Chat></Chat> */}
           {children}
 
         </div>
