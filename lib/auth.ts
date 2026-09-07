@@ -34,24 +34,24 @@ export async function getCurrentUser(): Promise<User | null> {
     console.log('users[0]')
     console.log(users[0])
 
-    return users[0] as CurrentUser;
+    return users[0] as User;
 }
 
-const roleLevel: Record<UserRole, number> = {
-    lead: 1,
-    manager: 2,
-};
+// const roleLevel: Record<UserRole, number> = {
+//     lead: 1,
+//     manager: 2,
+// };
 
-export async function requireRole(role: UserRole) {
-    const user = await getCurrentUser();
+// export async function requireRole(role: UserRole) {
+//     const user = await getCurrentUser();
     
-    if (!user) {
-        throw new Error("Unauthorized");
-    }
+//     if (!user) {
+//         throw new Error("Unauthorized");
+//     }
 
-    if (roleLevel[user.role] < roleLevel[role]) {
-        throw new Error("Forbidden");
-    }
+//     // if (roleLevel[user.role] < roleLevel[role]) {
+//     //     throw new Error("Forbidden");
+//     // }
 
-    return user;
-}
+//     return user;
+// }

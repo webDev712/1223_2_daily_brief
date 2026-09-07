@@ -5,10 +5,9 @@ import './css/Sidebar.css'
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { User } from '@/lib/types';
-import { CurrentUser } from '@/lib/auth';
 
 
-export default function Sidebar({ user }: { user: CurrentUser}) {
+export default function Sidebar({ user }: { user: User}) {
   const pages = [
     {href: 'dashboard', text: 'Dashboard', permission_name: 'see_dashboard'},
     {href: 'daily-brief', text: 'Daily Brief', permission_name: 'see_brief'},
