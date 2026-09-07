@@ -1,19 +1,8 @@
 import { auth } from "@/auth";
 import sql from "@/lib/db";
-import { DBPermissions } from "./types";
+import { DBPermissions, User } from "./types";
 
-export type UserRole = "manager" | "lead";
-
-export interface CurrentUser {
-    id: string;
-    email: string;
-    name: string;
-    role: UserRole;
-    lead_letter: string | null;
-    permissions: DBPermissions;
-}
-
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export async function getCurrentUser(): Promise<User | null> {
     const session = await auth();
 
     if (!session?.user?.email) {
