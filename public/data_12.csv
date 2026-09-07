@@ -1,0 +1,13 @@
+external_id,date,employee_name,department,pieces,value,hours,ppoh,target_ppoh,delta_ppoh,efficiency,notes
+321,9/5/2026,"Sanchez, Emerson",Deliver,25,,1.5,,,,,
+340,9/5/2026,"Strauss, Vince",Deliver,339,,0.75,,,,,
+217,9/5/2026,"Stackhouse, Zar",Detail,6,,1,,,,,
+235,9/5/2026,"Lopez, Everardo (omar)",Detail,86,,0.75,,,,,
+363,9/5/2026,"Jimenez, Francisco",Detail,1,,0.25,,,,,
+364,9/5/2026,"Maldonado, Andrea",Detail,1,,0.25,,,,,
+365,9/5/2026,"Maldonado helenas, Andrea",Detail,141,,0.25,,,,,
+372,9/5/2026,"Tercero, Juan",Detail,182,,0.75,,,,,
+343,9/5/2026,"Wedding, Carlos",Finishing,13,2201.75,4.35,2.99,5,-2.01,59.8,
+300,9/5/2026,"Counter, Np",Pick Up,3,,0.5,,,,,
+321,9/5/2026,"Sanchez, Emerson",Rack,27,,1,,,,,
+340,9/5/2026,"Strauss, Vince",Rack,342,,0.75,,,,,

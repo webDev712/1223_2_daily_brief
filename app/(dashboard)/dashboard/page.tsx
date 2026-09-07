@@ -105,7 +105,7 @@ export default function Dashboard() {
               (<Loader></Loader>) : (
         <div>
           <h1>{getGreeting()}, {user.name.split(' ')[0]} 👋</h1>
-          <p>Stay on top of your Route Department operations. Here's what needs your attention today.</p>
+          <p>Stay on top of your data. Here's what needs your attention today.</p>
           <div className="four-block">
             <div img-id="document-yellow">
               <h1>{briefs.length - in_progress_count}/{briefs.length}</h1>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
+import { User } from "@/lib/types";
 
 
 export async function GET(request: Request) {
@@ -34,4 +35,38 @@ export async function GET(request: Request) {
     `;
 
     return NextResponse.json(rows);
+}
+
+export async function POST(request: Request) {
+    try{
+        const body = await request.json();
+    
+        const {id, text, timestamp} = body;
+    
+        const rows = await sql`
+        INSERT INTO chat (
+            text,
+            from_user,
+            to_user,
+            timestamp,
+            read
+        )
+        SELECT
+            ${text},
+            ${id},
+            id,
+            ${timestamp},
+            FALSE
+        FROM website_user
+        WHERE id != ${id}
+        RETURNING id;`
+        return NextResponse.json({success: true, rows})
+    }
+    catch(e){
+        return NextResponse.json(
+            { error: "Database Error" },
+            { status: 500 }
+        )
+    }
+    
 }

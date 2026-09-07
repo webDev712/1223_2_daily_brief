@@ -12,15 +12,17 @@ export async function POST(request: Request) {
             source,
             once_per,
             start_at_day=1,
-            archived
+            archived,
+            assigned_to
         } = body;
 
         const rows = await sql`
-            INSERT INTO report (name, source, once_per, start_at_day, archived)
-            VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived});
+            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to)
+            VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived}, ${assigned_to})
+            RETURNING id;
         `;
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, id:  rows[0].id})
     }
     catch (error) {
         console.log(error)

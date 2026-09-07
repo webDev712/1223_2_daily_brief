@@ -7,6 +7,7 @@ import { Message, NewMessage, UserForChat } from '@/lib/types';
 import { format } from 'date-fns';
 import UserCircle from './UserCircle';
 import Loader from './Loader';
+import { toast } from 'sonner';
 
 const Chat = () => {
     const [openChat, setOpenChat] = useState(false);
@@ -28,27 +29,11 @@ const Chat = () => {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [messageText, setMessageText] = useState('');
 
+    const [showSendMessageToAll, setShowSendMessageToAll] = useState(false);
+
     const [scrollChats, setScrollChats] = useState(0);
     const [scrollMessages, setScrollMessages] = useState(false);
 
-    const updateChat = async (user_to_update: UserForChat) => {
-        if (user_to_update.open === true) {
-            const chat_res = await fetch(`/api/chat?id_1=${user.id}&id_2=${user_to_update.id}`);
-
-            if (!chat_res.ok) {
-                console.error('Error while fetching chat messages');
-                return;
-            }
-            const chat_data = await chat_res.json();
-            console.log('messages')
-            console.log(chat_data)
-            setMessages(chat_data);
-            setLoading(false);
-        }
-        setUsers(prev => prev.map((user: UserForChat) => 
-            user.id === user_to_update.id ? user_to_update : user
-        ))
-    }
 
     const sendMessage = async (message: NewMessage) => {
         const chat_res = await fetch('/api/chat', {
@@ -75,17 +60,37 @@ const Chat = () => {
             console.error('Error while sending message');
             return;
         }
-        setReloadMessages(prev => prev + 1);
+        // setReloadMessages(prev => prev + 1);
         // setReloadChats(prev => prev + 1);
     }
 
+    const sendMessageToAll = async () => {
+        const textareaElement = (document.getElementById('message-to-all')) as HTMLTextAreaElement;
+        if (!textareaElement) return;
+        const chats_res = await fetch('/api/chats', {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({id: me_user.id, text: `NOTIFICATION: ${textareaElement.value || '-'}`, timestamp: new Date()})
+        })
+        if (!chats_res.ok){
+            console.error('Error while sending message');
+            toast.error(`Error while sending message to all employees. Refresh the page and try once more`)
+            return;
+        }
+        setReloadMessages(prev => prev + 1);
+        setReloadChats(prev => prev + 1);
+        const chats_json = await chats_res.json();
+        toast.success(`Success! Message sent to ${chats_json.rows.length} users!`)
+        setShowSendMessageToAll(false);
+
+    }
     useEffect(() => {
         const load = async () => {
 
             const chat_res = await fetch(`/api/chats?id=${user.id}`);
 
             if (!chat_res.ok) {
-                console.error('Error while fetching chat');
+                console.log('Error while fetching chat');
                 return;
             }
             const chat_data = await chat_res.json();
@@ -152,7 +157,7 @@ const Chat = () => {
                 const chat_res = await fetch(`/api/chats?id=${user.id}`);
 
                 if (!chat_res.ok) {
-                    console.error('Error while fetching chat');
+                    console.log('Error while fetching chat');
                     return;
                 }
                 const chat_data = await chat_res.json();
@@ -199,14 +204,16 @@ const Chat = () => {
         });
     }, [scrollChats]);
 
+
     useEffect(() => {
         const interval = setInterval(() => {
             setReloadChats(prev => prev + 1);
             setReloadMessages(prev => prev + 1);
-        }, 3000);
+        }, openChat ? 3000 : 30000);
 
         return () => clearInterval(interval);
-    }, [])
+    }, [openChat]);
+
     return (
         <div className="chat">
             {openChat ? (
@@ -221,6 +228,9 @@ const Chat = () => {
                                     </div>
                                 )
                                 : 'All Messages'}</div>
+                                { me_user.permissions.send_messages_to_all === true && !selectedUserId && (
+                                    <div data-img="message-to-all" onClick={() => {setShowSendMessageToAll(true)}}></div>
+                                )}
                         <div onClick={() => setOpenChat(false)}>x</div>
                     </div>
                     <div>
@@ -242,7 +252,7 @@ const Chat = () => {
                                                 ? messages.map((message: Message) => (
                                                     <div key={message.id} className={message.from_user === user.id ? 'right' : 'left'}>
                                                         <div>{message.text}</div>
-                                                        <div>{format(message.timestamp, 'hh:mm aa, MM-dd-yyyy')}</div>
+                                                        <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
                                                 ))
                                                 : (<p>Send first message in this chat!</p>)
@@ -278,7 +288,7 @@ const Chat = () => {
                                     <div>
                                         <input type="text" name="" id="" value={filter} onChange={(e) => {setFilter(e.target.value)}} placeholder='Input user name to filter here...' className='filter'/>
                                     </div>
-                                    <div className='chats' ref={chatsRef}>
+                                          <div className='chats' ref={chatsRef}>
                                         {users
                                             .map((user: UserForChat) => {
                                             if (filter === '' || user.name.toLowerCase().includes(filter.toLowerCase()))
@@ -314,13 +324,23 @@ const Chat = () => {
                                                                 .find((message: Message) => message.to_user === user.id || message.from_user === user.id)?.text}
                                                         </div>
                                                         <div>
-                                                            {chats
-                                                                .sort((a: Message, b: Message) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                                                                .find((message: Message) => message.to_user === user.id || message.from_user === user.id)?.timestamp ? 
-                                                                    format(chats
-                                                                    .sort((a: Message, b: Message) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                                                                    .find((message: Message) => message.to_user === user.id || message.from_user === user.id)?.timestamp ?? '', 'hh:mm aa, MM-dd-yyyy')
-                                                                : ''}
+                                                            {(() => {
+                                                                const lastMessage = chats
+                                                                    .toSorted(
+                                                                        (a, b) =>
+                                                                            new Date(b.timestamp).getTime() -
+                                                                            new Date(a.timestamp).getTime()
+                                                                    )
+                                                                    .find(
+                                                                        message =>
+                                                                            message.to_user === user.id ||
+                                                                            message.from_user === user.id
+                                                                    );
+
+                                                                return lastMessage
+                                                                    ? format(new Date(lastMessage.timestamp), 'hh:mm a, MM-dd-yyyy')
+                                                                    : '';
+                                                            })()}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -335,11 +355,28 @@ const Chat = () => {
             ) : (
                 <span onClick={() => setOpenChat(true)} className={chats.filter((message: Message) => message.to_user === me_user.id && message.read === false).length > 0 ? "unread" : ""}></span>
             )}
+            {showSendMessageToAll && (
+                <div className='confirm send-message-to-all'>
+                    {loading === true ? (<div className='messages loader'><Loader></Loader></div>) : (
+                        <div>
+                            <h1>Type in message to send <strong>to all employees:</strong></h1>
+                            <p>They will receive it <strong>in their chats</strong></p>
+                            <div>
+                                <textarea id="message-to-all" placeholder='Message to all employees...'></textarea>
+                            </div>
+                            <div>
+                                <div className='button-w-bl' onClick={() => {setShowSendMessageToAll(false)}}>Cancel</div>
+                                <div className='button-d-bl' onClick={() => 
+                                    sendMessageToAll()
+                                }>Send</div>
+                            </div>
+                        </div>)}
+                </div>
+            )}
         </div>
     )
 }
 
-// TODO: MAYBE ADD LOADER WHEN LOADING MESSAGE
 // TODO: MAYBE ADD LATER A POSSIBILTY TO ATTACH IMAGES AND OR FILES (FIND OUT HOW MUCH WILL COST STORE FILES ON VERCEL)
 
 export default Chat;

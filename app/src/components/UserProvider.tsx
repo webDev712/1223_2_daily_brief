@@ -1,14 +1,16 @@
 "use client";
 
+import { User } from "@/lib/types";
 import { createContext, useContext } from "react";
 
-type User = {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  lead_letter: string | null;
-};
+// type User = {
+//   id: string;
+//   email: string;
+//   name: string;
+//   role: string;
+//   lead_letter: string | null;
+//   permission
+// };
 
 const UserContext = createContext<User | null>(null);
 

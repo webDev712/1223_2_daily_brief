@@ -1,13 +1,13 @@
 'use client';
 
-import Loader from "@/app/src/components/Loader";
 import { Department, Report, SavedBrief, User } from "@/lib/types";
+import scrollToElement from "@/lib/html_document";
+import Loader from "@/app/src/components/Loader";
 import { useEffect, useState } from "react";
+import { getWeekDays } from "@/lib/config";
 import { format } from "date-fns";
-import './page.css'
-import getReportsTypes, { getWeekDays } from "@/lib/config";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
+import './page.css'
 
 export default function Reports() {
   const [loading, setLoading] = useState(true)
@@ -19,10 +19,42 @@ export default function Reports() {
   const [departments, setDeparments] = useState<Department[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showAssigned, setShowAssigned] = useState(false);
-  const [showAssignedReport, setShowAssignedReport] = useState<Report | null>(null)
+  const [showAssignedReport, setShowAssignedReport] = useState<Report | null>(null);
+  const [showAddReport, setShowAddReport] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
   const weekDays = getWeekDays()
   const [reload, setReload] = useState(0);
+  
+  const [scrollToIdAfterReload, setScrollToIdAfterReload] = useState<string | null>()
+  
+  const [reportToAddNameAndSource, setReportToAddNameAndSource] = useState({name: '', source: ''});
+  const [reportToAdd, setReportToAdd] = useState<Report>({
+      id: 0,
+      name: 'Report Name',
+      text: '',
+      checked: false,
+      saved_brief_id: 0,
+      source: 'Report Source',
+      archived: false,
+      once_per: 'day',
+      timestamp: (new Date()).toString(),
+      edit: true,
+      start_at_day: '1',
+      assigned_to: {
+          all: {
+          assigned: true,
+          list: [],
+        },
+        person: {
+          assigned: true,
+          list: [],
+        },
+        department: {
+          assigned: true,
+          list: [],
+        },
+      }
+    })
 
   const changeReports = (new_report: Report) => {
     const id = new_report.id
@@ -70,26 +102,24 @@ export default function Reports() {
     });
   }
 
-  const addReport = () => {
-    const new_report = {
-      name: `Report #${reports.length + 1}`,
-      source: '-',
-      once_per: 'day',
-      archived: false,
-    }
-    const res = fetch("/api/report", {
+  const addReport = async (new_report: Report) => {
+    const res = await fetch("/api/report", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(new_report),
-    }).then(res => {
-      if (res.status === 200) {
-        toast.success('Added new Report!');
-        setReload(prev => prev + 1);
-      }
-      else toast.error('Error while adding new Report.')
+      body: JSON.stringify({...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'}),
     })
+    
+    if (res.status === 200) {
+      toast.success('Added new Report!');
+      const json = await res.json();
+      const id = json.id;
+      setScrollToIdAfterReload(`report_${id}`);
+      setReload(prev => prev + 1);
+    }
+    else toast.error('Error while adding new Report.')
+    setShowAddReport(false)
   }
   useEffect(() => {
     async function load() {
@@ -168,23 +198,37 @@ export default function Reports() {
       console.log(leads_data)
       setLeads(leads_data);
 
-      setLoading(false)
-
-
+      setLoading(false);
+      console.log('test 1')
+      console.log('scrollToIdAfterReload')
+      console.log(scrollToIdAfterReload)
+      if (scrollToIdAfterReload) {
+        console.log('test 2')
+        setTimeout(() => {
+          scrollToElement(scrollToIdAfterReload);
+          setScrollToIdAfterReload(null);
+        }, 1000)
+        console.log('test 3')
+      }
     }
     load();
   }, [reload]);
 
   const assignReport = (report: Report | null) => {
     if (!report) return;
-    setReports(prev =>
-      prev.map(r =>
-        r.id === report.id
-          ? report
-          : r
-      )
-    );
-    saveReport(report)
+    if (report.id === reportToAdd.id){
+      setReportToAdd(report);
+    }
+    else{
+      setReports(prev =>
+        prev.map(r =>
+          r.id === report.id
+            ? report
+            : r
+        )
+      );
+      saveReport(report)
+    }
     setShowAssigned(false);
   }
   
@@ -236,27 +280,19 @@ const getAssignedLeadIds = (report: Report): string[] => {
   }
 
   // Report assigned to ALL leads
-  if (assigned.all?.assigned === true) {
-    return leads.map((lead) => String(lead.id));
-  }
+  if (assigned.all?.assigned === true) { return leads.map((lead) => String(lead.id)); }
 
   const assignedLeadIds = new Set<string>();
 
   // Directly assigned leads
-  if (assigned.person?.assigned) {
-    assigned.person.list.forEach((leadId) => {
-      assignedLeadIds.add(String(leadId));
-    });
+  if (assigned.person?.assigned) { assigned.person.list.forEach((leadId) => {
+                                    assignedLeadIds.add(String(leadId)); });
   }
 
   // Assigned departments
   if (assigned.department?.assigned) {
     leads.forEach((lead) => {
-      if (
-        assigned.department.list.includes(
-          String(lead.department)
-        )
-      ) {
+      if (assigned.department.list.includes(String(lead.department))) {
         assignedLeadIds.add(String(lead.id));
       }
     });
@@ -402,8 +438,66 @@ return (
           </div>
         </div>
       )}
+      {showAddReport && (
+        <div className='confirm add-report'>
+          <div>
+            <h1>Enter new report data:</h1>
+            <div>
+              <div>
+                <div>Name</div>
+                <div>
+                  <input type="text" id="new_report_name" placeholder="Report Name"/>
+                </div>
+              </div>
+              <div>
+                <div>Source</div>
+                <div>
+                  <input type="text" id="new_report_source" placeholder="Report Source" />
+                </div>
+              </div>
+              <div>
+                <div>Period</div>
+                <div>
+                  <select value={reportToAdd.once_per ?? 'day'} onChange={(e) => {setReportToAdd({...reportToAdd, once_per: e.target.value})}}>
+                    <option value="day">Day</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                  </select>
+                  {reportToAdd.once_per === 'week' && "at"}
+                  {reportToAdd.once_per === 'week' && (
+                    <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} defaultValue={parseInt(reportToAdd.start_at_day || '1')}>
+                      {weekDays.map((day: {full: string, small: string}, i: number) => {
+                        return (
+                          <option key={`report_${reportToAdd.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
+                        )
+                      })}
+                    </select>
+                  )}
+                  {reportToAdd.once_per === 'month' && "at"}
+                  {reportToAdd.once_per === 'month' && (
+                    <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} value={reportToAdd.start_at_day || '1'}>
+                      {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
+                    </select>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div>Assinged To</div>
+                <div className="button-d-bl-sm" onClick={() => {
+                  setShowAssignedReport(reportToAdd);
+                  setShowAssigned(true);
+                }}>SET</div>
+              </div>
+            </div>
+            <div>
+              <div className='button-w-bl' onClick={() => {setShowAddReport(false)}}>Cancel</div>
+              <div className='button-d-bl' onClick={() => {addReport(reportToAdd)}}>Add Report</div>
+            </div>
+          </div>
+        </div>
+      )}
       {showAssigned && (
-        <div className='confirm'>
+        <div className='confirm assign'>
           <div>
             <h1>Assign {showAssignedReport?.name ?? ''} Report to</h1>
             <div className="select all">
@@ -469,6 +563,8 @@ return (
           </div>
         </div>
       )}
+      
+
 
       {loading ? (<Loader></Loader>) :
         (<div>
@@ -515,7 +611,9 @@ return (
                           toast.error("You don't have permissions for this action.")
                           return;
                         }
-                        addReport();
+                        setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
+                        setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } });
+                        setShowAddReport(true);
                       }}>Add Report</div>
                       </div>
                   ) : (
@@ -524,7 +622,9 @@ return (
                         toast.error("You don't have permissions for this action.")
                         return;
                       }
-                      addReport();
+                      setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
+                      setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } });
+                      setShowAddReport(true);
                     }}>Add Report</div>
                   )}
                 </div>
@@ -542,7 +642,7 @@ return (
                     {reports.map((r: Report) => {
                       if (!r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)) {
                         return (
-                          <div className="report" key={`report_${r.id}`}>
+                          <div className="report" key={`report_${r.id}`} id={`report_${r.id}`} >
                             <div>
                               <label>
                                 <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
@@ -629,7 +729,7 @@ return (
                                     </select>
                                   )}
                                   {r.once_per === 'month' && (
-                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
+                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} value={r.start_at_day || '1'}>
                                       {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                                     </select>
                                   )}
@@ -683,7 +783,9 @@ return (
                           toast.error("You don't have permissions for this action.")
                           return;
                         }
-                        addReport();
+                        setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
+                        setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
+                        setShowAddReport(true);
                       }}>Add Report</div>
                       </div>
                   ) : (
@@ -692,7 +794,9 @@ return (
                         toast.error("You don't have permissions for this action.")
                         return;
                       }
-                      addReport();
+                      setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
+                      setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
+                      setShowAddReport(true);
                     }}>Add Report</div>
                   )}
                 </div>
@@ -710,7 +814,7 @@ return (
                     {reports.map((r: Report) => {
                       if (!r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)) {
                         return (
-                          <div className="report" key={`report_${r.id}`}>
+                          <div className="report" key={`report_${r.id}`} id={`report_${r.id}`}>
                             <div>
                               <label>
                                 <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
@@ -797,7 +901,7 @@ return (
                                     </select>
                                   )}
                                   {r.once_per === 'month' && (
-                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
+                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} value={r.start_at_day || '1'}>
                                       {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                                     </select>
                                   )}

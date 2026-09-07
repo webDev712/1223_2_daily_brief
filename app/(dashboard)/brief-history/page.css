@@ -100,6 +100,10 @@
     font-weight: 500;
 }
 
+.brief-history .table > div > div:nth-child(5) > div:nth-child(1){
+    width: 50px;
+}
+
 .brief-history .table > div:first-child > div:nth-child(5){
     display: block;
     text-align: left;

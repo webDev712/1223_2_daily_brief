@@ -38,6 +38,7 @@
     font-weight: 600;
     display: flex;
     justify-content: space-between;
+    gap: 5px;
 }
 
 .chat > div:first-child > div:first-child > div:first-child > div:first-child{
@@ -171,20 +172,44 @@
     color: #7A7A7A;
 }
 
-.chat > div:first-child > div:first-child > div:nth-child(2){
+.chat > div:first-child > div:first-child > div:last-child{
     cursor: pointer;
     user-select: none;
     width: 20px;
     height: 20px;
     display: block;
-    line-height: 17px;
+    line-height: 18px;
     text-align: center;
     border-radius: 10px;
+    margin: auto 0;
+    transition: all 0.1s ease;
+    font-size: 18px;
+    position: relative;
 }
 
-.chat > div:first-child > div:first-child > div:nth-child(2):hover{
-    background-color: #7a7a7a2f;
+.chat > div:first-child > div:first-child > div:last-child:hover{
+    /* background-color: #7a7a7a2f; */
+    font-size: 20px;
 }
+
+/* .chat > div:first-child > div:first-child > div:last-child::before{
+    content: 'Close Chat';
+    font-size: 12px;
+    background-color: #a5a5a5;
+    color: white;
+    display: none;
+    width: max-content;
+    position: absolute;
+    right: 20px;
+    padding: 2px 10px;
+    font-weight: 400;
+    bottom: 6px;
+}
+
+.chat > div:first-child > div:first-child > div:last-child:hover::before{
+    display: block;
+} */
+
 
 .chat div:has(> .filter){
     padding: 5px 10px;
@@ -284,6 +309,53 @@
 
 .chat .loader > div{
     max-width: 100% !important;
+}
+
+
+[data-img="message-to-all"]{
+    background-image: url('../../../../public/send_message_to_all_0.png');
+    width: 23px;
+    height: 23px;
+    background-size: 80%;
+    margin-left: auto;
+    transition: all 0.1s ease;
+    background-color: transparent;
+    cursor: pointer;
+    background-position: center;
+    position: relative;
+}
+
+[data-img="message-to-all"]:hover{
+    background-size: 90% !important;
+}
+
+[data-img="message-to-all"]::before{
+    content: 'Send message to All';
+    font-size: 12px;
+    background-color: #a5a5a5;
+    color: white;
+    display: none;
+    width: max-content;
+    position: absolute;
+    right: 20px;
+    padding: 2px 10px;
+    font-weight: 400;
+    bottom: 6px;
+}
+
+[data-img="message-to-all"]:hover::before{
+    display: block;
+}
+
+.chat .confirm.send-message-to-all textarea{
+    width: 100%;
+    border: 1px solid #E8EAED;
+    background-color: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    max-height: 25vh;
+    min-height: 15vh;
 }
 
 @keyframes pulse {

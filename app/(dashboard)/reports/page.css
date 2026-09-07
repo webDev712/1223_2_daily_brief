@@ -63,9 +63,6 @@
 .reports .table-reports > .report > div:nth-child(5) > div > div.show > div:nth-child(1){
     width: 70px;
 }
-.reports .table-reports > .report > div:nth-child(5) > div > div.show > div:nth-child(2){
-    /* padding-left: 7px; */
-}
 
 .reports .table-reports > div > :nth-child(6) > div{
     margin: auto;
@@ -195,6 +192,57 @@
     margin-bottom: 30px;
 }
 
+.reports .confirm.assign{
+    z-index: 100000000;
+}
+
+.reports .confirm.add-report > div > div:nth-child(2){
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.reports .confirm.add-report > div > div:nth-child(2) > div{
+    display: flex;
+    justify-content: left;
+    gap: 15px;
+}
+
+.reports .confirm.add-report > div > div:nth-child(2) > div > div{
+    display: flex;
+    gap: 5px;
+}
+
+
+.reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(2),
+.reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(1) > div:nth-child(2){
+    padding-left: 4px;
+}
+
+.reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(3) > div:nth-child(2){
+    padding-left: 12px;
+}
+
+
+.reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > input,
+.reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > input{
+    border: 1px solid #E8EAED;
+    background-color: white;
+    border-radius: 8px;
+    padding: 2px 10px;
+    font-size: 14px;
+    width: calc(50vw - 200px);
+}
+
+.reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(4) > div:nth-child(2){
+    margin-left: 3px;
+}
+
+.reports .confirm.add-report > div > div:nth-child(2) > div > div:first-child{
+    width: 100px;
+    margin: auto 0;
+}
+
 
 @media (max-width: 500px) {
     .reports .table-wrapper{
@@ -220,5 +268,23 @@
     }
     .reports div.flex > h3 + div.flex:has(> span){
         flex-direction: column;
+    }
+
+    .reports .confirm.add-report > div > div:nth-child(2) > div{
+        justify-content: left;
+        gap: 5px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > input, .reports .confirm.add-report > div > div:nth-child(2) > div:first-child > div:nth-child(2) > input {
+        width: 90%;
+    }
+    .reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(3) > div:nth-child(2) {
+        padding-left: 3px;
+    }
+
+    .reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(4){
+        flex-direction: row;
     }
 }
