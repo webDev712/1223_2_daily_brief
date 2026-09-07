@@ -20,10 +20,12 @@ export default function ProductionDashboard() {
     const pageSize = 20;
 
     const today = new Date()
+    const yesterday = new Date()
+    yesterday.setDate(today.getDate() - 1)
     const seven_days_ago = new Date()
-    seven_days_ago.setDate(today.getDate() - 7)
+    seven_days_ago.setDate(yesterday.getDate() - 7)
     const [dateFrom, setDateFrom] = useState(seven_days_ago)
-    const [dateTo, setDateTo] = useState(today)
+    const [dateTo, setDateTo] = useState(yesterday)
     const [employee, setEmployee] = useState('')
     const [department, setDeparment] = useState('')
 

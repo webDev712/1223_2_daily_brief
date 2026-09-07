@@ -1,0 +1,8 @@
+external_id,date,employee_name,department,pieces,value,hours,ppoh,target_ppoh,delta_ppoh,efficiency,notes
+340,9/6/2026,"Strauss, Vince",Assemble,1,,0.25,,,,,
+340,9/6/2026,"Strauss, Vince",Deliver,402,,0.75,,,,,
+295,9/6/2026,"Ponce, Karla",Detail,527,,8.5,62,60,2,103.33,
+310,9/6/2026,"Cea, Katie",Detail,525,,8,65.63,60,5.63,109.38,
+340,9/6/2026,"Strauss, Vince",Detail,1,,0.25,,,,,
+295,9/6/2026,"Ponce, Karla",Pick Up,5,,0.25,,,,,
+340,9/6/2026,"Strauss, Vince",Rack,402,,0.5,,,,,
