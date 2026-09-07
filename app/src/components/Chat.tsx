@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import './css/Chat.css'
 import { useUser } from './UserProvider';
-import { Message, NewMessage, UserForChat } from '@/lib/types';
+import { Message, NewMessage, UserForChat, User } from '@/lib/types';
 import { format } from 'date-fns';
 import UserCircle from './UserCircle';
 import Loader from './Loader';
@@ -14,8 +14,7 @@ const Chat = () => {
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState('');
 
-    const user = useUser();
-    const me_user = user;
+    const me_user = useUser();
 
     const [chats, setChats] = useState<Message[]>([]);
     const [users, setUsers] = useState<UserForChat[]>([]);
@@ -28,6 +27,7 @@ const Chat = () => {
     const [reloadMessages, setReloadMessages] = useState(0);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [messageText, setMessageText] = useState('');
+    const [seeUserMessageAs, setSeeUserMessageAs] = useState<User>(me_user);
 
     const [showSendMessageToAll, setShowSendMessageToAll] = useState(false);
 
@@ -70,7 +70,7 @@ const Chat = () => {
         const chats_res = await fetch('/api/chats', {
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({id: me_user.id, text: `NOTIFICATION: ${textareaElement.value || '-'}`, timestamp: new Date()})
+            body: JSON.stringify({id: seeUserMessageAs.id, text: `NOTIFICATION: ${textareaElement.value || '-'}`, timestamp: new Date()})
         })
         if (!chats_res.ok){
             console.error('Error while sending message');
@@ -84,10 +84,31 @@ const Chat = () => {
         setShowSendMessageToAll(false);
 
     }
+
+    
+    const openChatById = (id: string) => {
+        setSelectedUserId(id);
+        setLoading(true);
+        const message = chats.find(
+            message =>
+                (message.to_user === id && message.from_user === seeUserMessageAs.id) ||
+                (message.from_user === id && message.to_user === seeUserMessageAs.id)
+        );
+
+        if (message?.read === false) {
+            updateMessage({
+                ...message,
+                read: true
+            });
+        }
+
+        setScrollMessages(true);
+    }
+
     useEffect(() => {
         const load = async () => {
 
-            const chat_res = await fetch(`/api/chats?id=${user.id}`);
+            const chat_res = await fetch(`/api/chats?id=${seeUserMessageAs.id}`);
 
             if (!chat_res.ok) {
                 console.log('Error while fetching chat');
@@ -106,10 +127,10 @@ const Chat = () => {
 
             let users_data = await users_res.json();
             users_data = users_data
-                .filter((filterUser: UserForChat) => filterUser.id !== user.id)
+                .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id)
                 .sort((a: UserForChat, b: UserForChat) => {
-                    let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === user.id) || (message.from_user === a.id && message.to_user === user.id));
-                    let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === user.id) || (message.from_user === b.id && message.to_user === user.id));
+                    let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === seeUserMessageAs.id) || (message.from_user === a.id && message.to_user === seeUserMessageAs.id));
+                    let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === seeUserMessageAs.id) || (message.from_user === b.id && message.to_user === seeUserMessageAs.id));
                     return (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) !== 0 ? 
                                 (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) 
                                 : a.name.localeCompare(b.name);
@@ -124,7 +145,7 @@ const Chat = () => {
     useEffect(() => {
         const load = async () => {
             if (selectedUserId !== null) {
-                const chat_res = await fetch(`/api/chat?id_1=${user.id}&id_2=${selectedUserId}`);
+                const chat_res = await fetch(`/api/chat?id_1=${seeUserMessageAs.id}&id_2=${selectedUserId}`);
 
                 if (!chat_res.ok) {
                     console.error('Error while fetching chat messages');
@@ -134,17 +155,18 @@ const Chat = () => {
                 const chat_data = await chat_res.json();
                 console.log('messages')
                 console.log(chat_data)
-                setLoading(false);
                 if (scrollMessages || messages.length !== chat_data.length) {
                     setScrollMessages(prev => !prev);
                     // setScrollMessages(false);
                 }
                 setMessages(chat_data);
-                if (chat_data.length > 0 && user.id === chat_data[chat_data.length - 1].to_user) {
+                if (chat_data.length > 0 && seeUserMessageAs.id === chat_data[chat_data.length - 1].to_user) {
                     const lastMessage = chat_data[chat_data.length - 1];
                     updateMessage({...lastMessage, read: true})
                     
                 }
+                setLoading(false);
+
             }
         }
 
@@ -154,7 +176,7 @@ const Chat = () => {
     useEffect(() => {
         const load = async () => {
             const selected_user = users.find((user: UserForChat) => user.id === selectedUserId );
-                const chat_res = await fetch(`/api/chats?id=${user.id}`);
+                const chat_res = await fetch(`/api/chats?id=${seeUserMessageAs.id}`);
 
                 if (!chat_res.ok) {
                     console.log('Error while fetching chat');
@@ -169,10 +191,10 @@ const Chat = () => {
                 }
                 let users_data = await users_res.json();
                 users_data = users_data
-                    .filter((filterUser: UserForChat) => filterUser.id !== user.id)
+                    .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id)
                     .sort((a: UserForChat, b: UserForChat) => {
-                        let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === user.id) || (message.from_user === a.id && message.to_user === user.id));
-                        let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === user.id) || (message.from_user === b.id && message.to_user === user.id));
+                        let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === seeUserMessageAs.id) || (message.from_user === a.id && message.to_user === seeUserMessageAs.id));
+                        let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === seeUserMessageAs.id) || (message.from_user === b.id && message.to_user === seeUserMessageAs.id));
                         return (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) !== 0 ? 
                                     (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) 
                                     : a.name.localeCompare(b.name);
@@ -184,6 +206,7 @@ const Chat = () => {
                 }
                 setUsers(users_data);
                 setChats(chat_data);
+                setLoading(false);
             }
         load();
     }, [reloadChats])
@@ -222,20 +245,40 @@ const Chat = () => {
                         <div>{selectedUserId
                                 ? (
                                     <div>
-                                        <div>Messages with</div>
+                                        <div>Messages</div>
+                                        {seeUserMessageAs.id !== me_user.id && (
+                                            <div className='flex'>
+                                                <UserCircle user_name={seeUserMessageAs.name} size={25}></UserCircle>
+                                                <div>{seeUserMessageAs.name}</div>
+                                            </div>
+                                        )}
+                                        {seeUserMessageAs.id !== me_user.id ? (<div>and</div>) : (<div>with</div>)}
                                         <UserCircle user_name={users.find((user: UserForChat) => user.id === selectedUserId)?.name ?? ''} size={25}></UserCircle>
                                         <div>{users.find((user: UserForChat) => user.id === selectedUserId)?.name}</div>
                                     </div>
                                 )
-                                : 'All Messages'}</div>
-                                { me_user.permissions.send_messages_to_all === true && !selectedUserId && (
+                                : (
+                                    <div>
+                                        {seeUserMessageAs.id !== me_user.id ? (
+                                            <div className='flex'>
+                                                <div>Viewing as</div>
+                                                <UserCircle user_name={seeUserMessageAs.name} size={25}></UserCircle>
+                                                <div>{seeUserMessageAs.name}</div>
+                                                <div onClick={() => {setLoading(true); setSeeUserMessageAs(me_user); setReloadChats(prev => prev + 1); }} className='exit button-w-bl'>{`Exit`}</div>
+                                            </div>
+                                        ) : (
+                                            <div>All Messages</div>
+                                        )}
+                                    </div>)}</div>
+                                { me_user.permissions.send_messages_to_all === true && !selectedUserId && seeUserMessageAs.id === me_user.id && (
                                     <div data-img="message-to-all" onClick={() => {setShowSendMessageToAll(true)}}></div>
                                 )}
-                        <div onClick={() => setOpenChat(false)}>x</div>
+                        <div onClick={() => setOpenChat(false)} className='x'>x</div>
                     </div>
                     <div>
                         {selectedUserId  
                             ? (
+                                // CHAT WITH USER
                                 <div>
                                     <div onClick={() => {
                                         setMessageText('');
@@ -250,7 +293,7 @@ const Chat = () => {
                                             
                                             {messages.length > 0 
                                                 ? messages.map((message: Message) => (
-                                                    <div key={message.id} className={message.from_user === user.id ? 'right' : 'left'}>
+                                                    <div key={message.id} className={message.from_user === seeUserMessageAs.id ? 'right' : 'left'}>
                                                         <div>{message.text}</div>
                                                         <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
@@ -266,7 +309,7 @@ const Chat = () => {
                                                 if (e.key === 'Enter') {
                                                     sendMessage({
                                                         text: messageText,
-                                                        from_user: user.id,
+                                                        from_user: seeUserMessageAs.id,
                                                         to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                         timestamp: new Date(),
                                                     });
@@ -275,7 +318,7 @@ const Chat = () => {
                                         <div className="button-d-bl-sm" onClick={() => {
                                             sendMessage({
                                                 text: messageText,
-                                                from_user: user.id,
+                                                from_user: seeUserMessageAs.id,
                                                 to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                 timestamp: new Date(),
                                             })
@@ -284,40 +327,27 @@ const Chat = () => {
                                     </div>
                                 </div>)
                             : (
+                                // ALL CHATS
                                 <div>
                                     <div>
                                         <input type="text" name="" id="" value={filter} onChange={(e) => {setFilter(e.target.value)}} placeholder='Input user name to filter here...' className='filter'/>
                                     </div>
-                                          <div className='chats' ref={chatsRef}>
+                                    {loading === true && (<Loader solid={true} small={true}></Loader>)}
+                                    <div className='chats' ref={chatsRef}>
                                         {users
                                             .map((user: UserForChat) => {
                                             if (filter === '' || user.name.toLowerCase().includes(filter.toLowerCase()))
                                             return (
-                                                <div key={user.id} className='flex j-s-b' onClick={() => {
-                                                        setSelectedUserId(user.id);
-                                                        setLoading(true);
-                                                        const message = chats.find(
-                                                            message =>
-                                                                (message.to_user === user.id && message.from_user === me_user.id) ||
-                                                                (message.from_user === user.id && message.to_user === me_user.id)
-                                                        );
-
-                                                        if (message?.read === false) {
-                                                            updateMessage({
-                                                                ...message,
-                                                                read: true
-                                                            });
-                                                        }
-
-                                                        setScrollMessages(true);
-
-                                                    }}>
-                                                    <div className={chats.find((message: Message) => message.to_user === me_user.id && message.from_user === user.id)?.read === true 
-                                                                    || !chats.find((message: Message) => message.to_user === me_user.id && message.from_user === user.id) ? "flex" : "unread flex"}>
+                                                <div key={user.id} className='flex j-s-b'>
+                                                    {seeUserMessageAs.id === me_user.id && me_user.permissions.see_other_employees_messages === true && (<div className='see-chats' onClick={() => {setLoading(true); setSeeUserMessageAs(user); setReloadChats(prev => prev + 1); }}></div>)}
+                                                    <div className={chats.find((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user === user.id)?.read === true 
+                                                                    || !chats.find((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user === user.id) ? "flex chat-user-name" : "unread flex chat-user-name"}
+                                                                    onClick={() => {openChatById(user.id)}}
+                                                                    >
                                                         <UserCircle user_name={user.name} size={25}></UserCircle>
                                                         <div>{user.name}</div>
                                                     </div>
-                                                    <div>
+                                                    <div className='chats-list-hover-message' onClick={() => {openChatById(user.id)}}>
                                                         <div>
                                                             {chats
                                                                 .sort((a: Message, b: Message) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -353,7 +383,7 @@ const Chat = () => {
                     </div>
                 </div>
             ) : (
-                <span onClick={() => setOpenChat(true)} className={chats.filter((message: Message) => message.to_user === me_user.id && message.read === false).length > 0 ? "unread" : ""}></span>
+                <span onClick={() => setOpenChat(true)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
             )}
             {showSendMessageToAll && (
                 <div className='confirm send-message-to-all'>

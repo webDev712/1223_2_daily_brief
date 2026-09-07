@@ -10,7 +10,7 @@
 .chat:has(> div){
     position: fixed;
     background-color: white;
-    width: 350px;
+    width: 450px;
     height: 80vh;
     right: 0;
     bottom: 0;
@@ -44,11 +44,30 @@
 .chat > div:first-child > div:first-child > div:first-child > div:first-child{
     display: flex;
     gap: 6px;
+    flex-wrap: nowrap;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child > div{
+.chat > div:first-child > div:first-child > div:first-child > div:first-child > div {
+    gap: 7px;
+    color: #101828;
+
+}
+
+.chat > div:first-child > div:first-child > div:first-child > div:first-child > div > div{
     width: max-content;
     display: block;
+    flex-wrap: nowrap;
+}
+
+.chat > div:first-child > div:first-child > div:first-child > div:first-child > div > div:last-child{
+    cursor: pointer;
+}
+
+.chat > div:first-child > div:first-child > div:first-child > div:first-child > div:nth-child(2){
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 7px;
 }
 
 .chat > div:first-child > div:first-child > div:first-child > div:first-child > div:nth-child(3){
@@ -83,49 +102,21 @@
 }
 .chat .chats > div{
     padding: 0px 10px;
-    height: 45px;
-    cursor: pointer;
     transition: all 0.1s ease !important;
+    border-bottom: 1px solid #b1b1b12b;
+}
+
+.chat .chats > div *{
+    cursor: pointer;
 }
 
 .chat .chats > div:first-child{
     border-top: 1px solid #b1b1b12b;
 }
 
-.chat .chats > div{
-    border-bottom: 1px solid #b1b1b12b;
-}
 
 .chat .chats > div:hover{
     background-color: #eae1ff3f;
-}
-
-.chat .chats > div > div:nth-child(1){
-    font-size: 14px;
-    margin: auto 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    gap: 6px;
-}
-
-.chat .chats > div > div:nth-child(1).unread.flex{
-    position: relative;
-    overflow: auto;
-}
-
-.chat .chats > div > div:nth-child(1).unread.flex::before{
-    content: ' ';
-    display: block;
-    width: 7px;
-    height: 7px;
-    background-size: 100%;
-    position: absolute;
-    top: 1px;
-    left: 20px;
-    z-index: 100000;
-    background-image: url('../../../../public/circle_red.svg');
-    animation: pulse 1.5s infinite;
 }
 
 .chat > span.unread{
@@ -147,18 +138,87 @@
     animation: pulse 1.5s infinite;
 }
 
-.chat .chats > div > div:nth-child(1) > div:nth-child(2){
+.chat .chats > div > div.see-chats{
+    margin: auto 0;
+    background-image: url('../../../../public/show_messages.png');
+    width: 30px;
+    height: 30px;
+    background-size: 90%;
+    background-position: center;
+    transition: all 0.1s;
+    position: relative;
+}
+
+.chat .chats > div > div.see-chats:hover{
+    background-size: 100%;
+}
+
+.chat .chats > div > div.see-chats::before{
+    content: "See employee's chats";
+    font-size: 12px;
+    background-color: #a5a5a5;
+    color: white;
+    display: none;
+    width: max-content;
+    position: absolute;
+    left: 30px;
+    padding: 2px 10px;
+    font-weight: 400;
+    bottom: 6px;
+    z-index: 1000;
+}
+
+.chat .chats > div > div.see-chats:hover:before{
+    display: block;
+}
+
+.chat .chats > div > div.chat-user-name{
+    font-size: 14px;
+    margin: auto auto auto 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    gap: 6px;
+    flex: 1;
+    padding: 10px 10px 10px 10px;
+}
+
+.chat .chats > div > div.chat-user-name.unread.flex{
+    position: relative;
+    overflow: auto;
+}
+
+.chat .chats > div > div.chat-user-name.unread.flex::before{
+    content: ' ';
+    display: block;
+    width: 7px;
+    height: 7px;
+    background-size: 100%;
+    position: absolute;
+    top: 8px;
+    left: 29px;
+    z-index: 100000;
+    background-image: url('../../../../public/circle_red.svg');
+    animation: pulse 1.5s infinite;
+}
+
+
+.chat .chats > div > div.chat-user-name > div:nth-child(2){
     margin: auto 0;
     color: #101828;
     font-weight: 600;
 }
 
-.chat .chats > div > div:nth-child(2){
-    max-width: 50%;
+.chat .chats > div > div.chats-list-hover-message{
+    width: calc(50% - 8px - 8px - 30px);
+    min-width: calc(50% - 8px - 8px - 30px);
+    min-width: calc(50% - 8px - 8px - 30px);
     margin: auto 0;
+    flex: 1;
+    padding: 9px 0;
 }
 
-.chat .chats > div > div:nth-child(2) > div:nth-child(1){
+.chat .chats > div > div.chats-list-hover-message > div:nth-child(1){
     font-size: 13px;
     line-height: 15px;
     white-space: nowrap;
@@ -166,33 +226,42 @@
     text-overflow: ellipsis;
 }
 
-.chat .chats > div > div:nth-child(2) > div:nth-child(2){
+.chat .chats > div > div.chats-list-hover-message > div:nth-child(2){
     font-size: 10px;
     line-height: 12px;
     color: #7A7A7A;
 }
 
-.chat > div:first-child > div:first-child > div:last-child{
+.chat .x{
     cursor: pointer;
     user-select: none;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     display: block;
-    line-height: 18px;
+    line-height: 16px;
     text-align: center;
     border-radius: 10px;
     margin: auto 0;
     transition: all 0.1s ease;
-    font-size: 18px;
+    font-size: 16px;
     position: relative;
 }
 
-.chat > div:first-child > div:first-child > div:last-child:hover{
+.chat .x:hover{
     /* background-color: #7a7a7a2f; */
     font-size: 20px;
 }
 
-/* .chat > div:first-child > div:first-child > div:last-child::before{
+.chat .exit{
+    margin-left: 10px;
+    font-size: 12px;
+    padding: 2px 10px;
+    transition: all 0.1s ease;
+}
+
+
+
+/* .chat .x::before{
     content: 'Close Chat';
     font-size: 12px;
     background-color: #a5a5a5;
@@ -206,7 +275,7 @@
     bottom: 6px;
 }
 
-.chat > div:first-child > div:first-child > div:last-child:hover::before{
+.chat .x:hover::before{
     display: block;
 } */
 
@@ -301,7 +370,7 @@
 
 .chat .messages > p {
     width: 100%;
-    margin-top: 45%;
+    margin-top: 32%;
     text-align: center;
     font-style: italic;
     color: #7A7A7A;

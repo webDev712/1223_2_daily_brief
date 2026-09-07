@@ -53,6 +53,7 @@ export const getPermissions = () => {
         {id: 16, name: "Edit Application settings", js_name: "edit_app_settings"},                      //TODO-TODO-TODO
         {id: 17, name: "See Production Dashboard", js_name: "see_production_dashboard"},                //done
         {id: 18, name: "Send messages to all employees at once", js_name: "send_messages_to_all"},      //done
+        {id: 19, name: "See other employees` messages", js_name: "see_other_employees_messages"},      //done
     ]
 }
 

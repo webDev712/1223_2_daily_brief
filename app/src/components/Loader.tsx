@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 
-export default function Loader() {
+interface LoaderProps {
+    solid?: boolean;
+    small?: boolean;
+}
+
+export default function Loader({ solid = false, small = false }: LoaderProps) {
     useEffect(() => {
         window.scrollTo(0, 0);
         const originalOverflow = document.body.style.overflow;
@@ -15,15 +20,15 @@ export default function Loader() {
         <div style={{
             position: 'absolute',
             top: 0,
-            width: '100vw',
-            height: '100vh',
+            width: small ? '100%' : '100vw',
+            height: small ? '100%' : '100vh',
             left: 0,
-            backgroundColor: '#00000017',
+            backgroundColor: solid ? '#fff' : '#00000017',
             zIndex: 10000000000
         }}>
             <div className="spinner-border" role="status" style={{
                 display: 'block',
-                margin: '40vh auto auto auto'
+                margin: small ? '50% auto auto auto' : '40vh auto auto auto'
             }}>
                 <span className="sr-only">Loading...</span>
             </div>
