@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db"
-import { requireRole } from "@/lib/auth";
 
 export async function PATCH(request: Request) {
     // CHANGING LEAD FOR DATE

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db"
-import { requireRole } from "@/lib/auth";
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
