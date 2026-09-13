@@ -73,12 +73,43 @@ export async function POST(request: Request) {
         // await requireRole("lead");
         const body = await request.json();
         const { lead_id, lead_letter, lead_name, date } = body;
+        const previous_brief_rows = await sql`
+            SELECT *
+            FROM saved_brief
+            WHERE lead_id = ${lead_id}
+            ORDER BY date DESC
+            LIMIT 1;
+        `
+
         const rows = await sql`
             INSERT INTO saved_brief (lead_id, letter, lead_name, freezed, original_lead_id, date)
             VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date})
             RETURNING id;
         `
         const new_id = rows[0].id;
+        if (previous_brief_rows && previous_brief_rows[0] && previous_brief_rows[0]?.id){
+            const previous_brief_id = previous_brief_rows[0].id;
+            await sql`
+                INSERT INTO saved_task (
+                    text,
+                    checked,
+                    task_type,
+                    saved_brief_id,
+                    roll_to_next_brief
+                )
+                SELECT
+                    text,
+                    checked,
+                    task_type,
+                    ${new_id},
+                    roll_to_next_brief
+                FROM saved_task
+                WHERE saved_brief_id = ${previous_brief_id}
+                    AND checked != true
+                    AND roll_to_next_brief = true;
+            `
+        }
+
         const reports_rows = await sql`
             WITH params AS (
                 SELECT CAST(${lead_id} AS uuid) AS lead_uuid,
@@ -123,8 +154,8 @@ export async function POST(request: Request) {
         await Promise.all(
             reports_rows.map((r) =>
                 sql`
-                INSERT INTO saved_report (text, name, source, checked, saved_brief_id)
-                VALUES ('', ${r.name}, ${r.source}, FALSE, ${new_id});
+                INSERT INTO saved_report (text, name, source, checked, saved_brief_id, day_time)
+                VALUES ('', ${r.name}, ${r.source}, FALSE, ${new_id}, ${r.day_time});
                 `
             )
             );

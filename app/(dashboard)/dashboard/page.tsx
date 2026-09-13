@@ -65,14 +65,7 @@ export default function Dashboard() {
   }, [date]);
 
   const in_progress_count = briefs.filter((b: SavedBrief) => {
-    const briefDate = new Date(b.date);
-
-    const isToday =
-      briefDate.getFullYear() === today.getFullYear() &&
-      briefDate.getMonth() === today.getMonth() &&
-      briefDate.getDate() === today.getDate();
-
-    return !b.freezed && isToday;
+     return !b.freezed;
   }).length;
   const reports_done_count: number = briefs.reduce((a_b, b: SavedBrief) => a_b + b.reports?.filter((r: Report) => r.checked).length, 0);
   const reports_all_count: number = briefs.reduce((a_b, b: SavedBrief) => a_b + b.reports?.length, 0);
@@ -99,6 +92,15 @@ export default function Dashboard() {
       (b.lead_id !== b.original_lead_id ? 1 : 0),
     0
   )
+
+  const dutiesCount = briefs.reduce(
+    (sum: number, b: SavedBrief) =>
+      sum +
+      (b.findings?.filter((f: Finding) => f.type === "info").length ?? 0) +
+      (b.tasks?.filter((t: Task) => t.checked).length ?? 0) +
+      (b.reports?.filter((r: Report) => r.checked).length > 0 ? 1 : 0),
+    0
+  )
   return (
     <div className="dashboard">
       {loading ?
@@ -111,10 +113,10 @@ export default function Dashboard() {
               <h1>{briefs.length - in_progress_count}/{briefs.length}</h1>
               <div>Daily Briefs</div>
               {in_progress_count === 0 ? 
-                (<span>All briefs done</span>) : 
-                (<span>{in_progress_count} brief still in progress</span>)}
+                (<span>All briefs submitted</span>) : 
+                (<span>{in_progress_count} brief not submitted</span>)}
               {in_progress_count > 0 && 
-                (<h2>{in_progress_count} pending</h2>)}
+                (<h2>{in_progress_count} not submitted</h2>)}
             </div>
             <div img-id="book-blue">
               <h1>{reports_done_count}/{reports_all_count}
@@ -163,7 +165,7 @@ export default function Dashboard() {
                   briefDate.getMonth() === today.getMonth() &&
                   briefDate.getDate() === today.getDate();
                 return (
-                <div className={b.freezed || !isToday ? "brief submitted" : "brief"} key={`b_${b.id}`}>
+                <div className={b.freezed ? "brief submitted" : (!b.freezed && !isToday ? "brief incomplete" : "brief")} key={`b_${b.id}`}>
                   <div className="lane"></div>
                   <div className="header-sm">
                     <div className="user">
@@ -177,7 +179,9 @@ export default function Dashboard() {
                         <UserCircle user_name={leads.find(el => el.id == b.lead_id)?.name || ''} size={45}></UserCircle>
                         <div>{` ${leads.find(el => el.id == b.lead_id)?.name}`}</div>
                       </div>) : ''}
-                    <div>{b.freezed || !isToday ? (<div className="submitted">● Submitted</div>) : (<div>● In Progress</div>)}</div>
+                    {b.freezed && (<div><div className="submitted">● Submitted</div></div>)}
+                    {!b.freezed && !isToday && (<div><div className="incomplete">● Incomplete</div></div>)}
+                    {!b.freezed && isToday && (<div><div>● In Progress</div></div>)}
                     
                   </div>
                   <div>
@@ -228,9 +232,6 @@ export default function Dashboard() {
                   <span>EMPLOYEE</span>
                   <span>COVERING FOR</span>
                   <span>DEPARTMENT</span>
-                  {/* <span>ROUTE</span>
-                  <span>VAN</span>
-                  <span>STOPS</span> */}
                   <span>WINDOW</span>
                   <span>STATUS</span>
                 </div>
@@ -248,11 +249,16 @@ export default function Dashboard() {
                     <div><UserCircle user_name={b.lead_name} size={20}></UserCircle> {b.lead_name}</div>
                     <div>{route.covering_for || "-"}</div>
                     <div>{leads.find((e: User) => e.id === b.lead_id)?.department}</div>
-                    {/* <div>{route.route_zone || "-"}</div>
-                    <div>{route.van || "-"}</div>
-                    <div>{route.stops || "-"}</div> */}
                     <div>{route.windows || "-"}</div>
-                    <div><div className={b.freezed || !isToday ? "submitted" : ""}>{b.freezed || !isToday ? "Submitted" : "In Progress"}</div></div>
+                    <div>
+                      <div className={b.freezed ? "submitted" :
+                                        !b.freezed && !isToday ? "incomplete" : ""}>
+                        {b.freezed && (<div><div>Submitted</div></div>)}
+                        {!b.freezed && !isToday && (<div><div>Incomplete</div></div>)}
+                        {!b.freezed && isToday && (<div><div>In Progress</div></div>)}
+                      {/* {b.freezed || !isToday ? "Submitted" : "In Progress"} */}
+                      </div>
+                    </div>
                   </div>
                 ));
               })}
@@ -265,7 +271,7 @@ export default function Dashboard() {
                 <h3>Requires attention</h3>
                 <p>Ordered by urgency</p>
               </div>
-              <div>{attentionCount} items</div>
+              <div>{attentionCount} item{attentionCount === 1 ? '' : 's'}</div>
             </div>
             {attentionCount === 0 && (<h3>No tasks requires attention today</h3>)}
             <div className="attention-container">
@@ -289,27 +295,35 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )
-              }).concat(...b.tasks?.map((task: Task, task_i: number) => {
-                if (task.checked === false) return (
-                  <div className="attention attention_task" key={`${b.id}_attention_task_${task_i}`}>
+              })
+            })}
+            {briefs.flatMap((b: SavedBrief) =>
+              (b.tasks || [])
+                .filter((task: Task) => !task.checked)
+                .map((task: Task, task_i: number) => (
+                  <div
+                    className="attention attention_task"
+                    key={`${b.id}_attention_task_${task_i}`}
+                  >
                     <div>
                       <div>
                         <p>Pending task</p>
                         <span className="moderate">Attention</span>
                       </div>
+
                       <div>{task.text}</div>
                     </div>
+
                     <div>
-                      <div>
-                        <UserCircle user_name={b.lead_name} size={20}></UserCircle>
+                      <div className="flex">
+                        <UserCircle user_name={b.lead_name} size={20} />
                         <div>{b.lead_name}</div>
                       </div>
+
                     </div>
                   </div>
-
-                )
-              }));
-            })}
+                ))
+            )}
             {briefs.map((b: SavedBrief) => {
               const reports_pending_length = b.reports.filter((report: Report) => report.checked === false).length
               if (reports_pending_length > 0) return (
@@ -338,6 +352,109 @@ export default function Dashboard() {
                       <div>
                         <p>Handed Off Brief</p>
                         <span className="moderate">Attention</span>
+                      </div>
+                      <div>
+                        <div>Handed Off from</div>
+                        <UserCircle user_name={leads.find(el => el.id === b.original_lead_id)?.name || ""} size={20}></UserCircle>
+                        <div>{leads.find(el => el.id === b.original_lead_id)?.name}</div>
+                        <div>to</div>
+                        <UserCircle user_name={leads.find(el => el.id === b.lead_id)?.name || ""} size={20}></UserCircle>
+                        <div>{leads.find(el => el.id === b.lead_id)?.name}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div>
+                        <UserCircle user_name={b.lead_name} size={20}></UserCircle>
+                        <div>{b.lead_name}</div>
+                      </div>
+                    </div>
+                  </div>
+              )
+            })}
+            </div>
+          </div>
+          <div style={{marginTop: 20}}>
+            <div className="flex j-s-b">
+              <div>
+                <h3>Duties Done</h3>
+                <p>All activities users done today</p>
+              </div>
+              <div>{dutiesCount} item{dutiesCount === 1 ? '' : 's'}</div>
+            </div>
+            {dutiesCount === 0 && (<h3>No tasks requires attention today</h3>)}
+            <div className="attention-container duties-container">
+             {briefs.map((b: SavedBrief) => {
+              return b.findings?.map((finding: Finding, finding_i: number) => {
+                if (finding.type === 'info') return (
+                  <div className="attention attention_finding" key={`${b.id}_attention_finding_${finding_i}`}>
+                    <div>
+                      <div>
+                        <p>Information finding</p>
+                        <span className="info">Info</span>
+                      </div>
+                      <div>{finding.description}</div>
+                    </div>
+                    <div>
+                      <div>
+                        <UserCircle user_name={b.lead_name} size={20}></UserCircle>
+                        <div>{b.lead_name}</div>
+                      </div>
+                      <div>{format(finding.created_at, 'h:m a')}</div>
+                    </div>
+                  </div>
+                )
+              })
+            })}
+            {briefs.flatMap((b: SavedBrief) => 
+                (b.tasks || [])
+                  .filter((task: Task) => task.checked)
+                  .map((task: Task) => (
+                  <div className="attention attention_task" key={`${b.id}_attention_task_${task.id}`}>
+                    <div>
+                      <div>
+                        <p>Completed task</p>
+                        <span className="good">Tasks</span>
+                      </div>
+                      <div>{task.text}</div>
+                    </div>
+                    <div>
+                      <div className="flex">
+                        <UserCircle user_name={b.lead_name} size={20}></UserCircle>
+                        <div>{b.lead_name}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                ))
+              )}
+            {briefs.map((b: SavedBrief) => {
+              const reports_done_length = b.reports.filter((report: Report) => report.checked === true).length
+              if (reports_done_length > 0) return (
+                  <div className="attention attention_report" key={`${b.id}_attention_reports`}>
+                    <div>
+                      <div>
+                        <p>Progress in reports reviewing</p>
+                        <span className="good">Reports</span>
+                      </div>
+                      <div>{reports_done_length === b.reports.length ? `All reports reviewed (${reports_done_length} reports)` : `${reports_done_length} reports reviewed`}</div>
+                    </div>
+                    <div>
+                      <div>
+                        <UserCircle user_name={b.lead_name} size={20}></UserCircle>
+                        <div>{b.lead_name}</div>
+                      </div>
+                      <div>{reports_done_length} done</div>
+                    </div>
+                  </div>
+              )
+            })}
+            {briefs.map((b: SavedBrief) => {
+              if (b.lead_id !== b.original_lead_id) return (
+                  <div className="attention attention_handoff" key={`${b.id}_attention_handoff`}>
+                    <div>
+                      <div>
+                        <p>Handed Off Brief</p>
+                        <span className="good">Attention</span>
                       </div>
                       <div>
                         <div>Handed Off from</div>

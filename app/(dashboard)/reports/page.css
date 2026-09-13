@@ -44,7 +44,8 @@
 .reports .table-reports > div > :first-child,
 .reports .table-reports > div > :nth-child(2),
 .reports .table-reports > div > :nth-child(6),
-.reports .table-reports > div > :nth-child(7){
+.reports .table-reports > div > :nth-child(7),
+.reports .table-reports > div > :nth-child(8){
     flex: 2;
     text-align: center;
     padding: 0 10;
@@ -64,7 +65,7 @@
     width: 70px;
 }
 
-.reports .table-reports > div > :nth-child(6) > div{
+.reports .table-reports > div > :nth-child(7) > div{
     margin: auto;
 }
 

@@ -8,6 +8,7 @@ import { getWeekDays } from "@/lib/config";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import './page.css'
+import capitalize from "@/lib/text";
 
 export default function Reports() {
   const [loading, setLoading] = useState(true)
@@ -53,7 +54,8 @@ export default function Reports() {
           assigned: true,
           list: [],
         },
-      }
+      },
+      day_time: 'ongoing'
     })
 
   const changeReports = (new_report: Report) => {
@@ -479,6 +481,12 @@ return (
                       {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                     </select>
                   )}
+                  <select value={reportToAdd.day_time ?? 'ongoing'} onChange={(e) => {setReportToAdd({...reportToAdd, day_time: e.target.value})}}>
+                    <option value="opening">Opening</option>
+                    <option value="midday">Midday</option>
+                    <option value="closing">Closing</option>
+                    <option value="ongoing">Ongoing</option>
+                  </select>
                 </div>
               </div>
               <div>
@@ -636,6 +644,7 @@ return (
                       <div>REPORTS</div>
                       <div>SOURCE</div>
                       <div>PERIOD</div>
+                      <div>DAY TIME</div>
                       <div>ASSIGNED TO</div>
                       <div>DELETE</div>
                     </div>
@@ -738,6 +747,17 @@ return (
                               </div>
                             </div>
                             <div>
+                              <div className="show">{capitalize(r.day_time)}</div>
+                              <div className="edit">
+                                <select value={r.day_time} onChange={(e) => {changeReports({...r, day_time: e.target.value})}}>
+                                  <option value="opening">Opening</option>
+                                  <option value="midday">Midday</option>
+                                  <option value="closing">Closing</option>
+                                  <option value="ongoing">Ongoing</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div>
                               <div className="button-d-bl-sm" onClick={() => {
                                 if (!user?.permissions.edit_reports){
                                   toast.error("You don't have permissions for this action.")
@@ -808,6 +828,7 @@ return (
                       <div>REPORTS</div>
                       <div>SOURCE</div>
                       <div>PERIOD</div>
+                      <div>DAY TIME</div>
                       <div>ASSIGNED TO</div>
                       <div>DELETE</div>
                     </div>
@@ -907,6 +928,17 @@ return (
                                   )}
                                   {r.once_per === 'month' && 'day'}
                                 </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="show">{capitalize(r.day_time)}</div>
+                              <div className="edit">
+                                <select value={r.day_time} onChange={(e) => {changeReports({...r, day_time: e.target.value})}}>
+                                  <option value="opening">Opening</option>
+                                  <option value="midday">Midday</option>
+                                  <option value="closing">Closing</option>
+                                  <option value="ongoing">Ongoing</option>
+                                </select>
                               </div>
                             </div>
                             <div>

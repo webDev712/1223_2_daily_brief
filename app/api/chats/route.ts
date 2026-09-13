@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     try{
         const body = await request.json();
     
-        const {id, text, timestamp} = body;
+        const {id, text, timestamp, users_ids} = body;
     
         const rows = await sql`
         INSERT INTO chat (
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
             ${timestamp},
             FALSE
         FROM website_user
-        WHERE id != ${id}
+        WHERE id = ANY(${users_ids})
         RETURNING id;`
         return NextResponse.json({success: true, rows})
     }

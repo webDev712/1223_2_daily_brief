@@ -58,7 +58,8 @@ export async function POST(request: Request) {
                                 source,
                                 checked,
                                 timestamp,
-                                saved_brief_id
+                                saved_brief_id,
+                                day_time
                             )
                             VALUES (
                                 ${r.text},
@@ -66,7 +67,8 @@ export async function POST(request: Request) {
                                 ${r.source},
                                 ${r.checked},
                                 ${r.timestamp},
-                                ${id}
+                                ${id},
+                                ${r.dat_time}
                             );
                         `;
                     } else {
@@ -77,7 +79,8 @@ export async function POST(request: Request) {
                                 name = ${r.name},
                                 source = ${r.source},
                                 checked = ${r.checked},
-                                timestamp = ${r.timestamp}
+                                timestamp = ${r.timestamp},
+                                day_time = ${r.day_time}
                             WHERE id = ${r.id};
                         `;
 }
@@ -85,8 +88,6 @@ export async function POST(request: Request) {
                 );
 
             // tasks
-            console.log('tasks')
-            console.log(tasks)
             await Promise.all(
                 tasks.map(async (t: any) => {
                     if (t.id == null || t.custom_id !== null) {
@@ -97,15 +98,23 @@ export async function POST(request: Request) {
                                     text,
                                     checked,
                                     task_type,
-                                    saved_brief_id
+                                    saved_brief_id,
+                                    roll_to_next_brief
                                 )
                                 VALUES (
                                     ${t.custom_id},
                                     ${t.text},
                                     ${t.checked ?? false},
                                     ${t.task_type},
-                                    ${id}
-                                );
+                                    ${id},
+                                    ${t.roll_to_next_brief ?? false}
+                                )
+                                ON CONFLICT (id)
+                                DO UPDATE SET
+                                    text = EXCLUDED.text,
+                                    checked = EXCLUDED.checked,
+                                    task_type = EXCLUDED.task_type,
+                                    roll_to_next_brief = EXCLUDED.roll_to_next_brief;
                             `;
                         }
                         else {
@@ -114,7 +123,8 @@ export async function POST(request: Request) {
                                 SET
                                     text = ${t.text},
                                     checked = ${t.checked},
-                                    task_type = ${t.task_type}
+                                    task_type = ${t.task_type},
+                                    roll_to_next_brief = ${t.roll_to_next_brief}
                                 WHERE id = ${t.id};
                             `;
                         }
@@ -124,7 +134,8 @@ export async function POST(request: Request) {
                             SET
                                 text = ${t.text},
                                 checked = ${t.checked},
-                                task_type = ${t.task_type}
+                                task_type = ${t.task_type},
+                                roll_to_next_brief = ${t.roll_to_next_brief}
                             WHERE id = ${t.id};
                         `;
                     }

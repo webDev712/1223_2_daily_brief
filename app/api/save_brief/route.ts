@@ -61,14 +61,16 @@ export async function POST(request: Request) {
                             name,
                             source,
                             checked,
-                            saved_brief_id
+                            saved_brief_id,
+                            day_time
                         )
                         VALUES (
                             ${r.text},
                             ${r.name},
                             ${r.source},
                             ${r.checked},
-                            ${new_id}
+                            ${new_id},
+                            ${r.day_time}
                         )
                     `;
                 }

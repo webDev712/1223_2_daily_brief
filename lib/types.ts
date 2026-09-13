@@ -47,6 +47,7 @@ export interface Report {
   start_at_day: string | null;
   edit: boolean;
   assigned_to: Assignment;
+  day_time: string;
 }
 
 export interface Finding {
@@ -68,6 +69,7 @@ export interface Task {
   text: string;
   task_type: string;
   checked: boolean;
+  roll_to_next_brief: boolean;
 }
 
 export interface User {
@@ -89,6 +91,7 @@ export interface User {
 
 export interface UserForChat extends User {
   open: boolean,
+  sendMessageToGroupSelected: boolean,
 }
 
 export interface Shift {
@@ -179,3 +182,23 @@ export interface NewMessage {
   to_user: string;
   timestamp: Date;
 };
+
+export interface Action {
+  id: string;
+  text: string;
+  date: string;
+  user_id: string;
+}
+
+export interface DailyLog {
+  id: string;
+  date: string;
+  user_id: string;
+  department_id: string;
+  shift: string;
+  category: string;
+  text: string;
+  date_resolved: string | null;
+  status: string;
+  actions: Action[];
+}

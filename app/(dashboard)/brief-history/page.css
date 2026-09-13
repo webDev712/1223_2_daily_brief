@@ -5,22 +5,191 @@
     overflow: hidden !important;
 }
 
-.brief-history .table > div{
+.brief-history .table > label{
     display: flex;
     padding: 10px 20px;
     background-color: white;
+    cursor: pointer;
 }
 
-.brief-history .table > div + div:has(+ div){
+.brief-history .table > label:has(input[type="checkbox"]:checked){
+    flex-wrap: wrap;
+}
+
+.brief-history .table > label > b{
+    height: 0px;
+    width: 0;
+    overflow: hidden;
+    font-weight: 400;
+    padding: 10px 0;
+}
+
+.brief-history .table > label > b *{
+    background-color: transparent;
+}
+
+
+.brief-history .table > label > b > div:nth-child(1),
+.brief-history .table > label > b > div:nth-child(3){
+    color: #0a0c10;
+    font-weight: 600;
+    margin: 2px 0 5px 0;
+}
+
+.brief-history .table > label > b > div:nth-child(2) > div ,
+.brief-history .table > label > b > div:nth-child(4) > div {
+    display: flex;
+    gap: 2px 10px;
+    /* margin-bottom: 10px; */
+}
+
+.brief-history .table > label > b > div:nth-child(2) > div > div:nth-child(1){
+    width: 25px;
+    height: 25px;
+    background-position: center;
+    background-size: 20px;
+    margin: auto 0;
+}
+
+
+.brief-history .table > label > b .high{
+    background-image: url('../../../public/high.svg');
+}
+
+.brief-history .table > label > b .moderate{
+    background-image: url('../../../public/medium.svg');
+}
+
+.brief-history .table > label > b .info{
+    background-image: url('../../../public/info.svg');
+}
+
+.brief-history .table > label > b > div:nth-child(2) > div > div:nth-child(2){
+    color: #0a0c10;
+    font-size: 14px;
+    margin: auto 0;
+}
+
+.brief-history .table > label > b > div:nth-child(2) > div > div:nth-child(3){
+    text-wrap-mode: nowrap;
+    width: max-content;
+    color: #9ca3af;
+    font-size: 12px;
+    margin: auto 0 auto auto;
+}
+
+
+.brief-history .table > label > b > div:nth-child(4) > div {
+    padding-left: 20px;
+    background-image: url('../../../public/round_select_0.png');
+    background-size: 13px;
+    background-position: left 7px center;
+}
+
+.brief-history .table > label > b > div:nth-child(4) > div.checked{
+    background-image: url('../../../public/round_select_1.png');
+}
+
+.brief-history .table > label > b > div:nth-child(4) > div > div:first-child.do-not-roll-next-brief,
+.brief-history .table > label > b > div:nth-child(4) > div > div:first-child.roll-next-brief{
+    background-image: url('../../../public/task_do_roll_to_the_next_day.png');
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    background-size: 30px;
+    background-position: center;
+    display: block;
+    position: relative;
+}
+
+
+.brief-history .table > label > b > div:nth-child(4) > div > div.do-not-roll-next-brief::before,
+.brief-history .table > label > b > div:nth-child(4) > div > div.roll-next-brief::before{
+    content: "This task rolls to the next brief.";
+    display: none;
+    width: 270px;
+    padding: 3px 10px;
+    background-color: #cfcfcf;
+    z-index: 1;
+    position: absolute;
+    font-weight: 600;
+    color: #18253f;
+    font-style: italic;
+    left: 40px;
+    bottom: 30px;
+    border-radius: 5px;
+}
+
+.brief-history .table > label > b > div:nth-child(4) > div > div.do-not-roll-next-brief:not(.d):hover:before,
+.brief-history .table > label > b > div:nth-child(4) > div > div.roll-next-brief:not(.d):hover:before{
+    display: block;
+}
+
+.brief-history .table > label > b > div:nth-child(4) > div > div.do-not-roll-next-brief::before{
+    content: "This task DOES NOT rolls to the next brief.";
+    width: 340px;
+}
+
+
+.brief-history .table > label > b > div:nth-child(4) > div > div:first-child.do-not-roll-next-brief{
+    background-image: url('../../../public/task_dont_roll_next_day.png');
+}
+
+.brief-history .table > label > b > div:nth-child(4) > div > div:nth-child(2){
+    margin: auto 0;
+}
+
+.brief-history .table > label > b > div:nth-child(4) > div > div:nth-child(3){
+    margin: auto 0 auto auto;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    text-align: right;
+    color: #9ca3af;
+    font-size: 12px;
+    line-height: 24px;
+}
+
+.brief-history .table > label > b > div:nth-child(2),
+.brief-history .table > label > b > div:nth-child(4){
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.brief-history .table > label > b h1{
+    width: 100%;
+    color: #6b7280;
+    text-align: left;
+    font-size: 14px;
+    font-style: italic;
+    overflow: hidden;
+    padding: 5px 0 0 10px;
+    margin: 0;
+}
+
+.brief-history .table > label:has(input[type="checkbox"]:checked) > b{
+    flex-basis: 100%;
+    height: max-content;
+}
+
+
+.brief-history .table > label:nth-child(n + 2):hover{
+    background-color: #eae1ff3f;
+}
+
+.brief-history .table > label + label:has( + label){
     border-bottom: 2px solid #F2F4F7;
+    cursor: pointer;
 }
 
-.brief-history .table > div:first-child{
+.brief-history .table > label:first-child{
     background-color: #F7F8FC;
     border: 2px solid #F2F4F7;
 }
 
-.brief-history .table > div:first-child > div{
+.brief-history .table > label:first-child > div{
     color: #98A2B3 !important;
     font-weight: 600 !important;
     font-size: 14px !important;
@@ -28,26 +197,30 @@
     justify-content: left !important;
 }
 
-.brief-history .table > div > div{
+.brief-history .table > label > div{
     text-align: left;
     flex: 1;
     margin: auto 0;
 }
 
-.brief-history .table > div > div:nth-child(1){
+.brief-history .table > label > div:nth-child(1){
     width: 140px;
     color: #101828;
     font-weight: 600;
     font-size: 14px;
 }
 
-.brief-history .table > div > div:nth-child(1) span{
+.brief-history .table > label > div:nth-child(1) * {
+    background-color: transparent;
+}
+
+.brief-history .table > label > div:nth-child(1) span{
     color: #98A2B3;
     font-size: 12px;
     font-weight: 400;
 }
 
-.brief-history .table > div > div:nth-child(2){
+.brief-history .table > label > div:nth-child(2){
     width: 160px;
     min-width: 160px;
     display: flex;
@@ -55,26 +228,27 @@
     justify-content: start;
 }
 
-.brief-history .table > div > div:nth-child(2) > div:nth-child(2){
+.brief-history .table > label > div:nth-child(2) > div:nth-child(2){
     color: #98a2b3;
+    background-color: transparent;
 }
 
-.brief-history .table > div > div:nth-child(2) > div:first-child{
+.brief-history .table > label > div:nth-child(2) > div:first-child{
     margin-left: 30px;
 }
 
-.brief-history .table > div > div:nth-child(2) > div:first-child:has(+ div + div){
+.brief-history .table > label > div:nth-child(2) > div:first-child:has(+ div + div){
     margin-left: 0;
 }
 
 
-.brief-history .table > div:first-child > div:nth-child(2){
+.brief-history .table > label:first-child > div:nth-child(2){
     flex: 0.5;
     display: block;
     text-align: center;
 }
 
-.brief-history .table > div > div:nth-child(3){
+.brief-history .table > label > div:nth-child(3){
     width: 100px;
     color: #667085;
     font-weight: 400;
@@ -82,17 +256,17 @@
     text-align: center;
 }
 
-.brief-history .table > div:first-child > div:nth-child(3){
+.brief-history .table > label:first-child > div:nth-child(3){
     display: block;
     text-align: center;
 }
 
-.brief-history .table > div > div:nth-child(4){
+.brief-history .table > label > div:nth-child(4){
     width: 100px;
     font-size: 14px
 }
 
-.brief-history .table > div > div:nth-child(5){
+.brief-history .table > label > div:nth-child(5){
     display: flex;
     width: 100px;
     padding: 0 10px;
@@ -100,23 +274,24 @@
     font-weight: 500;
 }
 
-.brief-history .table > div > div:nth-child(5) > div:nth-child(1){
+.brief-history .table > label > div:nth-child(5) > div:nth-child(1){
     width: 50px;
+    background-color: transparent;
 }
 
-.brief-history .table > div:first-child > div:nth-child(5){
+.brief-history .table > label:first-child > div:nth-child(5){
     display: block;
     text-align: left;
 }
 
 
-.brief-history .table > div > div:nth-child(5) .progress-bar{
+.brief-history .table > label > div:nth-child(5) .progress-bar{
     width: 50px;
     margin: auto 0;
     height: 6px !important;
 }
 
-.brief-history .table > div > div:nth-child(6){
+.brief-history .table > label > div:nth-child(6){
     width: 100px;
     background-repeat: no-repeat;
     background-position: left center;
@@ -125,24 +300,24 @@
     font-size: 12px;
 }
 
-.brief-history .table > div:first-child > div:nth-child(6){
+.brief-history .table > label:first-child > div:nth-child(6){
     padding-left: 0;
 }
 
-.brief-history .table > div > div:nth-child(6).yellow{
+.brief-history .table > label > div:nth-child(6).yellow{
     color: #F79009;
     background-image: url('../../../public/medium.svg');
     font-size: 14px;
 }
 
 
-.brief-history .table > div > div:nth-child(6).red{
+.brief-history .table > label > div:nth-child(6).red{
     color: #F04438;
     background-image: url('../../../public/high.svg');
     font-size: 14px;
 }
 
-.brief-history .table > div > div:nth-child(7){
+.brief-history .table > label > div:nth-child(7){
     width: 100px;
     background-image: url('../../../public/task.svg');
     background-repeat: no-repeat;
@@ -151,30 +326,35 @@
     color: #667085;
 }
 
-.brief-history .table > div:first-child > div:nth-child(7){
+.brief-history .table > label:first-child > div:nth-child(7){
     padding-left: 0;
 }
 
 
-.brief-history .table > div > div:nth-child(8){
+.brief-history .table > label > div:nth-child(8){
     width: 100px;
     font-size: 14px;
 }
 
 
-.brief-history .table > div:first-child > div:nth-child(8){
+.brief-history .table > label:first-child > div:nth-child(8){
     display: block;
     text-align: left;
 }
 
-.brief-history .table > div:first-child > div:nth-child(9){
+.brief-history .table > label:first-child > div:nth-child(9){
     display: block;
     text-align: center;
 }
 
 
-.brief-history .table > div > div:nth-child(9){
+.brief-history .table > label > div:nth-child(9){
     text-align: center;
+}
+
+
+.brief-history .table > label > input[type="checkbox"]{
+    display: none;
 }
 
 
@@ -214,5 +394,16 @@
 
     .table {
         width: max-content;
+    }
+
+    .brief-history .table > label > b > div:nth-child(2) > div ,
+    .brief-history .table > label > b > div:nth-child(4) > div {
+        flex-wrap: wrap;
+    }
+    
+
+    .brief-history .table > label > b > div:nth-child(2) > div > div:last-child ,
+    .brief-history .table > label > b > div:nth-child(4) > div > div:last-child {
+        flex-basis: 100%;
     }
 }

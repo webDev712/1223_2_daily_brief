@@ -6,11 +6,13 @@ import { useEffect, useState, useRef } from 'react';
 import getColorsFromName from '@/lib/color';
 import { format, parse } from "date-fns";
 import { toast } from 'sonner';
-import { Covered, SavedBrief, Shift, User } from '@/lib/types';
+import { Covered, Report, SavedBrief, Shift, User } from '@/lib/types';
 import './page.css'
 import { downloadPDF, generateEmailHTML } from '@/lib/documents';
 import SmallLoader from '@/app/src/components/SmallLoader';
 import { useSearchParams } from 'next/navigation';
+import { randomInt } from 'crypto';
+import capitalize from '@/lib/text';
 
 
 export default function DailyBrief() {
@@ -24,7 +26,8 @@ export default function DailyBrief() {
       briefDate.getFullYear() === today.getFullYear() &&
       briefDate.getMonth() === today.getMonth() &&
       briefDate.getDate() === today.getDate();
-    return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) && user?.permissions.update_brief === false };
+    return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) || user?.permissions.update_brief === false 
+  };
   const [showSubmit, setShowSubmit] = useState(false)
   const [showHandoff, setShowHandoff] = useState(false)
   const savingRef = useRef(false);
@@ -136,6 +139,8 @@ export default function DailyBrief() {
   };
 
   const changeTask = async (b: any, task: any) => {
+    console.log('task')
+    console.log(task)
     if (savingRef.current) return;
 
     savingRef.current = true;
@@ -146,7 +151,8 @@ export default function DailyBrief() {
         el.id === task.id ? task : el
       ),
     };
-
+    console.log('updatedBrief')
+    console.log(updatedBrief)
     setBriefs((prev: any) =>
       prev.map((brief: any) =>
         brief.id === b.id ? updatedBrief : brief
@@ -165,6 +171,7 @@ export default function DailyBrief() {
 
   const addTask = async ( b: any, task: any ) => {
     if (savingRef.current) return;
+    console.log('addTask 1')
 
     savingRef.current = true;
     setShowAddTask(false)
@@ -173,7 +180,7 @@ export default function DailyBrief() {
       tasks: [
         ...(b.tasks || []),
         {
-          ...task, custom_id: undefined,
+          ...task,
         }
       ]
     };
@@ -184,6 +191,8 @@ export default function DailyBrief() {
       )
     );
 
+    console.log('updatedBrief')
+    console.log(updatedBrief)
     await fetch("/api/update_todays_brief", {
       method: "POST",
       headers: {
@@ -513,9 +522,9 @@ export default function DailyBrief() {
                         <div>
                           <span>Date</span>
                           <div>{format(
-    parse(b.date, "yyyy-MM-dd", new Date()),
-    "MMMM d, yyyy"
-)}</div>
+                              parse(b.date, "yyyy-MM-dd", new Date()),
+                              "MMMM d, yyyy"
+                          )}</div>
                         </div>
                         <div>
                             <span>Driving Status</span>
@@ -605,16 +614,17 @@ export default function DailyBrief() {
                       </div>
                     </div>
                     <div className='reports'>
-                      <div>Reports: <span>{b.reports.filter((r: any) => r.checked === true).length} of {b.reports.length} reviewed</span></div>
+                      <div>Reports: <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} reviewed</span></div>
                       <div>
                         <div className='progress-bar'>
                           <span style={{width: b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100 + "%"}}></span>
                         </div>
-                        {b.reports.map(
-                        (r: any) => (
+                        {b.reports.sort((a: Report, b: Report) => ['opening', 'midday', 'closing', 'ongoing'].indexOf(a.day_time) - ['opening', 'midday', 'closing', 'ongoing'].indexOf(b.day_time)).map(
+                        (r: Report) => (
                         <div className='report' key={r.id}>
                           <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} />
                           <div>{r.name}</div>
+                          <div>{capitalize(r.day_time)}</div>
                           <div>{r.source}</div>
                           <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                         </div>)
@@ -667,12 +677,16 @@ export default function DailyBrief() {
                         </div>
                         <div>
                           {b.tasks && b.tasks?.length > 0 ? b.tasks.map(t => (
-                            <label key={`task_label_${t.id}`} id={`task_label_${t.id}`} className={noAccessEdit(b) ? 'task d' : 'task'}>
+                            <label key={`task_label_${t.id || crypto.randomUUID()}`} id={`task_label_${t.id || crypto.randomUUID()}`} className={noAccessEdit(b) ? 'task d' : 'task'}>
                               <input key={`${t.id}-task-input`} type='checkbox' checked={t.checked ?? false} onChange={() => { if (!noAccessEdit(b)) changeTask(b, {
                                     ...t,
                                     checked: !(t.checked ?? false),
                                   });
                                 }}/>
+                              <div data-img={t.roll_to_next_brief === true ? "roll-next-brief" : "do-not-roll-next-brief"} className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) changeTask(b, {
+                                ...t,
+                                roll_to_next_brief: !t.roll_to_next_brief
+                              })}}></div>
                               <div key={`${t.id}-task-text`}>{t.text}</div>
                               <div key={`${t.id}-task-type`}>{t.task_type}</div>
                             </label>)) : (<h3>{!showAddTask ? "No Tasks yet" : ""}</h3>)
@@ -694,8 +708,11 @@ export default function DailyBrief() {
                                 <option value='Other'>Other</option>
                               </select>
                             </div>
-                            <input disabled={noAccessEdit(b)} type="button" value="Add" className='button-d-bl-sm' onClick={() => { addTask(b, {
-                                custom_id: crypto.randomUUID(),
+                            <input disabled={noAccessEdit(b)} type="button" value="Add" className='button-d-bl-sm' onClick={() => {
+                              const custom_id = crypto.randomUUID();
+                              addTask(b, {
+                                id: custom_id,
+                                custom_id: custom_id,
                                 task_type: (document.getElementById(`new_t_type_${b.id}`) as HTMLTextAreaElement)?.value || '',
                                 text: (document.getElementById(`new_t_name_${b.id}`) as HTMLTextAreaElement)?.value || '',
                               });

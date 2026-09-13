@@ -357,7 +357,24 @@ div .progress-bar{
     display: flex;
     gap: 20px;
     flex-direction: column;
-    min-height: max-content;
+    height: max-content;
+    max-height: 80vh;
+    overflow-y: scroll;
+}
+
+
+.confirm > div::-webkit-scrollbar {
+    width: 6px;
+}
+
+.confirm > div::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.confirm > div::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
 }
 
 .confirm > div > h1{

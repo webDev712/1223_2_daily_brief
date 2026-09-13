@@ -427,6 +427,46 @@
     min-height: 15vh;
 }
 
+.chat .confirm.send-message-to-all > div > label:nth-child(3){
+    background-image: url('../../../../public/arrow_grey_bottom.svg');
+    background-position: left center;
+    padding-left: 25px;
+    background-size: 20px;
+    font-style: italic;
+    color: #9b9b9b;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.chat .confirm.send-message-to-all > div > label:nth-child(3) input{
+    display: none;
+}
+
+.chat .confirm.send-message-to-all > div > div:nth-child(4){
+    display: none;
+}
+
+.chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked){
+    margin-bottom: -15px;
+}
+
+.chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked) + div{
+    display: grid;
+    gap: 5px;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.chat .confirm.send-message-to-all > div > div:nth-child(4) > label{
+    display: flex;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.chat .confirm.send-message-to-all > div > div:nth-child(4) > label input{
+    cursor: pointer;
+}
+
 @keyframes pulse {
     0% {
         transform: scale(1);
@@ -444,5 +484,20 @@
 @media (max-width: 500px) {
     .chat:has(> div){
         width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked) + div{
+        grid-template-columns: repeat(1, 1fr);
+        font-size: 18px;
+    }
+
+    .chat .messages{
+        height: calc(100vh - 148px);
+    }
+    
+    .chat .chats{
+        height: calc(100vh - 92px);
     }
 }

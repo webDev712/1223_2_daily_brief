@@ -49,24 +49,32 @@
     flex-direction: column;
     gap: 15px;
     border-radius: 16px;
-    box-shadow: 0px 4px 16px 0px #0000000F;
+    box-shadow: 0px 0px 0px 3px #FCD34D26;
     overflow: hidden;
 }
 
 .dashboard .briefs .brief.submitted{
-    box-shadow: 0px 0px 0px 3px #FCD34D26;
+    box-shadow: rgb(157 255 127 / 15%) 0px 0px 0px 2px;
+}
+
+.dashboard .briefs .brief.incomplete{
+    box-shadow: rgb(252 77 77 / 15%) 0px 0px 0px 2px;
 }
 
 .dashboard .briefs .brief .lane{
-    background: #E8EAED;
     width: calc(100% + 30px);
     height: 5px;
     margin-left: -15px;
     margin-top: -15px;
+    background: linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%);
 }
 
 .dashboard .briefs .brief.submitted .lane{
-    background: linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%);
+    background: linear-gradient(90deg, #9ee0b8 0%, #4dfc93 100%);
+}
+
+.dashboard .briefs .brief.incomplete .lane{
+    background: linear-gradient(90deg, #f50b0b 0%, #ff9e9e 100%);
 }
 
 
@@ -290,10 +298,16 @@
 }
 
 
-.dashboard .covered-container > div:nth-child(n + 2) > div:last-child > div.submitted{
-    color: #059669;
-    background-color: #ECFDF5;
+.dashboard .brief div:has(> div.submitted){
+    color: #059669 !important;
+    background-color: #ECFDF5 !important;
 }
+
+.dashboard .brief div:has(> div.incomplete){
+    color: #960505 !important;
+    background-color: #fdecec !important;
+}
+
 
 .dashboard .covered-container > div:nth-child(n + 2) > div:nth-child(4){
     /* background-image: url('../../../public/van.svg'); */
@@ -341,6 +355,8 @@
     font-weight: 400;
 }
 
+.dashboard .attention-container .info,
+.dashboard .attention-container .good,
 .dashboard .attention-container .high,
 .dashboard .attention-container .moderate{
     font-size: 10px;
@@ -360,6 +376,16 @@
     background-color: #FFFAEB;
 }
 
+.dashboard .attention-container .good{
+    color: #118419;
+    background-color: #ebfff2;
+}
+
+.dashboard .attention-container .info{
+    color: #4d55c9;
+    background-color: #ebebff;
+}
+
 .dashboard .attention-container > div > div:nth-child(2){
     display: flex;
     flex-direction: column;
@@ -377,6 +403,7 @@
     margin: auto 0;
 }
 
+.dashboard .attention-container > div > div:nth-child(2) > div:first-child > div:first-child,
 .dashboard .attention-container > div > div:nth-child(2) > div:first-child > div:first-child > div{
     border-radius: 50px !important;
     line-height: 2.3 !important;
@@ -406,9 +433,14 @@
     border-radius: 50px !important;
 }
 
-.dashboard div:has(+ .attention-container) > div:nth-child(2){
+.dashboard div:has( + .attention-container) > div:nth-child(2){
     color: #F04438;
     background-color: #FEF3F2;
+}
+
+.dashboard div:has( + .attention-container.duties-container) > div:nth-child(2){
+    color: #3aa036;
+    background-color: #e7f7e6;
 }
 
 

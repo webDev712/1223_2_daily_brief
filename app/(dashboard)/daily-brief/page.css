@@ -111,11 +111,15 @@
 
 
 .daily-brief .report > :nth-child(3) {
-    margin-left: auto;
-    color: #9CA3AF;
+    font-size: 14px;
+    margin: auto 0 auto auto;
 }
 
 .daily-brief .report > :nth-child(4) {
+    color: #9CA3AF;
+}
+
+.daily-brief .report > :nth-child(5) {
     background-color: #F5F7FA;
     padding: 4px 10px;
     border-radius: 10px;
@@ -127,7 +131,7 @@
     text-wrap-mode: nowrap;
 }
 
-.daily-brief .report > :nth-child(4).done {
+.daily-brief .report > :nth-child(5).done {
     background-color: #ECFDF5;
     color: #059669;
 }
@@ -562,10 +566,61 @@
 }
 
 .daily-brief .tasks .task > div:nth-child(3){
-    margin-left: auto;
+    line-height: 1.4;
+    height: max-content;
+    margin: auto 0;
+}
+
+.daily-brief .tasks .task > div:nth-child(4){
     color: #9CA3AF;
     font-size: 12px;
     line-height: 24px;
+    min-width: 80px;
+    max-width: 80px;
+    margin: auto 0 auto auto;
+}
+
+.daily-brief .tasks .task > div[data-img="do-not-roll-next-brief"],
+.daily-brief .tasks .task > div[data-img="roll-next-brief"]{
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    margin: auto 0;
+    background-image: url('../../../public/task_do_roll_to_the_next_day.png');
+    background-size: 100%;
+    position: relative;
+    cursor: pointer;
+}
+
+.daily-brief .tasks .task > div[data-img="do-not-roll-next-brief"]{
+    background-image: url('../../../public/task_dont_roll_next_day.png');
+}
+
+.daily-brief .tasks .task > div[data-img="do-not-roll-next-brief"]::before,
+.daily-brief .tasks .task > div[data-img="roll-next-brief"]::before{
+    content: "This task will roll to the next brief. Click here to make it NOT roll to the next brief.";
+    display: none;
+    width: 320px;
+    padding: 3px 10px;
+    background-color: #cfcfcf;
+    z-index: 1;
+    position: absolute;
+    font-weight: 600;
+    color: #18253f;
+    font-style: italic;
+    left: 40px;
+    bottom: 30px;
+    border-radius: 5px;
+}
+
+.daily-brief .tasks .task > div[data-img="do-not-roll-next-brief"]:not(.d):hover:before,
+.daily-brief .tasks .task > div[data-img="roll-next-brief"]:not(.d):hover:before{
+    display: block;
+}
+
+.daily-brief .tasks .task > div[data-img="do-not-roll-next-brief"]::before{
+    content: "This task will NOT roll to the next brief. Click here to make it do roll to the next brief.";
 }
 
 .daily-brief .add-task{
@@ -757,7 +812,7 @@
         flex-direction: column;
     }
 
-    .daily-brief .report > :nth-child(3){
+    .daily-brief .report > :nth-child(4){
         margin: 0;
     }
 
@@ -799,5 +854,9 @@
         width: 100%;
     }
 
+    .daily-brief .tasks .task > div[data-img="do-not-roll-next-brief"]::before,
+    .daily-brief .tasks .task > div[data-img="roll-next-brief"]::before{
+        width: 250px;
+    }
 
 }

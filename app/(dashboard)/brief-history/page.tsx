@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { format, parse } from "date-fns";
 import './page.css'
 import UserCircle from "@/app/src/components/UserCircle";
-import { SavedBrief, User } from "@/lib/types";
+import { Finding, SavedBrief, Task, User } from "@/lib/types";
 
 
 export default function BriefHistory() {
@@ -46,6 +46,9 @@ export default function BriefHistory() {
             if (status === 'submitted'){
               if (!((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 > 1 || b.freezed)) return false;
             }
+            if (status === 'incomplete'){
+              if (!((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 > 1 && !b.freezed)) return false;
+            }
           }
           return (today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < parseInt(days);
         })
@@ -71,14 +74,15 @@ export default function BriefHistory() {
       }
       load();
     }, [status, days, selectedLead]);
-  const briefs_submitted = allBriefs.filter((b: SavedBrief) => {
-                    const briefDate = new Date(b.date);
-                    const isToday =
-                      briefDate.getFullYear() === today.getFullYear() &&
-                      briefDate.getMonth() === today.getMonth() &&
-                      briefDate.getDate() === today.getDate();
-                    return b.freezed === true || !isToday
-                  }).length
+  const briefs_submitted = allBriefs.filter((b: SavedBrief) => { return b.freezed === true }).length
+  const briefs_incomplete = allBriefs.filter((b: SavedBrief) => { 
+    const briefDate = new Date(b.date);
+    const isToday =
+      briefDate.getFullYear() === today.getFullYear() &&
+      briefDate.getMonth() === today.getMonth() &&
+      briefDate.getDate() === today.getDate();
+    return b.freezed === false && !isToday }).length
+                  
   return (
     <div className="brief-history">
       {loading ?
@@ -97,7 +101,7 @@ export default function BriefHistory() {
                     <span>{(briefs_submitted / allBriefs.length * 100).toFixed(0)}% completion rate</span>
                   </div>
                   <div img-id="clock">
-                    <h1>{allBriefs.length - briefs_submitted}</h1>
+                    <h1>{allBriefs.length - briefs_submitted - briefs_incomplete}</h1>
                     <div>In Progress</div>
                     <span>Awaiting submission today</span>
                   </div>
@@ -116,6 +120,7 @@ export default function BriefHistory() {
                     <option value="">All Statuses</option>
                     <option value="submitted">Submitted</option>
                     <option value="progress">In progress</option>
+                    <option value="incomplete">Incomplete</option>
                   </select>
                   <select name="days" id="days" defaultValue={days} onChange={(e) => setDays(e.target.value)}>
                     <option value="7">Last 7 days</option>
@@ -128,7 +133,7 @@ export default function BriefHistory() {
               <div></div>
               <div className="table-wrapper">
                 <div className="table">
-                  <div>
+                  <label>
                     <div>DATE</div>
                     <div>EMPLOYEE</div>
                     <div>SHIFT</div>
@@ -139,7 +144,7 @@ export default function BriefHistory() {
                     {/* <div>HANDOFF</div> */}
                     <div>STATUS</div>
                     {/* <div>VIEW</div> */}
-                  </div>
+                  </label>
                   {briefs.map((b: SavedBrief) => {
                     const briefDate = parse(b.date, "yyyy-MM-dd", new Date());
                     const isToday =
@@ -148,7 +153,7 @@ export default function BriefHistory() {
                       briefDate.getDate() === today.getDate();
                     const reportsPercentage = b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100;
                     return (
-                      <div key={b.id}>
+                      <label key={b.id}>
                         <div>
                           <div>{isToday ? 'Today' : format(briefDate, 'MMM d')}</div>
                           <span>{format(briefDate, 'MMMM d, yyyy')}</span>
@@ -173,11 +178,36 @@ export default function BriefHistory() {
                         <div className={b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : ''}>{b.findings ? b.findings.length : "None"}</div>
                         <div>{b.tasks.length}</div>
                         {/* <div>HANDOFF</div> */}
-                        <div style={{color: (b.freezed === true || !isToday ? '#12B76A' : '#F79009')}}>
-                          ● {b.freezed === true || !isToday ? 'Submitted' : 'In progress'}
+                        <div style={{color: (b.freezed ? '#12B76A' : 
+                                                (isToday ? '#F79009' : '#f70909'))}}>
+                          ● {b.freezed ? 'Submitted' : 
+                                                (isToday ? 'In progress' : 'Incomplete')}
                         </div>
+                        <input type="checkbox" />
+                        <b>
+                          <div>Findings:</div>
+                          <div>{b.findings && b.findings?.length > 0 ? b.findings.map((finding: Finding) => (
+                            <div key={`finding_show_${finding.id}`}>
+                              <div className={finding.type}></div>
+                              <div>{finding.description}</div>
+                              <div>{format(finding.created_at, 'hh:mm aa')}</div>
+                            </div>
+                          )) : (
+                            <h1>No Findings in this brief</h1>
+                          )}</div>
+                          <div>Tasks:</div>
+                          <div>{b.tasks && b.tasks?.length > 0 ? b.tasks.map((task: Task) => (
+                            <div key={`task_show_${task.id}`} className={task.checked ? 'checked' : ''}>
+                              <div className={task.roll_to_next_brief === true ? 'roll-next-brief' : 'do-not-roll-next-brief'}></div>
+                              <div>{task.text}</div>
+                              <div>{task.task_type}</div>
+                            </div>
+                          )) : (
+                            <h1>No Tasks in this brief</h1>
+                          )}</div>
+                        </b>
                         {/* <div>VIEW</div> */}
-                      </div>
+                      </label>
                     )
                   })}
                 </div>

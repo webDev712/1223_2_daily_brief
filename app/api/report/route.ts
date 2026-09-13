@@ -12,12 +12,13 @@ export async function POST(request: Request) {
             once_per,
             start_at_day=1,
             archived,
-            assigned_to
+            assigned_to,
+            day_time
         } = body;
 
         const rows = await sql`
-            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to)
-            VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived}, ${assigned_to})
+            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to, day_time)
+            VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived}, ${assigned_to}, ${day_time})
             RETURNING id;
         `;
 
@@ -43,12 +44,13 @@ export async function PATCH(request: Request) {
             once_per,
             start_at_day="",
             archived,
-            assigned_to
+            assigned_to,
+            day_time
         } = body;
         console.log(body)
         const rows = await sql`
             UPDATE report
-            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}
+            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}, day_time = ${day_time}
             WHERE id = ${id};
         `
         // const rows_2 = await sql`

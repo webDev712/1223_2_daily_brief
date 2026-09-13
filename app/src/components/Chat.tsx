@@ -18,6 +18,7 @@ const Chat = () => {
 
     const [chats, setChats] = useState<Message[]>([]);
     const [users, setUsers] = useState<UserForChat[]>([]);
+    const [usersForSendMessageToGroup, setUsersForSendMessageToGroup] = useState<UserForChat[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
 
     const messagesRef = useRef<HTMLDivElement>(null);
@@ -64,13 +65,18 @@ const Chat = () => {
         // setReloadChats(prev => prev + 1);
     }
 
-    const sendMessageToAll = async () => {
+    const sendMessageToGroup = async () => {
         const textareaElement = (document.getElementById('message-to-all')) as HTMLTextAreaElement;
         if (!textareaElement) return;
         const chats_res = await fetch('/api/chats', {
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({id: seeUserMessageAs.id, text: `NOTIFICATION: ${textareaElement.value || '-'}`, timestamp: new Date()})
+            body: JSON.stringify({
+                id: seeUserMessageAs.id, 
+                text: `NOTIFICATION: ${textareaElement.value || '-'}`, 
+                timestamp: new Date(), 
+                users_ids: usersForSendMessageToGroup.map((user: UserForChat) => {if (user.sendMessageToGroupSelected) return user.id})
+            })
         })
         if (!chats_res.ok){
             console.error('Error while sending message');
@@ -136,6 +142,10 @@ const Chat = () => {
                                 : a.name.localeCompare(b.name);
                 })
             setUsers(users_data);
+            let users_change = users_data.map((user: User) => { return {...user, sendMessageToGroupSelected: true } })
+            console.log('users_change')
+            console.log(users_change)
+            setUsersForSendMessageToGroup(users_change)
             setChats(chat_data);
         }
 
@@ -302,29 +312,31 @@ const Chat = () => {
                                             }
                                         </div>
                                     )}
-                                    <div className='flex j-s-b'>
-                                        <input type="text" value={messageText} placeholder='Message text...' onChange={(e) => setMessageText(e.target.value)}
-                                        onKeyDown={(e) => {
-                                                console.log(e.key)
-                                                if (e.key === 'Enter') {
-                                                    sendMessage({
-                                                        text: messageText,
-                                                        from_user: seeUserMessageAs.id,
-                                                        to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
-                                                        timestamp: new Date(),
-                                                    });
-                                                }
-                                            }}/>
-                                        <div className="button-d-bl-sm" onClick={() => {
-                                            sendMessage({
-                                                text: messageText,
-                                                from_user: seeUserMessageAs.id,
-                                                to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
-                                                timestamp: new Date(),
-                                            })
-                                        }}
-                                        >Send</div>
-                                    </div>
+                                    {seeUserMessageAs.id === me_user.id && (
+                                        <div className='flex j-s-b'>
+                                            <input type="text" value={messageText} placeholder='Message text...' onChange={(e) => setMessageText(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                    console.log(e.key)
+                                                    if (e.key === 'Enter') {
+                                                        sendMessage({
+                                                            text: messageText,
+                                                            from_user: seeUserMessageAs.id,
+                                                            to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
+                                                            timestamp: new Date(),
+                                                        });
+                                                    }
+                                                }}/>
+                                            <div className="button-d-bl-sm" onClick={() => {
+                                                sendMessage({
+                                                    text: messageText,
+                                                    from_user: seeUserMessageAs.id,
+                                                    to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
+                                                    timestamp: new Date(),
+                                                })
+                                            }}
+                                            >Send</div>
+                                        </div>
+                                    )}
                                 </div>)
                             : (
                                 // ALL CHATS
@@ -391,13 +403,32 @@ const Chat = () => {
                         <div>
                             <h1>Type in message to send <strong>to all employees:</strong></h1>
                             <p>They will receive it <strong>in their chats</strong></p>
+                            <label>
+                                <div>Or select employees</div>
+                                <input type="checkbox" />
+                            </label>
+                            <div>
+                                {usersForSendMessageToGroup.map((user: UserForChat) => (
+                                    <label key={`sendMessageToGroupSelected_${user.id}`} >
+                                        <input type="checkbox" checked={user.sendMessageToGroupSelected ?? true} onChange={(e) => {
+                                            setUsersForSendMessageToGroup((prev) => prev.map((user_local: UserForChat) => {
+                                                return user_local.id === user.id ? {
+                                                    ...user, 
+                                                    sendMessageToGroupSelected: e.target.checked
+                                                } : user_local
+                                            }))
+                                        }}/>
+                                        <div>{user.name}</div>
+                                    </label>
+                                ))}
+                            </div>
                             <div>
                                 <textarea id="message-to-all" placeholder='Message to all employees...'></textarea>
                             </div>
                             <div>
                                 <div className='button-w-bl' onClick={() => {setShowSendMessageToAll(false)}}>Cancel</div>
                                 <div className='button-d-bl' onClick={() => 
-                                    sendMessageToAll()
+                                    sendMessageToGroup()
                                 }>Send</div>
                             </div>
                         </div>)}

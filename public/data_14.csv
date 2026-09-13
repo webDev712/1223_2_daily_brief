@@ -1,0 +1,6 @@
+external_id,date,employee_name,department,pieces,value,hours,ppoh,target_ppoh,delta_ppoh,efficiency,notes
+235,9/7/2026,"Lopez, Everardo (omar)",Assemble,1,,0.25,,,,,
+321,9/7/2026,"Sanchez, Emerson",Deliver,330,,0.25,,,,,
+235,9/7/2026,"Lopez, Everardo (omar)",Detail,212,,0.75,,,,,
+373,9/7/2026,"Alvarado, Yuritzi",Detail,203,,1.25,,,,,
+321,9/7/2026,"Sanchez, Emerson",Rack,333,,0.75,,,,,
