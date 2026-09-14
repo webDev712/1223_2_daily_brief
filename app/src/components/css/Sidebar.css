@@ -101,6 +101,9 @@
 [data-img="production-dashboard"]{
     background-image: url('../../../../public/production_dashboard_0.svg');
 }
+[data-img="action-tracker"]{
+    background-image: url('../../../../public/action_tracker_0.png');
+}
 
 
 div:has(> [data-img="settings"]){
@@ -131,6 +134,10 @@ div:has(> [data-img="settings"]){
 [data-img="production-dashboard"].selected{
     background-image: url('../../../../public/production_dashboard_1.svg');
 }
+[data-img="action-tracker"].selected{
+    background-image: url('../../../../public/action_tracker_1.png');
+}
+
 
 [data-img="photo_sidebar"]{
     background-image: url('../../../../public/photo_sidebar.svg');

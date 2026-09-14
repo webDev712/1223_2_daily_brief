@@ -15,6 +15,7 @@ export default function Sidebar({ user }: { user: User}) {
     {href: 'reports', text: 'Reports', permission_name: 'see_reports_page'},
     {href: 'teams-and-roles', text: 'Teams & Roles', permission_name: 'see_team_roles'},
     {href: 'production-dashboard', text: 'Production Dashboard', permission_name: 'see_production_dashboard'},
+    // {href: 'action-tracker', text: 'Action Tracker', permission_name: 'see_profile_settings'},
     {href: 'settings', text: 'Settings', permission_name: 'see_profile_settings'},
   ]
 

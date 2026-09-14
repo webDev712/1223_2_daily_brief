@@ -13,6 +13,8 @@ import SmallLoader from '@/app/src/components/SmallLoader';
 import { useSearchParams } from 'next/navigation';
 import { randomInt } from 'crypto';
 import capitalize from '@/lib/text';
+import { isSameDay } from "date-fns";
+
 
 
 export default function DailyBrief() {
@@ -20,12 +22,8 @@ export default function DailyBrief() {
   const today = new Date();
 
   const noAccessEdit = (b: SavedBrief) => { 
-    const briefDate = new Date(b.date);
+    const isToday = isSameDay(new Date(b.date), new Date());
 
-    const isToday =
-      briefDate.getFullYear() === today.getFullYear() &&
-      briefDate.getMonth() === today.getMonth() &&
-      briefDate.getDate() === today.getDate();
     return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) || user?.permissions.update_brief === false 
   };
   const [showSubmit, setShowSubmit] = useState(false)
