@@ -16,7 +16,6 @@ export async function POST(request: Request) {
             notes,
             reports = [],
             tasks = [],
-            projects = []
         } = body;
         
         
@@ -90,26 +89,6 @@ export async function POST(request: Request) {
                             ${t.text},
                             ${t.checked},
                             ${t.task_type},
-                            ${new_id}
-                        )
-                    `;
-                }
-            }
-
-            // projects
-            if (projects.length > 0) {
-                for (const p of projects) {
-                    await sql`
-                        INSERT INTO saved_project (
-                            name,
-                            text,
-                            checked,
-                            saved_brief_id
-                        )
-                        VALUES (
-                            ${p.name},
-                            ${p.text},
-                            ${p.checked},
                             ${new_id}
                         )
                     `;

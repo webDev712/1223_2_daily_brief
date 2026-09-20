@@ -90,14 +90,6 @@
     display: block;
 }
 
-.daily-brief .project {
-    display: flex;
-    gap: 10px;
-}
-
-.daily-brief .project input[type="checkbox"]{
-    display: block;
-}
 
 .daily-brief .report{
     display: flex;
@@ -151,7 +143,7 @@
 
 .daily-brief .briefs > div:nth-child(1):empty:before,
 .daily-brief .briefs:empty::before{
-    content: "No Briefs for this day for this lead";
+    content: "No Briefs to display";
     margin: auto;
     width: max-content;
     display: block;

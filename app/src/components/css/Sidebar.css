@@ -102,6 +102,7 @@
     background-image: url('../../../../public/production_dashboard_0.svg');
 }
 [data-img="action-tracker"]{
+    background-size: 35px !important;
     background-image: url('../../../../public/action_tracker_0.png');
 }
 

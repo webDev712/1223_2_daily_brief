@@ -260,6 +260,7 @@ export default function TeamsAndRoles() {
         return;
       }
       let departments_data = await departments_res.json();
+      departments_data = departments_data.filter((department: Department) => department.is_main === true)
       console.log('departments_data')
       console.log(departments_data)
       setDeparments(departments_data)

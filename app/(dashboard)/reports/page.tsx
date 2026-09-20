@@ -140,6 +140,7 @@ export default function Reports() {
           return;
       }
       let departments_data = await departments_res.json();
+      departments_data = departments_data.filter((department: Department) => department.is_main)
       console.log('departments_data')
       console.log(departments_data)
       setDeparments(departments_data)

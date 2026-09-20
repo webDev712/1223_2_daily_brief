@@ -16,6 +16,10 @@ body {
   -ms-overflow-style: none; /* IE/Edge */
 }
 
+body:has(.confirm) {
+  overflow: hidden !important;
+}
+
 
 
 html::-webkit-scrollbar,
@@ -67,6 +71,7 @@ body > .sidebar + div > div:last-child{
   display: none !important;
 }
 
+.button-w-r,
 .button-w-r-sm,
 .button-r-sm,
 .button-d-bl-sm,
@@ -80,7 +85,7 @@ body > .sidebar + div > div:last-child{
   font-size: 14px;
   cursor: pointer;
   max-width: max-content;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease !important;
   user-select: none !important;
 }
 
@@ -90,6 +95,7 @@ body > .sidebar + div > div:last-child{
   box-shadow: 0px 0px 6px 1px #6881ff;
 }
 
+.button-w-r:hover,
 .button-w-r-sm:hover,
 .button-r-sm:hover{
   box-shadow: 0px 0px 6px 1px #ff4848ad;
@@ -121,6 +127,14 @@ body > .sidebar + div > div:last-child{
   padding: 6px 14px;
   border-radius: 10px;
   color: #F04438;
+}
+
+.button-w-r{
+  background-color: #FECACA;
+  border: 2px solid #ff9f9f;
+  color: #F04438;
+  padding: 6px 14px;
+  border-radius: 14px;
 }
 
 .tg{
@@ -255,32 +269,20 @@ div .progress-bar{
   color: #F04438
 }
 
-.red,
-.red-b{
+.b{
+  font-weight: 600;
+}
+
+.red{
   color: #F04438
 }
 
-.red-b{
-  font-weight: 600;
-}
-
-.orange,
-.orange-b{
+.orange{
   color: #ffb23e
 }
 
-.orange-b{
-  font-weight: 600;
-}
-
-
-.green,
-.green-b{
+.green{
   color: #28ae2a
-}
-
-.green-b{
-  font-weight: 600;
 }
 
 [img-id="document-yellow"]{
@@ -399,6 +401,30 @@ div .progress-bar{
     justify-content: center;
     gap: 20px;
 }
+
+
+.x{
+  cursor: pointer;
+  user-select: none;
+  width: 16px;
+  height: 16px;
+  display: block;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 10px;
+  margin: auto 0;
+  transition: all 0.1s ease;
+  font-size: 16px;
+  position: relative;
+  font-weight: 600;
+  color: rgb(122, 122, 122);
+}
+
+.x:hover{
+  /* background-color: #7a7a7a2f; */
+  font-size: 20px;
+}
+
 
 
 @media (max-width: 1000px) {

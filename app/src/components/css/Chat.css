@@ -232,26 +232,6 @@
     color: #7A7A7A;
 }
 
-.chat .x{
-    cursor: pointer;
-    user-select: none;
-    width: 16px;
-    height: 16px;
-    display: block;
-    line-height: 16px;
-    text-align: center;
-    border-radius: 10px;
-    margin: auto 0;
-    transition: all 0.1s ease;
-    font-size: 16px;
-    position: relative;
-}
-
-.chat .x:hover{
-    /* background-color: #7a7a7a2f; */
-    font-size: 20px;
-}
-
 .chat .exit{
     margin-left: 10px;
     font-size: 12px;
@@ -260,24 +240,6 @@
 }
 
 
-
-/* .chat .x::before{
-    content: 'Close Chat';
-    font-size: 12px;
-    background-color: #a5a5a5;
-    color: white;
-    display: none;
-    width: max-content;
-    position: absolute;
-    right: 20px;
-    padding: 2px 10px;
-    font-weight: 400;
-    bottom: 6px;
-}
-
-.chat .x:hover::before{
-    display: block;
-} */
 
 
 .chat div:has(> .filter){
@@ -298,14 +260,14 @@
     overflow: hidden;
     cursor: pointer;
     background-image: url('../../../../public/bell-grey.svg');
-    background-size: 50%;
+    background-size: 19px;
     background-position: center;
     transition: all 0.1s ease;
     background-color: transparent;
 }
 
 .chat > span:hover{
-    background-size: 60%;
+    background-size: 23px;
 }
 
 .chat div:has(+ .messages){
@@ -454,6 +416,15 @@
     display: grid;
     gap: 5px;
     grid-template-columns: repeat(2, 1fr);
+}
+
+.chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked) + div > span {
+    color: #9b9b9b;
+    font-style: italic;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    grid-column: 1 / -1;
 }
 
 .chat .confirm.send-message-to-all > div > div:nth-child(4) > label{

@@ -111,6 +111,7 @@ export interface Covered {
 export interface Department {
   id: string,
   name: string,
+  is_main: boolean,
 }
 
 export interface Permission {
@@ -190,15 +191,31 @@ export interface Action {
   user_id: string;
 }
 
-export interface DailyLog {
-  id: string;
+export interface DailyLogRow {
+  id?: string;
   date: string;
   user_id: string;
+  u_name?: string;
   department_id: string;
+  d_name?: string;
   shift: string;
   category: string;
   text: string;
   date_resolved: string | null;
   status: string;
-  actions: Action[];
+  severity: string;
+  actions: Action[] | null;
+}
+
+export interface IdName {
+  id: string | number,
+  name: string,
+} 
+
+export interface FiltersData {
+  statuses: string[],
+  employees: IdName[],
+  departments: IdName[],
+  severities: string[],
+  categories: string[],
 }

@@ -30,15 +30,6 @@ export async function GET(request: Request) {
 
                 COALESCE(
                     (
-                        SELECT json_agg(sp ORDER BY sp.id)
-                        FROM saved_project sp
-                        WHERE sp.saved_brief_id = sb.id
-                    ),
-                    '[]'::json
-                ) AS projects,
-
-                COALESCE(
-                    (
                         SELECT json_agg(sr ORDER BY sr.id)
                         FROM saved_report sr
                         WHERE sr.saved_brief_id = sb.id

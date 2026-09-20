@@ -165,6 +165,12 @@ div:has( > #today){
     margin: 0;
 }
 
+.react-datepicker__input-container > div{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
 @media (max-width: 500px) {
     #back, #forward{
         display: none;
@@ -185,5 +191,36 @@ div:has( > #today){
 
     .header p{
         line-height: 13px;
+    }
+
+    /* CHECKPOINT */
+    .header #date_picker{
+        display: none;
+    }
+
+    .header .react-datepicker__input-container > div{
+        cursor: pointer;
+        background-image: url('../../../../public/arrow_grey_bottom.svg');
+        background-size: 15px;
+        background-position: left 5px center;
+        padding-left: 30px;
+        background-repeat: no-repeat;
+    }
+
+    .header .react-datepicker__input-container > div{
+        flex-direction: column;
+    }
+
+    .header .react-datepicker__input-container > div > span{
+        text-wrap-mode: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    .header .react-datepicker__input-container * {
+        background: transparent;
+    }
+
+    .header .react-datepicker-popper{
+        left: 60px !important;
     }
 }

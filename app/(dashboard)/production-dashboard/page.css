@@ -164,13 +164,13 @@
 .production-dashboard > div:first-child > label{
     display: flex;
     flex-direction: column;
-    gap: 5px;
 }
 
 .production-dashboard > div:first-child span{
     color: #9CA3AF;
     font-size: 12px;
     font-weight: 400;
+    margin-bottom: 3px;
 }
 
 .production-dashboard > div:first-child > label > :nth-child(2):not(:has(.picker)){
@@ -201,7 +201,10 @@
     cursor: pointer;
 }
 .production-dashboard > div:first-child > :last-child{
-    margin: auto 0 auto auto;
+    height: max-content;
+    padding: 4px 20px;
+    margin-top: auto !important;
+    margin-left: auto;
 }
 
 .production-dashboard > div:first-child > label select{

@@ -40,13 +40,6 @@ export default function ProductionDashboard() {
     useEffect(() => {
         const load = async () => {
             setLoading(true);
-            console.log('dateFrom')
-            console.log(format(dateFrom, 'yyyy-MM-dd'))
-            console.log('toDate')
-            console.log(format(dateTo, 'yyyy-MM-dd'))
-            console.log('department')
-            console.log(department)
-            console.log(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${format(dateFrom, 'yyyy-MM-dd')}&to_date=${format(dateTo, 'yyyy-MM-dd')}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}`)
             const ppoh_master_res = await fetch(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${format(dateFrom, 'yyyy-MM-dd')}&to_date=${format(dateTo, 'yyyy-MM-dd')}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}`);
             if (!ppoh_master_res.ok){
                 console.log('Failed to load ppoh_master');
@@ -54,8 +47,6 @@ export default function ProductionDashboard() {
                 return;
             }
             const ppoh_master_data = await ppoh_master_res.json();
-            console.log('ppoh_master_data')
-            console.log(ppoh_master_data)
             setTableData(ppoh_master_data.rows)
             setResultsCount(ppoh_master_data.count)
 

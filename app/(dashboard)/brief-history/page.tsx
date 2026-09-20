@@ -18,6 +18,8 @@ export default function BriefHistory() {
   const [selectedLead, setSelectedLead] = useState('');
   const [days, setDays] = useState('7');
   const [status, setStatus] = useState('');
+  const [leadsCount, setLeadsCount] = useState(0);
+
   useEffect(() => {
       async function load() {
         setLoading(true)
@@ -53,6 +55,9 @@ export default function BriefHistory() {
           return (today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < parseInt(days);
         })
         setBriefs(briefs_data)
+        const unique_leads: string[] = [];
+        briefs_data.map((brief: SavedBrief) => { if (unique_leads.indexOf(brief.lead_id) === -1) unique_leads.push(brief.lead_id); })
+        setLeadsCount(unique_leads.length)
         console.log('briefs_data')
         console.log(briefs_data)
         setLoading(false)
@@ -93,7 +98,7 @@ export default function BriefHistory() {
                   <div img-id="document">
                     <h1>{allBriefs.length}</h1>
                     <div>Total Briefs</div>
-                    <span>Last {days} days, {leads.length} leads</span>
+                    <span>Last {days} days, {leadsCount} leads</span>
                   </div>
                   <div img-id="done">
                     <h1>{briefs_submitted}</h1>
@@ -106,7 +111,7 @@ export default function BriefHistory() {
                     <span>Awaiting submission today</span>
                   </div>
                   <div img-id="error">
-                    <h1>{allBriefs.reduce((a: number, b: SavedBrief) => b.findings ? a + b.findings.length : a + 0, 0)}</h1>
+                    <h1>{briefs.reduce((a: number, b: SavedBrief) => b.findings ? a + b.findings.length : a + 0, 0)}</h1>
                     <div>Total Findings</div>
                     <span>Across all briefs last {days} days</span>
                   </div>

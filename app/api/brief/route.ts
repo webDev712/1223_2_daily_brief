@@ -29,15 +29,6 @@ export async function GET(request: Request) {
 
                 COALESCE(
                     (
-                        SELECT json_agg(sp ORDER BY sp.id)
-                        FROM saved_project sp
-                        WHERE sp.saved_brief_id = sb.id
-                    ),
-                    '[]'::json
-                ) AS projects,
-
-                COALESCE(
-                    (
                         SELECT json_agg(sr ORDER BY sr.id)
                         FROM saved_report sr
                         WHERE sr.saved_brief_id = sb.id
@@ -76,7 +67,7 @@ export async function POST(request: Request) {
         const previous_brief_rows = await sql`
             SELECT *
             FROM saved_brief
-            WHERE lead_id = ${lead_id}
+            WHERE original_lead_id = ${lead_id}
             ORDER BY date DESC
             LIMIT 1;
         `
@@ -162,27 +153,6 @@ export async function POST(request: Request) {
         console.log(reports_rows)
         return NextResponse.json({ ok: true });
     } catch (error) {
-        console.error(error);
-        return NextResponse.json(
-            { error: "Database error" },
-            { status: 500 }
-        );
-    }
-}
-
-export async function PATCH(request: Request) {
-    try{
-        // await requireRole("manager");
-        const body = await request.json();
-        const { brief_id, new_status } = body;
-        const rows = await sql`
-            UPDATE brief
-            SET archived = ${new_status}
-            WHERE id = ${brief_id};
-        `
-        return NextResponse.json({ success: true })
-    }
-    catch (error) {
         console.error(error);
         return NextResponse.json(
             { error: "Database error" },

@@ -240,9 +240,10 @@ const Chat = () => {
 
     useEffect(() => {
         const interval = setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
             setReloadChats(prev => prev + 1);
             setReloadMessages(prev => prev + 1);
-        }, openChat ? 3000 : 30000);
+        }, openChat ? 10000 : 60000);
 
         return () => clearInterval(interval);
     }, [openChat]);
@@ -281,7 +282,13 @@ const Chat = () => {
                                         )}
                                     </div>)}</div>
                                 { me_user.permissions.send_messages_to_all === true && !selectedUserId && seeUserMessageAs.id === me_user.id && (
-                                    <div data-img="message-to-all" onClick={() => {setShowSendMessageToAll(true)}}></div>
+                                    <div data-img="message-to-all" onClick={() => {
+                                        setUsersForSendMessageToGroup(
+                                            usersForSendMessageToGroup.map((user: UserForChat) => { return {
+                                                ...user,
+                                                sendMessageToGroupSelected: true
+                                            } })
+                                        ); setShowSendMessageToAll(true)}}></div>
                                 )}
                         <div onClick={() => setOpenChat(false)} className='x'>x</div>
                     </div>
@@ -421,6 +428,14 @@ const Chat = () => {
                                         <div>{user.name}</div>
                                     </label>
                                 ))}
+                                <span onClick={() => {
+                                    setUsersForSendMessageToGroup(
+                                        usersForSendMessageToGroup.map((user: UserForChat) => { return {
+                                            ...user,
+                                            sendMessageToGroupSelected: false
+                                        } })
+                                    )
+                                }}>Clear</span>
                             </div>
                             <div>
                                 <textarea id="message-to-all" placeholder='Message to all employees...'></textarea>

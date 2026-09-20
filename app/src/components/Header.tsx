@@ -22,7 +22,9 @@ const DateButton = forwardRef<
       
     }}
   >
-    {value}
+    <span>{value?.split(',')[0]},</span>
+    <span>{value?.split(',')[1]},</span>
+    <span>{value?.split(',')[2]}</span>
   </div>
 ));
 
@@ -67,6 +69,11 @@ export default function Header({user_name, user_role}: HeaderProps) {
     case 'production-dashboard':
       header_text = 'Production dashboard';
       header_description = 'See historical production KPI'
+      break;
+    case 'action-tracker':
+      header_text = 'Action Tracker';
+      header_description = 'See and Edit Problems & Actions'
+      break;
   }
   return (
     <div className={selected !== "login" ? "header" : "display-none"}>

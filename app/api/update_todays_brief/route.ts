@@ -17,7 +17,6 @@ export async function POST(request: Request) {
             notes,
             reports = [],
             tasks = [],
-            projects = [],
             findings = [],
             covered = [],
             freezed
@@ -142,19 +141,6 @@ export async function POST(request: Request) {
                 })
             );
 
-            // projects
-            await Promise.all(
-                projects.map((p: any) => 
-                    sql`
-                        UPDATE saved_project
-                        SET 
-                            name = ${p.name},
-                            text = ${p.text},
-                            checked = ${p.checked}
-                        WHERE
-                            id = ${p.id}`
-                )
-            )
             return NextResponse.json({ success: true, });
         } catch (err) {
             throw err;

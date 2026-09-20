@@ -53,7 +53,10 @@ export const getPermissions = () => {
         {id: 16, name: "Edit Application settings", js_name: "edit_app_settings"},                      //TODO-TODO-TODO
         {id: 17, name: "See Production Dashboard", js_name: "see_production_dashboard"},                //done
         {id: 18, name: "Send messages to all employees at once", js_name: "send_messages_to_all"},      //done
-        {id: 19, name: "See other employees` messages", js_name: "see_other_employees_messages"},      //done
+        {id: 19, name: "See other employees` messages", js_name: "see_other_employees_messages"},       //done
+        {id: 20, name: "See Action Tracker page", js_name: "see_action_tracker"},                       //done
+        {id: 21, name: "Edit Action Tracker data", js_name: "edit_action_tracker"},                     //done
+        {id: 22, name: "Add Actions to Issues / Observations", js_name: "add_actions_to_io"},           //done
     ]
 }
 
@@ -179,6 +182,24 @@ export const getTestEmployees = () => {
         { id: 303, name: 'Yoryani C'},
         { id: 217, name: 'Zar S'},
         { id: 171, name: 'Zaydi B'},
+    ]
+}
+
+export const getActionLogCategories = () => {
+    return [
+        {id: 1, name: "Staffing / Attendance",},
+        {id: 2, name: "Training & Skill Development",},
+        {id: 3, name: "Equipment / Maintenance",},
+        {id: 4, name: "Process Deviation",},
+        {id: 5, name: "Quality Control",},
+        {id: 6, name: "Safety / Risk",},
+        {id: 7, name: "Customer / Account Impact",},
+        {id: 8, name: "Volume / Forecasting",},
+        {id: 9, name: "Housekeeping / Standards",},
+        {id: 10 ,name: "SMRT ",},
+        {id: 11 ,name: "Metalprogetti",},
+        {id: 12 ,name: "Invenasset",},
+        {id: 13 ,name: "Communication",},
     ]
 }
 

@@ -422,6 +422,10 @@ export default function DailyBrief() {
       }
       load();
     }, [date, selectedLead, reload]);
+  const leads_to_display = leads.filter(
+            (u: User) => 
+              (allBriefs.filter((brief: SavedBrief) => brief.lead_id === u.id).length > 0) || (u.permissions.update_brief === true && u.id === user?.id)
+          )
   return (
     <div className="daily-brief">
       <div>
@@ -429,24 +433,26 @@ export default function DailyBrief() {
         <div>Daily Briefs</div>
       </div>
       <div>
-        <div className="leads" style={{display: leads.length > 0 ? "flex" : "none", gap: "10px"}}>
-          <div className='choose'>
-            <span>Choose ROUTE Lead</span>
+        {leads_to_display.length > 0 && (
+          <div className="leads" style={{display: leads.length > 0 ? "flex" : "none", gap: "10px"}}>
+            <div className='choose'>
+              <span>Choose ROUTE Lead</span>
+            </div>
+            {leads_to_display.sort((a: User, b: User) => a.name.localeCompare(b.name)).map((u: User, i) => {
+              let colors = getColorsFromName(u.name);
+              return (
+                <label className='lead' style={{
+                    backgroundColor: selectedLead === u.id ? colors.medium : colors.light, 
+                    color: selectedLead === u.id ? "white" : "#a1a1a1"}} key={i}>
+                  <input type='radio' name='lead' checked={selectedLead === u.id} onChange={() => {setSelectedLead(u.id)}} />
+                  <span style={{
+                    backgroundColor: selectedLead === u.id ? colors.dark : colors.medium,
+                    color: selectedLead === u.id ? "white" : "white"
+                    }}>{u.name.split(" ")[0][0]}{u.name.split(" ")[1] ? u.name.split(" ")[1][0] : ""}</span> {u.name}
+                </label>)
+            })}
           </div>
-          {leads.filter((u: User) => allBriefs.filter((brief: SavedBrief) => brief.lead_id === u.id).length > 0 || !u.archived).map((u: User, i) => {
-            let colors = getColorsFromName(u.name);
-            return (
-              <label className='lead' style={{
-                  backgroundColor: selectedLead === u.id ? colors.medium : colors.light, 
-                  color: selectedLead === u.id ? "white" : "#a1a1a1"}} key={i}>
-                <input type='radio' name='lead' checked={selectedLead === u.id} onChange={() => {setSelectedLead(u.id)}} />
-                <span style={{
-                  backgroundColor: selectedLead === u.id ? colors.dark : colors.medium,
-                  color: selectedLead === u.id ? "white" : "white"
-                  }}>{u.name.split(" ")[0][0]}{u.name.split(" ")[1] ? u.name.split(" ")[1][0] : ""}</span> {u.name}
-              </label>)
-          })}
-        </div>
+        ) }
         <br></br>
         <br></br>
         {loading ?
@@ -455,7 +461,7 @@ export default function DailyBrief() {
             {allBriefs.filter(
               (b: SavedBrief) => b.original_lead_id === selectedLead).length === 0 && selectedLead === user?.id && (
               <div className='no-briefs'>
-                <h1>You have not started your own Brief today</h1>
+                <h1>You have not started your own Brief</h1>
                 {selectedLead === user?.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {startMyBrief()}}>Start My Brief</div>) : (<div></div>)}
               </div>
             )}
