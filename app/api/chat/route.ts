@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
+import { auth } from "@/auth";
 
 
 export async function GET(request: Request) {
@@ -7,14 +8,26 @@ export async function GET(request: Request) {
 
     const id_1 = searchParams.get('id_1');
     const id_2 = searchParams.get('id_2');
+    const session = await auth();
 
+    if (!session?.user) {
+        return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: 401 }
+        );
+    }
+
+    const user_id = session.user.id;
+    const company_id = session.user.company_id;
+    const permissions = session.user.permissions;
+            
     const rows = await sql`
         SELECT *
         FROM chat
-        WHERE (from_user = ${id_1}
-            AND to_user = ${id_2})
-                OR (from_user = ${id_2}
-                    AND to_user = ${id_1})
+        WHERE company_id = ${company_id} AND (
+                (from_user = ${id_1} AND to_user = ${id_2})
+                OR (from_user = ${id_2} AND to_user = ${id_1})
+            )
         ORDER BY timestamp;
     `;
 
@@ -24,6 +37,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
 
         const {
             text,
@@ -38,14 +64,16 @@ export async function POST(request: Request) {
                 from_user,
                 to_user,
                 timestamp,
-                read
+                read,
+                company_id
             )
             VALUES (
                 ${text},
                 ${from_user},
                 ${to_user},
                 ${timestamp},
-                FALSE
+                FALSE,
+                ${company_id}
             )
             RETURNING id;
         `;
@@ -68,7 +96,19 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     try {
-        const body = await request.json();
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+            const body = await request.json();
 
         const {
             id,
@@ -81,7 +121,7 @@ export async function PATCH(request: Request) {
 
         const rows = await sql`
             UPDATE chat 
-            SET text = ${text}, from_user = ${from_user}, to_user = ${to_user}, timestamp = ${timestamp}, read = ${read}
+            SET text = ${text}, from_user = ${from_user}, to_user = ${to_user}, timestamp = ${timestamp}, read = ${read}, company_id = ${company_id}
             WHERE id = ${id};
         `;
 

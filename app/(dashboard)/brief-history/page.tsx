@@ -40,7 +40,6 @@ export default function BriefHistory() {
         briefs_data = briefs_data.filter((b: SavedBrief) => {
           if (selectedLead !== '' && b.lead_id !== selectedLead) return false;
           const briefDate = new Date(b.date);
-          console.log((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < parseInt(days))
           if (status !== ''){
             if (status === 'progress'){
               if (!((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < 1) || b.freezed) return false;
@@ -58,8 +57,6 @@ export default function BriefHistory() {
         const unique_leads: string[] = [];
         briefs_data.map((brief: SavedBrief) => { if (unique_leads.indexOf(brief.lead_id) === -1) unique_leads.push(brief.lead_id); })
         setLeadsCount(unique_leads.length)
-        console.log('briefs_data')
-        console.log(briefs_data)
         setLoading(false)
 
 
@@ -73,8 +70,6 @@ export default function BriefHistory() {
         }  
         let leads_data = await users_res.json();
         leads_data = leads_data.filter((a: User) => a.user_role !== 'manager');
-        console.log('leads_data')
-        console.log(leads_data)
         setLeads(leads_data);
       }
       load();

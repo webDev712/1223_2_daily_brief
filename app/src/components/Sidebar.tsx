@@ -8,6 +8,21 @@ import { User } from '@/lib/types';
 
 
 export default function Sidebar({ user }: { user: User}) {
+  const [companyName, setCompanyName] = useState('')
+  useEffect(() => {
+    const load = async () => {
+      const company_res = await fetch('/api/company');
+      if (!company_res.ok) {
+        console.error('Error while getting company data.')
+        return;
+      }
+      const company_data = await company_res.json();
+      console.log('company_data')
+      console.log(company_data)
+      setCompanyName(company_data[0]?.name)
+    }
+    load();
+  }, [])
   const pages = [
     {href: 'dashboard', text: 'Dashboard', permission_name: 'see_dashboard'},
     {href: 'daily-brief', text: 'Daily Brief', permission_name: 'see_brief'},
@@ -36,7 +51,7 @@ export default function Sidebar({ user }: { user: User}) {
     <div className={selected !== "login" ? "sidebar" : "display-none"}>
       <div>
         <div data-img="photo_sidebar"></div>
-          <span>Helena's Cleaners</span>
+          <span>{companyName}</span>
           <div data-img="burger" onClick={() => {setMobileShow(prev => !prev)}}></div>
         </div>
         {!loading && (mobileShow || !isMobile) && (

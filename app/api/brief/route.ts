@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db"
+import { auth } from "@/auth";
 
 
 export async function GET(request: Request) {
     try{
         // await requireRole("lead");
-
+        
         const { searchParams } = new URL(request.url);
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
 
         const id = searchParams.get("id");
 
@@ -26,12 +39,14 @@ export async function GET(request: Request) {
                 sb.original_lead_id,
                 sb.freezed,
                 sb.findings,
+                sb.company_id,
 
                 COALESCE(
                     (
                         SELECT json_agg(sr ORDER BY sr.id)
                         FROM saved_report sr
                         WHERE sr.saved_brief_id = sb.id
+                            AND sr.company_id = ${company_id}
                     ),
                     '[]'::json
                 ) AS reports,
@@ -41,6 +56,7 @@ export async function GET(request: Request) {
                         SELECT json_agg(st ORDER BY st.id)
                         FROM saved_task st
                         WHERE st.saved_brief_id = sb.id
+                            AND st.company_id = ${company_id}
                     ),
                     '[]'::json
                 ) AS tasks
@@ -64,17 +80,33 @@ export async function POST(request: Request) {
         // await requireRole("lead");
         const body = await request.json();
         const { lead_id, lead_letter, lead_name, date } = body;
+        
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
+
         const previous_brief_rows = await sql`
             SELECT *
             FROM saved_brief
             WHERE original_lead_id = ${lead_id}
+                AND company_id = ${company_id}
             ORDER BY date DESC
             LIMIT 1;
         `
 
         const rows = await sql`
-            INSERT INTO saved_brief (lead_id, letter, lead_name, freezed, original_lead_id, date)
-            VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date})
+            INSERT INTO saved_brief (lead_id, letter, lead_name, freezed, original_lead_id, date, company_id)
+            VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date}, ${company_id})
             RETURNING id;
         `
         const new_id = rows[0].id;
@@ -86,18 +118,21 @@ export async function POST(request: Request) {
                     checked,
                     task_type,
                     saved_brief_id,
-                    roll_to_next_brief
+                    roll_to_next_brief,
+                    company_id
                 )
                 SELECT
                     text,
                     checked,
                     task_type,
                     ${new_id},
-                    roll_to_next_brief
+                    roll_to_next_brief,
+                    company_id
                 FROM saved_task
                 WHERE saved_brief_id = ${previous_brief_id}
                     AND checked != true
-                    AND roll_to_next_brief = true;
+                    AND roll_to_next_brief = true
+                    AND company_id = ${company_id};
             `
         }
 
@@ -110,6 +145,7 @@ export async function POST(request: Request) {
             FROM report r
             JOIN website_user u
                 ON u.id = (SELECT lead_uuid FROM params)
+                AND u.company_id = ${company_id}
             WHERE (
                 r.once_per = 'day'
                 OR (
@@ -140,17 +176,17 @@ export async function POST(request: Request) {
                         WHERE assigned_department_id = CAST(u.department_id AS text)
                     )
                 )
-            );
+            )
+            AND u.company_id = ${company_id};
         `;
         await Promise.all(
             reports_rows.map((r) =>
                 sql`
-                INSERT INTO saved_report (text, name, source, checked, saved_brief_id, day_time)
-                VALUES ('', ${r.name}, ${r.source}, FALSE, ${new_id}, ${r.day_time});
+                INSERT INTO saved_report (text, name, source, checked, saved_brief_id, day_time, company_id)
+                VALUES ('', ${r.name}, ${r.source}, FALSE, ${new_id}, ${r.day_time}, ${r.company_id});
                 `
             )
             );
-        console.log(reports_rows)
         return NextResponse.json({ ok: true });
     } catch (error) {
         console.error(error);

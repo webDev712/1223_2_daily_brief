@@ -60,16 +60,12 @@ export default function ActionTracker () {
 
 
     const sendActionTrackerRow = async (newActionTrackerRow: DailyLogRow) => {
-        console.log('newActionTrackerRow before')
-        console.log(newActionTrackerRow)
         setLoading(true);
         newActionTrackerRow = {
             ...newActionTrackerRow,
             date_resolved: newActionTrackerRow.status === 'Resolved' ? (newActionTrackerRow.date_resolved ?? new Date().toISOString()) : null,
             date: newActionTrackerRow.date.length > 10 ? formatDateWithoutTimezone(newActionTrackerRow.date) : newActionTrackerRow.date
         }
-        console.log('newActionTrackerRow after')
-        console.log(newActionTrackerRow)
 
 
         const action_tracker_res = await fetch('/api/daily_log', {
@@ -129,8 +125,6 @@ export default function ActionTracker () {
             const action_log_data = await action_log_res.json();
             setFiltersData(action_log_data.filterArrays)
             setAuditLogData(action_log_data.rows)
-            console.log('action_log_data.rows')
-            console.log(action_log_data.rows)
             setResultsCount(action_log_data.count)
             
             const departments_res = await fetch(`/api/departments`);
@@ -145,8 +139,6 @@ export default function ActionTracker () {
             if (departments_data.length > 0) {
                 setAuditLogRowToAdd({...auditLogRowToAdd, department_id: departments_data[0].id})
             }
-            console.log('departments_data');
-            console.log(departments_data);
 
 
             const users_res = await fetch(`/api/users`);
@@ -157,8 +149,6 @@ export default function ActionTracker () {
                 return;
             }  
             let users_data = await users_res.json();
-            console.log('users_data')
-            console.log(users_data)
             setUsers(users_data);
 
             setLoading(false);
@@ -315,7 +305,7 @@ export default function ActionTracker () {
                                         </label>
                                         <label>
                                             <div>Shift</div>
-                                            <select value={auditLogRowToAdd.shift} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, shift: e.target.value})}}>
+                                            <select value={auditLogRowToAdd.shift ?? '-'} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, shift: e.target.value})}}>
                                                 <option value="10 AM - 6 PM">10 AM - 6 PM</option>
                                                 <option value="4 PM - 10 PM">4 PM - 10 PM</option>
                                                 <option value="-">-</option>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db"
 import { SelectedPermission } from "@/lib/types";
-
+import { auth } from "@/auth";
 
 // export async function GET(request: Request) {
 //     try{
@@ -24,6 +24,19 @@ import { SelectedPermission } from "@/lib/types";
 
 export async function POST(request: Request) {
     try {
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const user_permissions = session.user.permissions;
+        
         // await requireRole("manager");
 
         const body = await request.json();
@@ -41,11 +54,13 @@ export async function POST(request: Request) {
         const rows = await sql`
             INSERT INTO role (
                 name,
-                permissions
+                permissions,
+                company_id
             )
             VALUES (
                 ${name},
-                ${JSON.stringify(permissionsObject)}::jsonb
+                ${JSON.stringify(permissionsObject)}::jsonb,
+                ${company_id}
             )
             RETURNING id;
         `;
@@ -69,6 +84,18 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     try {
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const user_permissions = session.user.permissions;
         // await requireRole("manager");
 
         const body = await request.json();
@@ -87,7 +114,7 @@ export async function PATCH(request: Request) {
         const rows = await sql`
             UPDATE role 
             SET name = ${name}, permissions = ${JSON.stringify(permissionsObject)}::jsonb
-            WHERE id = ${id};
+            WHERE id = ${id} AND company_id = ${company_id};
         `;
 
         return NextResponse.json({

@@ -43,8 +43,6 @@ export default function Dashboard() {
       }
 
       const data = await res.json();
-      console.log('briefs')
-      console.log(data)
       setBriefs(data);
 
 

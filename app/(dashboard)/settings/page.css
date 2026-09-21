@@ -73,7 +73,7 @@
     position: relative;
 }
 
-.settings .user-circle > div::before{
+.settings .my .user-circle > div::before{
     content: " ";
     background-image: url('../../../public/online.svg') !important;
     background-repeat: no-repeat;
@@ -85,12 +85,17 @@
     bottom: 0;
 }
 
+.settings .company .user-circle > div{
+    border-radius: 50px !important;
+}
+
 .settings .schmall .user-circle > div::before{
     width: 10px;
     height: 10px;
     background-size: 10px;
 }
 
+.settings .company > div > div:first-child > div:first-child,
 .settings .my > div:first-child{
     display: flex;
     gap: 25px;
@@ -99,6 +104,13 @@
     box-shadow: 0px 1px 4px 0px #1018280A;
     padding: 20px 25px;
     border-radius: 22px;
+}
+
+.settings .company > div > div:first-child > div:first-child{
+    flex-direction: column;
+    padding: 0;
+    gap: 10px;
+    overflow: hidden;
 }
 
 .settings .my > div:first-child > div:nth-child(2){
@@ -131,6 +143,11 @@
     padding-left: 18px;
 }
 
+.settings .company-data{
+    margin-top: 30px !important;
+}
+
+.settings .company-data,
 .settings .my > div:nth-child(2){
     border: 2px solid #EAECF0;
     background-color: #FFFFFF;
@@ -140,6 +157,8 @@
     margin-top: 20px;
 }
 
+.settings .company > div > div:first-child h2,
+.settings .company-data > div:first-child,
 .settings .my > div:nth-child(2) > div:nth-child(1){
     border-bottom: #F2F4F7;
     padding: 10px 20px;
@@ -151,10 +170,15 @@
     justify-content: space-between;
 }
 
+.settings .company-data > div:first-child > div{
+    margin: auto 0;
+}
+
 .settings .my > div:nth-child(2) > div:nth-child(1) > div{
     margin: auto 0;
 }
 
+.settings .company-data > div:nth-child(2),
 .settings .my > div:nth-child(2) > div:nth-child(2){
     padding: 20px;
     display: grid;
@@ -162,18 +186,25 @@
     gap: 10px 30px;
 }
 
+.settings .company-data > div:nth-child(2){
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.settings .company-data > div:nth-child(2) label,
 .settings .my > div:nth-child(2) > div:nth-child(2) label{
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
 
+.settings .company-data > div:nth-child(2) label span,
 .settings .my > div:nth-child(2) > div:nth-child(2) label span{
     color: #667085;
     font-size: 14px;
     font-weight: 500;
 }
 
+.settings .company-data > div:nth-child(2) label input,
 .settings .my > div:nth-child(2) > div:nth-child(2) label input{
     border: 1px solid #EAECF0;
     padding: 8px 17px;
@@ -182,7 +213,7 @@
     font-size: 14px;
 }
 
-
+.settings .company-data > div:nth-child(2) label.d,
 .settings .my > div:nth-child(2) > div:nth-child(2) label input.d{
     border: 1px solid #EAECF0;
     background-color: #F7F8FC;
@@ -293,6 +324,57 @@
 .settings .data > div:nth-child(4) > div:nth-child(2) > div{
     margin: auto 0;
 }
+
+.settings .company > div > div:first-child h2{
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 0;
+    padding: 17px 20px;
+}
+
+
+.settings .company > div > div:first-child > div:first-child > div:nth-child(2){
+    gap: 5px;
+    padding: 0px 25px 13px 25px;
+}
+
+.settings .company > div > div:first-child > div:nth-child(1) > div:nth-child(2) > div{
+    margin: auto 0;
+}
+
+.settings .company > div > div:first-child > div:nth-child(1) > div:nth-child(2) > div:nth-child(3){
+    margin: auto 0 auto auto;
+}
+
+.settings .company label .plan {
+    background-image: url('../../../public/link.png');
+    background-position: right 12px center;
+    background-size: 12px;
+    cursor: pointer;
+}
+
+.settings .company label .plan:hover{
+    box-shadow: 0px 1px 4px 0px #10182823;
+    background-size: 14px;
+
+}
+
+.settings .confirm > div > div:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.settings .confirm > div > div:nth-child(2) label{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #101828;
+}
+
+
 
 
 @media (max-width: 500px) {

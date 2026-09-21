@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db"
 import nodemailer from "nodemailer";
+import { auth } from "@/auth";
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -12,12 +13,25 @@ const transporter = nodemailer.createTransport({
 
 export async function GET(request: Request) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         // await requireRole("lead");
         const { searchParams } = new URL(request.url);
 
         const id = searchParams.get("id");
         const rows = await sql`
-            SELECT * FROM website_user WHERE id = ${id};
+            SELECT * FROM website_user WHERE id = ${id} AND company_id = ${company_id};
         `
         return NextResponse.json(rows);
     } catch (error) {
@@ -32,6 +46,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         // await requireRole("manager");
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
 
         const body = await request.json();
 
@@ -53,7 +79,8 @@ export async function POST(request: Request) {
                 lead_letter,
                 archived,
                 phone,
-                department_id
+                department_id,
+                company_id
             )
             VALUES (
                 ${email},
@@ -62,14 +89,15 @@ export async function POST(request: Request) {
                 ${lead_letter},
                 ${archived},
                 ${phone},
-                ${department_id}
+                ${department_id},
+                ${company_id}
             )
             RETURNING id;
         `;
 
         try {
             await transporter.sendMail({
-                from: `"Helena's Cleaners" <${process.env.GMAIL_USER}>`,
+                from: `"Daily Brief" <${process.env.GMAIL_USER}>`,
                 to: email,
                 subject: "Your Daily Brief account is ready",
                 html: `
@@ -78,7 +106,7 @@ export async function POST(request: Request) {
                     <p>You can sign in here:</p>
                     <a href="https://dailybrief-web.vercel.app/login">dailybrief-web.vercel.app</a>
                     <p>If you did not expect this account, please contact your administrator.</p>
-                    <p>Best, Helena's Cleaners</p>
+                    <p>Best, Daily Brief.</p>
                 `,
             });
 
@@ -114,6 +142,19 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         // await requireRole("lead");
         const body = await request.json()
 
@@ -130,7 +171,7 @@ export async function PATCH(request: Request) {
         await sql`
             UPDATE website_user
             SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}, department_id = ${department}
-            WHERE id = ${id};
+            WHERE id = ${id} AND company_id = ${company_id};
         `
         return NextResponse.json({
             success: true,

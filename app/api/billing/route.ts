@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
-import sql from "@/lib/db";
 import { auth } from "@/auth";
+import sql from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET (request: NextRequest) {
     try{
+        const { searchParams } = new URL(request.url);
         const session = await auth();
 
         if (!session?.user) {
@@ -12,17 +13,10 @@ export async function GET() {
                 { status: 401 }
             );
         }
-
-        const user_id = session.user.id;
-        const company_id = session.user.company_id;
-        const permissions = session.user.permissions;
-        
-        // await requireRole("lead");
-        const rows = await sql`
-            SELECT * FROM role WHERE company_id = ${company_id};
-        `
+        const rows = await sql`SELECT * FROM billing`;
         return NextResponse.json(rows);
-    } catch (error) {
+    }
+    catch(error) {
         console.log(error);
         return NextResponse.json(
             { error: "Database error" },

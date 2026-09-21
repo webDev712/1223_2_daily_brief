@@ -139,8 +139,6 @@ export default function DailyBrief() {
   };
 
   const changeTask = async (b: any, task: any) => {
-    console.log('task')
-    console.log(task)
     if (savingRef.current) return;
 
     savingRef.current = true;
@@ -151,8 +149,6 @@ export default function DailyBrief() {
         el.id === task.id ? task : el
       ),
     };
-    console.log('updatedBrief')
-    console.log(updatedBrief)
     setBriefs((prev: any) =>
       prev.map((brief: any) =>
         brief.id === b.id ? updatedBrief : brief
@@ -171,7 +167,6 @@ export default function DailyBrief() {
 
   const addTask = async ( b: any, task: any ) => {
     if (savingRef.current) return;
-    console.log('addTask 1')
 
     savingRef.current = true;
     setShowAddTask(false)
@@ -191,8 +186,6 @@ export default function DailyBrief() {
       )
     );
 
-    console.log('updatedBrief')
-    console.log(updatedBrief)
     await fetch("/api/update_todays_brief", {
       method: "POST",
       headers: {
@@ -356,8 +349,6 @@ export default function DailyBrief() {
     async function load() {
       const me_res = await fetch("/api/me");
       const me_user = await me_res.json();
-      console.log('me_user')
-      console.log(me_user)
       setUser(me_user)
       const users_res = await fetch(`/api/users`);
       if (!users_res.ok) {
@@ -398,8 +389,6 @@ export default function DailyBrief() {
         }
         let briefs_data = await briefs_res.json();
         setAllBriefs(briefs_data)
-        console.log('briefs_data')
-        console.log(briefs_data)
         briefs_data = briefs_data.filter((a: SavedBrief) => a.lead_id === lead_id)
         await setBriefs(briefs_data)
         

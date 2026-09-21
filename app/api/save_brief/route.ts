@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
-import sql from "@/lib/db"
+import sql from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function POST(request: Request) {
     try {
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         // await requireRole("lead");
         const body = await request.json();
 
@@ -33,7 +47,8 @@ export async function POST(request: Request) {
                     reports_reviewed,
                     reports_all_count,
                     notes,
-                    date
+                    date,
+                    company_id
                 )
                 VALUES (
                     ${lead_id},
@@ -44,7 +59,8 @@ export async function POST(request: Request) {
                     ${reports_reviewed_count},
                     ${reports.length},
                     ${notes},
-                    NOW()
+                    NOW(),
+                    ${company_id}
                 )
                 RETURNING id;
             `;
@@ -61,7 +77,8 @@ export async function POST(request: Request) {
                             source,
                             checked,
                             saved_brief_id,
-                            day_time
+                            day_time,
+                            company_id
                         )
                         VALUES (
                             ${r.text},
@@ -69,7 +86,8 @@ export async function POST(request: Request) {
                             ${r.source},
                             ${r.checked},
                             ${new_id},
-                            ${r.day_time}
+                            ${r.day_time},
+                            ${company_id}
                         )
                     `;
                 }
@@ -83,13 +101,15 @@ export async function POST(request: Request) {
                             text,
                             checked,
                             task_type,
-                            saved_brief_id
+                            saved_brief_id,
+                            company_id
                         )
                         VALUES (
                             ${t.text},
                             ${t.checked},
                             ${t.task_type},
-                            ${new_id}
+                            ${new_id},
+                            ${company_id}
                         )
                     `;
                 }

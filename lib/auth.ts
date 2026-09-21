@@ -19,7 +19,8 @@ export async function getCurrentUser(): Promise<User | null> {
             w.lead_letter,
             w.phone,
             d.name AS department,
-            r.permissions
+            r.permissions,
+            w.company_id
         FROM website_user w, department d, role r
         WHERE email = ${session.user.email}
           AND archived = false
@@ -35,6 +36,16 @@ export async function getCurrentUser(): Promise<User | null> {
     console.log(users[0])
 
     return users[0] as User;
+}
+
+export async function getUserCompanyId(id: string | undefined): Promise<String> {
+    if (!id) return 'error';
+    const user = await sql`
+        SELECT company_id
+        FROM website_user
+        WHERE id = ${id};
+    `
+    return user[0].company_id
 }
 
 // const roleLevel: Record<UserRole, number> = {

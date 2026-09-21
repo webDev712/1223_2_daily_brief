@@ -86,7 +86,8 @@ export interface User {
   selectedAnotherRole: boolean,
   selectedAnotherDepartment: boolean,
   newDepartment: string | undefined,
-  role_id: string
+  role_id: string,
+  company_id: string,
 }
 
 export interface UserForChat extends User {
@@ -143,6 +144,12 @@ export interface DBPermissions {
   see_profile_settings: boolean;
   edit_profile_settings: boolean;
   archive_give_access_users: boolean;
+  see_production_dashboard: boolean;
+  send_messages_to_all: boolean;
+  see_other_employees_messages: boolean;
+  see_action_tracker: boolean;
+  edit_action_tracker: boolean;
+  add_actions_to_io: boolean;
 }
 
 export interface Role {
@@ -218,4 +225,38 @@ export interface FiltersData {
   departments: IdName[],
   severities: string[],
   categories: string[],
+}
+
+export interface Company {
+  id: string,
+  name: string,
+  main_admin_id: string,
+  logo: string,
+  plan_id: string,
+  stripe_customer_id: string,
+  created_at: string,
+  // colors: string,
+}
+
+export interface CompanyToDisplay extends Company {
+  admin_name: string | undefined;
+  plan_name: string | undefined;
+}
+
+export interface Plan {
+  id: string,
+  name: string,
+  price: number,
+  max_users: number,
+  additional_features: string[],
+}
+
+export interface Billing {
+  id: string,
+  company_id: string,
+  plan_id: string,
+  date_from: string,
+  date_to: string,
+  stripe_subscription_id: string,
+  stripe_price_id: string,
 }

@@ -50,8 +50,6 @@ export default function ProductionDashboard() {
             setTableData(ppoh_master_data.rows)
             setResultsCount(ppoh_master_data.count)
 
-            console.log('ppoh_master_data.departments')
-            console.log(ppoh_master_data.departments)
             setDeparments(ppoh_master_data.departments)
 
             setLoading(false);
@@ -93,8 +91,6 @@ export default function ProductionDashboard() {
                             </select>
                         </label>
                         <div className="button-d-bl-sm" onClick={() => {
-                            console.log(dateFrom)
-                            console.log(dateTo)
                             if (dateFrom > dateTo) {
                                 toast.error("Please select a start date before the end date"); 
                                 return 0;

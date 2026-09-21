@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
-import { count } from "console";
 import { format } from "date-fns";
+import { auth } from "@/auth";
 
 export async function GET(request: Request) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         const { searchParams } = new URL(request.url)
         const page_size = searchParams.get('page_size') || 100;
         const from_date = searchParams.get('from_date');
@@ -14,22 +27,10 @@ export async function GET(request: Request) {
         const page = searchParams.get('page') || 1;
 
 
-        console.log('page_size')
-        console.log(page_size)
-        console.log('from_date')
-        console.log(from_date)
-        console.log('to_date')
-        console.log(to_date)
-        console.log('employee')
-        console.log(employee)
-        console.log('department')
-        console.log(department)
-        console.log('page')
-        console.log(page)
         const rows_count = await sql`
             SELECT COUNT(*) 
             FROM ppoh_master
-            WHERE 1=1
+            WHERE company_id = ${company_id}
             ${from_date ? sql`
                 AND date >= ${from_date}` : sql``}
             ${to_date ? sql`
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
         const rows = await sql`
             SELECT *
             FROM ppoh_master
-            WHERE 1=1
+            WHERE company_id = ${company_id}
             ${from_date ? sql`
                 AND date >= ${from_date}` : sql``}
             ${to_date ? sql`
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
             SELECT DISTINCT department
             FROM ppoh_master
             WHERE department IS NOT NULL
+                AND company_id = ${company_id}
             ORDER BY department ASC;
         `;
         console.log(departments.map(row => row.department))

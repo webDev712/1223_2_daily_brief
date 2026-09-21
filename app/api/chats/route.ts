@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
 import { User } from "@/lib/types";
+import { auth } from "@/auth";
 
 
 export async function GET(request: Request) {
     const {searchParams} = new URL(request.url);
 
     const id = searchParams.get('id');
+    const session = await auth();
+
+    if (!session?.user) {
+        return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: 401 }
+        );
+    }
+
+    const user_id = session.user.id;
+    const company_id = session.user.company_id;
+    const permissions = session.user.permissions;
 
     const rows = await sql`
         WITH ranked_messages AS (
@@ -25,8 +38,9 @@ export async function GET(request: Request) {
                     ORDER BY timestamp DESC
                 ) AS rn
             FROM chat
-            WHERE from_user = ${id}
-            OR to_user = ${id}
+            WHERE (from_user = ${id}
+                    OR to_user = ${id})
+                        AND company_id = ${company_id}
         )
         SELECT *
         FROM ranked_messages
@@ -39,6 +53,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         const body = await request.json();
     
         const {id, text, timestamp, users_ids} = body;
@@ -49,16 +76,19 @@ export async function POST(request: Request) {
             from_user,
             to_user,
             timestamp,
-            read
+            read,
+            company_id
         )
         SELECT
             ${text},
             ${id},
             id,
             ${timestamp},
-            FALSE
+            FALSE,
+            ${company_id}
         FROM website_user
         WHERE id = ANY(${users_ids})
+            AND company_id = ${company_id}
         RETURNING id;`
         return NextResponse.json({success: true, rows})
     }

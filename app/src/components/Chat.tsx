@@ -128,8 +128,6 @@ const Chat = () => {
                 console.error('Error while fetching users');
                 return;
             }
-            console.log('chats');
-            console.log(chat_data);
 
             let users_data = await users_res.json();
             users_data = users_data
@@ -143,8 +141,6 @@ const Chat = () => {
                 })
             setUsers(users_data);
             let users_change = users_data.map((user: User) => { return {...user, sendMessageToGroupSelected: true } })
-            console.log('users_change')
-            console.log(users_change)
             setUsersForSendMessageToGroup(users_change)
             setChats(chat_data);
         }
@@ -163,8 +159,6 @@ const Chat = () => {
                 }
 
                 const chat_data = await chat_res.json();
-                console.log('messages')
-                console.log(chat_data)
                 if (scrollMessages || messages.length !== chat_data.length) {
                     setScrollMessages(prev => !prev);
                     // setScrollMessages(false);
@@ -323,7 +317,6 @@ const Chat = () => {
                                         <div className='flex j-s-b'>
                                             <input type="text" value={messageText} placeholder='Message text...' onChange={(e) => setMessageText(e.target.value)}
                                             onKeyDown={(e) => {
-                                                    console.log(e.key)
                                                     if (e.key === 'Enter') {
                                                         sendMessage({
                                                             text: messageText,

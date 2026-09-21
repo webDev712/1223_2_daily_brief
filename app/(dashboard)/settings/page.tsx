@@ -2,12 +2,14 @@
 
 import Loader from '@/app/src/components/Loader';
 import { useState, useEffect } from 'react';
-import { User } from '@/lib/types';
+import { User, CompanyToDisplay, Company, Plan, Billing } from '@/lib/types';
 import './page.css'
 import UserCircle from '@/app/src/components/UserCircle';
 import { getRoles } from '@/lib/config';
 import generatePhoneNumber from '@/lib/phone';
 import { toast } from 'sonner';
+import capitalize from '@/lib/text';
+import { format } from 'date-fns';
 
 export default function Settings() {
   const [user, setUser] = useState<User | null>()
@@ -15,18 +17,44 @@ export default function Settings() {
   const [reload, setReload] = useState(0);
   const [showSubmitArchive, setShowSubmitArchive] = useState(false);
   const [dataChanged, setDataChanged] = useState(false);
+  const [company, setCompany] = useState<CompanyToDisplay>();
+  const [showAssignAnotherAdmin, setShowAssignAnotherAdmin] = useState(false)
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedNewAdmin, setSelectedNewAdmin] = useState<string>();
+  const [plans, setPlans] = useState<Plan[]>();
+  const [companyName, setCompanyName] = useState<string>();
+  const [allowSave, setAllowSave] = useState(false);
+  const [billings, setBillings] = useState<Billing[]>();
+  
   const changeUser = (user: User) => {
     if (dataChanged === false) setDataChanged(true);
     setUser(user);
   }
   useEffect(() => {
     async function load() {
+      setLoading(true);
       const me_res = await fetch("/api/me");
       const me_user = await me_res.json();
-      console.log('me_user')
-      console.log(me_user)
-      setUser(me_user)
-      setLoading(false)
+      setUser(me_user);
+      const company_res = await fetch('/api/company');
+      const company_data = await company_res.json();
+      console.log('company_data')
+      console.log(company_data)
+      const users_res = await fetch('/api/users');
+      let users_data = await users_res.json();
+      users_data = users_data.sort((a: User, b: User) => b.user_role.localeCompare(a.user_role))
+      // const plans_res = await fetch('/api/plan');
+      // const plans_data = await plans_res.json();
+      // setPlans(plans_data);
+      const billings_res = await fetch('/api/billing');
+      const billings_data = await billings_res.json();
+      setBillings(billings_data)
+      setUsers(users_data)
+      setCompany(company_data[0]);
+      setCompanyName(company_data[0].name)
+      setSelectedNewAdmin(company_data[0].main_admin_id)
+      setAllowSave(false);
+      setLoading(false);
     }
     load()
   }, [reload])
@@ -54,6 +82,25 @@ export default function Settings() {
       }
     })
   }
+
+  const sendCompany = async (company: CompanyToDisplay | undefined) => {
+    if (!company) return;
+    setShowAssignAnotherAdmin(false);
+    setLoading(true);
+    const company_res = await fetch('/api/company', {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(company)
+    })
+    if (!company_res.ok) {
+      console.log("Error while sending company data.");
+      setLoading(false)
+      return;
+    }
+    setReload(prev => prev + 1);
+  }
   return (
     <div className="settings">
       {showSubmitArchive && (
@@ -75,7 +122,7 @@ export default function Settings() {
           <div>
             <div>
               <div data-img="bell" className={selectedSettings === 'my' ? 'selected' : ''} onClick={() => {setSelectedSettings('my')}}>My Profile</div>
-              {/* <div data-img="house" className={selectedSettings === 'general' ? 'selected' : ''} onClick={() => {setSelectedSettings('general')}}>General</div> */}
+              {company?.main_admin_id === user.id && (<div data-img="house" className={selectedSettings === 'company' ? 'selected' : ''} onClick={() => {setSelectedSettings('company')}}>Company</div>)}
               {user.permissions.see_app_settings && (
                 <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>Data & Security</div>
               )}
@@ -142,9 +189,47 @@ export default function Settings() {
                 </div>
                 {/* {JSON.stringify(user)} */}
               </div>)}
-            {selectedSettings === 'general' && (
-              <div>
-                General
+            {selectedSettings === 'company' && (
+              <div className='company'>
+                <h1>Company</h1>
+                <p>Manage company settings and subscriptions.</p>
+                {company && (
+                  <div>
+                    <div>
+                      <div>
+                        <h2>MAIN ADMIN OF "{companyName}"</h2>
+                        <div className='flex'>
+                          <UserCircle user_name={company.admin_name || 'Admin'} size={30}></UserCircle>
+                          <div>{company.admin_name}</div>
+                          <div className='button-d-bl-sm' onClick={() => {setShowAssignAnotherAdmin(true)}}>Assign another Main Admin</div>
+                        </div>
+                      </div>
+                      <div className='company-data'>
+                        <div>
+                          <div>COMPANY DATA</div>
+                          <div className={allowSave ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={() => {if (allowSave) sendCompany(company)}}>Save Changes</div>
+                        </div>
+                        <div>
+                          <label>
+                            <span>Name</span>
+                            <input type="text" value={company.name} onChange={(e) => {setCompany({...company, name: e.target.value}); setAllowSave(true);}} />
+                          </label>
+                          <label>
+                            <span>Plan</span>
+                            <input className="plan" type="text" value={company.plan_name} onChange={() => {}} disabled />
+                          </label>
+                          <label>
+                            <span>Created At</span>
+                            <input type="text" value={format(new Date(company.created_at), 'MM-dd-yyyy')} disabled className='d' onChange={() => {}}/>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      Billings
+                    </div>
+                  </div>
+                )}
               </div>)}
             {selectedSettings === 'data' && (
               <div className='data'>
@@ -172,6 +257,27 @@ export default function Settings() {
                   </div>
                 </div>
               </div>)}
+          </div>
+        )}
+        {showAssignAnotherAdmin && (
+          <div className='confirm'>
+            <div>
+              <h1>Select another Admin:</h1>
+              <div>
+                {users.map((user: User) => {
+                  return (
+                    <label key={`assign_another_user_${user.id}`}>
+                      <input type='radio' checked={user.id === selectedNewAdmin} onChange={(e) => setSelectedNewAdmin(user.id)} name='select-another-admin' />
+                      <div>{user.name} ({capitalize(user.user_role)})</div>
+                    </label>
+                  )
+                })}
+              </div>
+              <div>
+                <div className='button-w-bl' onClick={() => {setShowAssignAnotherAdmin(false)}}>Close</div>
+                <div className='button-d-bl' onClick={() => {if (selectedNewAdmin && company) sendCompany({...company, main_admin_id: selectedNewAdmin })}}>Confirm</div>
+              </div>
+            </div>
           </div>
         )}
     </div>

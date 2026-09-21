@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 
 export const metadata = {
-  title: "Helena's Cleaners Daily Brief",
-  description: "Daily Brief",
+  title: "Daily Brief",
+  description: "All your statistics in one place!",
 };
 
 

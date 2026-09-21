@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
-import sql from "@/lib/db"
+import sql from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function POST(request: Request) {
     try {
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+        
         // await requireRole("lead");
         const body = await request.json();
 
@@ -43,7 +57,8 @@ export async function POST(request: Request) {
                     freezed = ${freezed},
                     covered = ${JSON.stringify(covered)}
                 WHERE
-                    id = ${id};`;
+                    id = ${id}
+                    AND company_id = ${company_id};`;
 
 
             // reports
@@ -58,7 +73,8 @@ export async function POST(request: Request) {
                                 checked,
                                 timestamp,
                                 saved_brief_id,
-                                day_time
+                                day_time,
+                                company_id
                             )
                             VALUES (
                                 ${r.text},
@@ -67,7 +83,8 @@ export async function POST(request: Request) {
                                 ${r.checked},
                                 ${r.timestamp},
                                 ${id},
-                                ${r.dat_time}
+                                ${r.dat_time},
+                                ${company_id}
                             );
                         `;
                     } else {
@@ -80,9 +97,10 @@ export async function POST(request: Request) {
                                 checked = ${r.checked},
                                 timestamp = ${r.timestamp},
                                 day_time = ${r.day_time}
-                            WHERE id = ${r.id};
+                            WHERE id = ${r.id}
+                                AND company_id = ${company_id};
                         `;
-}
+                    }
                 })
                 );
 
@@ -98,7 +116,8 @@ export async function POST(request: Request) {
                                     checked,
                                     task_type,
                                     saved_brief_id,
-                                    roll_to_next_brief
+                                    roll_to_next_brief,
+                                    company_id
                                 )
                                 VALUES (
                                     ${t.custom_id},
@@ -106,7 +125,8 @@ export async function POST(request: Request) {
                                     ${t.checked ?? false},
                                     ${t.task_type},
                                     ${id},
-                                    ${t.roll_to_next_brief ?? false}
+                                    ${t.roll_to_next_brief ?? false},
+                                    ${company_id}
                                 )
                                 ON CONFLICT (id)
                                 DO UPDATE SET
@@ -124,7 +144,8 @@ export async function POST(request: Request) {
                                     checked = ${t.checked},
                                     task_type = ${t.task_type},
                                     roll_to_next_brief = ${t.roll_to_next_brief}
-                                WHERE id = ${t.id};
+                                WHERE id = ${t.id}
+                                    AND company_id = ${company_id};
                             `;
                         }
                     } else {
@@ -135,7 +156,8 @@ export async function POST(request: Request) {
                                 checked = ${t.checked},
                                 task_type = ${t.task_type},
                                 roll_to_next_brief = ${t.roll_to_next_brief}
-                            WHERE id = ${t.id};
+                            WHERE id = ${t.id}
+                                AND company_id = ${company_id};
                         `;
                     }
                 })

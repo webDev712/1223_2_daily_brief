@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import sql from "@/lib/db";
 import { IdName } from "@/lib/types";
+import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+            
         const { searchParams } = new URL(request.url);
         const fromDate = searchParams.get("fromDate");
         const toDate = searchParams.get("toDate");
@@ -14,15 +28,14 @@ export async function GET(request: NextRequest) {
         const category = searchParams.get("category");
         const page_size = searchParams.get("pageSize");
         const page = searchParams.get("page");
-        console.log('fromDate')
-        console.log(fromDate)
-        console.log('toDate')
-        console.log(toDate)
 
         const rows_count = await sql`
             SELECT COUNT(*) 
             FROM daily_log dl, department d, website_user u
-            WHERE d.id = dl.department_id
+            WHERE dl.company_id = ${company_id}
+                AND d.company_id = ${company_id}
+                AND u.company_id = ${company_id}
+                AND d.id = dl.department_id
                 AND u.id = dl.user_id
             ${fromDate ? sql`
                 AND date >= ${fromDate}` : sql``}
@@ -44,7 +57,10 @@ export async function GET(request: NextRequest) {
         const rows = await sql`
             SELECT dl.*, d.name AS d_name, u.name AS u_name
             FROM daily_log dl, department d, website_user u
-            WHERE d.id = dl.department_id
+            WHERE dl.company_id = ${company_id}
+                AND d.company_id = ${company_id}
+                AND u.company_id = ${company_id}
+                AND d.id = dl.department_id
                 AND u.id = dl.user_id
             ${fromDate ? sql`
                 AND dl.date >= ${fromDate}` : sql``}
@@ -79,7 +95,10 @@ export async function GET(request: NextRequest) {
         const all_rows = await sql`
             SELECT dl.*, u.name AS u_name, d.name AS d_name
             FROM daily_log dl, department d, website_user u
-            WHERE d.id = dl.department_id
+            WHERE dl.company_id = ${company_id}
+                AND d.company_id = ${company_id}
+                AND u.company_id = ${company_id}
+                AND d.id = dl.department_id
                 AND u.id = dl.user_id`;
         
         all_rows.map((row: any) => {
@@ -124,6 +143,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         const body = await request.json();
         const {
             id = crypto.randomUUID(),
@@ -138,8 +169,6 @@ export async function POST(request: NextRequest) {
             actions,
             date_resolved = null
         } = body;
-        console.log("body")
-        console.log(body)
         
         await sql`
             INSERT INTO daily_log (
@@ -153,7 +182,8 @@ export async function POST(request: NextRequest) {
                 text,
                 status,
                 actions,
-                date_resolved
+                date_resolved,
+                company_id
             )
             VALUES (
                 ${id},
@@ -166,7 +196,8 @@ export async function POST(request: NextRequest) {
                 ${text},
                 ${status},
                 ${JSON.stringify(actions ?? [])},
-                ${(status === 'Resolved' || date_resolved !== null) ? date_resolved : null}
+                ${(status === 'Resolved' || date_resolved !== null) ? date_resolved : null},
+                ${company_id}
             )
             ON CONFLICT (id)
             DO UPDATE SET
@@ -193,14 +224,26 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try{
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const permissions = session.user.permissions;
+
         const body = await request.json();
         const { id } = body;
-        console.log("body")
-        console.log(body)
         
         await sql`
             DELETE FROM daily_log
-            WHERE id = ${id};
+            WHERE id = ${id}
+                AND company_id = ${company_id};
         `
         return NextResponse.json({success: true})
     } catch (error) {

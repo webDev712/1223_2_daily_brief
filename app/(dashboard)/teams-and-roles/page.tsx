@@ -61,8 +61,6 @@ export default function TeamsAndRoles() {
     if (role === null) return;
     fetch("/api/role", {method: "DELETE", headers: {"Content-Type": "application/json"}, body: JSON.stringify(role)})
     .then(res => {
-      console.log('res')
-      console.log(res)
       if (res.status === 200) {
         toast.success(`Deleted Role ${role.name}`);
         setReload(prev => prev + 1);
@@ -118,9 +116,6 @@ export default function TeamsAndRoles() {
     setUsers((prev: User[]) => prev.map((user: User) => {
       return user.id === userToUpdate.id ? userToUpdate : user
     }))
-    console.log('userToUpdate')
-    console.log(userToUpdate)
-
   }
 
   const saveUser = (user: User) => {
@@ -147,8 +142,6 @@ export default function TeamsAndRoles() {
       name: (document.getElementById('new_role') as HTMLInputElement)?.value || '',
       permissions: selectedPermissionsNewRole,
     }
-    console.log('role')
-    console.log(role)
     fetch("/api/role", {
       method: "POST",
       headers: {
@@ -170,8 +163,6 @@ export default function TeamsAndRoles() {
       name: roleToEdit?.name,
       permissions: selectedPermissionsNewRole,
     }
-    console.log('role')
-    console.log(role)
     fetch("/api/role", {
       method: "PATCH",
       headers: {
@@ -226,8 +217,6 @@ export default function TeamsAndRoles() {
       setLoading(true)
       const me_res = await fetch("/api/me");
       const me_user = await me_res.json();
-      console.log('me_user')
-      console.log(me_user)
       setUser(me_user)
 
       setSelectedPermissionsNewRole(permissions.map((permission: Permission) => { return {...permission, selected: false} }))
@@ -249,8 +238,6 @@ export default function TeamsAndRoles() {
       let users_data = await users_res.json();
       users_data = await users_data.sort((a: User, b: User) => { if (a.archived !== b.archived) { return Number(a.archived) - Number(b.archived);}
           return Object.keys(b.permissions).filter(key => b.permissions[key] === true).length - Object.keys(a.permissions).filter(key => a.permissions[key] === true).length;})
-      console.log('users_data')
-      console.log(users_data)
       setUsers(users_data)
 
       let departments_res = await fetch("/api/departments");
@@ -261,8 +248,6 @@ export default function TeamsAndRoles() {
       }
       let departments_data = await departments_res.json();
       departments_data = departments_data.filter((department: Department) => department.is_main === true)
-      console.log('departments_data')
-      console.log(departments_data)
       setDeparments(departments_data)
       
       let roles_res = await fetch("/api/roles");
@@ -273,8 +258,6 @@ export default function TeamsAndRoles() {
       }
       let roles_data = await roles_res.json();
       roles_data = roles_data.sort((a: Role, b: Role) => Object.keys(b.permissions).filter(key => b.permissions[key] === true).length - Object.keys(a.permissions).filter(key => a.permissions[key] === true).length);
-      console.log('roles_data')
-      console.log(roles_data)
       setRoles(roles_data)
 
 

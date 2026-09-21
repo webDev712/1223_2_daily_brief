@@ -17,7 +17,6 @@ export async function POST() {
             trim: true,
         });
 
-        console.log(`Found ${rows.length} rows`);
 
         const BATCH_SIZE = 500;
 

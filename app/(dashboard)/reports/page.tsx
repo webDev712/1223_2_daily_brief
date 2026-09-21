@@ -78,8 +78,6 @@ export default function Reports() {
   }
 
   const saveReport = (r: Report) => {
-    console.log('saveReport Report')
-    console.log(r)
     fetch("/api/report", {
       method: "PATCH",
       headers: {
@@ -100,7 +98,6 @@ export default function Reports() {
       else{
         toast.error("Error while saving report")
       }
-      console.log(r)
     });
   }
 
@@ -128,8 +125,6 @@ export default function Reports() {
       setLoading(true)
       const me_res = await fetch("/api/me");
       const me_user = await me_res.json();
-      console.log('me_user')
-      console.log(me_user)
       setUser(me_user)
 
 
@@ -141,8 +136,6 @@ export default function Reports() {
       }
       let departments_data = await departments_res.json();
       departments_data = departments_data.filter((department: Department) => department.is_main)
-      console.log('departments_data')
-      console.log(departments_data)
       setDeparments(departments_data)
 
 
@@ -171,11 +164,6 @@ export default function Reports() {
         }
       })
       reportsObject['Shared Reports'] = [ ...reports_data ]
-      console.log('reports_data')
-      console.log(reports_data)
-      
-      console.log('reportsObject')
-      console.log(reportsObject)
       const dateString = format(new Date(), "yyyy-MM-dd");
 
       const res = await fetch(`/api/brief_history?date_from=${dateString}&date_to=${dateString}`);
@@ -197,21 +185,14 @@ export default function Reports() {
       }  
       let leads_data = await users_res.json();
       leads_data = leads_data.filter((a: User) => a.user_role !== 'manager' && a.archived !== true);
-      console.log('leads_data')
-      console.log(leads_data)
       setLeads(leads_data);
 
       setLoading(false);
-      console.log('test 1')
-      console.log('scrollToIdAfterReload')
-      console.log(scrollToIdAfterReload)
       if (scrollToIdAfterReload) {
-        console.log('test 2')
         setTimeout(() => {
           scrollToElement(scrollToIdAfterReload);
           setScrollToIdAfterReload(null);
         }, 1000)
-        console.log('test 3')
       }
     }
     load();
