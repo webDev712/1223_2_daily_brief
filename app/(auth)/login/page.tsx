@@ -5,6 +5,7 @@ import { LoginButton } from "../../src/components/LoginButton";
 import './page.css'
 import { Plan } from "@/lib/types";
 import { toast } from "sonner";
+import Loader from "@/app/src/components/Loader";
 
 export default function Login() {
   const handlePayment = async () => {
@@ -12,7 +13,7 @@ export default function Login() {
           alert('Please select a plan');
           return;
       }
-
+      setLoading(true);
       const response = await fetch(
           '/api/stripe/create-checkout',
           {
@@ -35,7 +36,8 @@ export default function Login() {
   const [showSignUp, setShowSignUp] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('')
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
       fetch('/api/plan')
           .then(res => res.json())
@@ -59,6 +61,7 @@ useEffect(() => {
 }, []);
   return (
     <div className="login">
+      {loading && <Loader></Loader>}
       <div>
         <div>
           <span></span>

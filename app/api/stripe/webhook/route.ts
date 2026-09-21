@@ -83,14 +83,16 @@ export async function POST(request: NextRequest) {
                     role_id,
                     user_role,
                     archived,
-                    department_id)
+                    department_id,
+                    company_id)
                 VALUES (
                     ${adminEmail},
                     ${adminName},
                     ${role[0].id},
                     'Manager',
                     FALSE,
-                    ${department[0].id}
+                    ${department[0].id},
+                    ${company[0].id}
                 )
                 RETURNING id;
             `
