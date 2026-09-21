@@ -1,3 +1,5 @@
+'use client';
+
 import { LoginButton } from "../../src/components/LoginButton";
 import './page.css'
 
