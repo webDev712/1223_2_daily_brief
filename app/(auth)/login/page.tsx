@@ -17,6 +17,7 @@ export default function Login() {
       const all_users_res = await fetch('/api/all_companies_users');
       const all_users_data = await all_users_res.json();
       if (all_users_data.length > 0) {
+        setLoading(false);
         toast.error('You already have account in the Daily Brief system. Please login.')
         return;
       }
