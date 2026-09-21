@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
             SELECT COUNT(*) 
             FROM daily_log dl, department d, website_user u
             WHERE dl.company_id = ${company_id}
-                AND d.company_id = ${company_id}
                 AND u.company_id = ${company_id}
                 AND d.id = dl.department_id
                 AND u.id = dl.user_id
@@ -58,7 +57,6 @@ export async function GET(request: NextRequest) {
             SELECT dl.*, d.name AS d_name, u.name AS u_name
             FROM daily_log dl, department d, website_user u
             WHERE dl.company_id = ${company_id}
-                AND d.company_id = ${company_id}
                 AND u.company_id = ${company_id}
                 AND d.id = dl.department_id
                 AND u.id = dl.user_id
@@ -96,7 +94,6 @@ export async function GET(request: NextRequest) {
             SELECT dl.*, u.name AS u_name, d.name AS d_name
             FROM daily_log dl, department d, website_user u
             WHERE dl.company_id = ${company_id}
-                AND d.company_id = ${company_id}
                 AND u.company_id = ${company_id}
                 AND d.id = dl.department_id
                 AND u.id = dl.user_id`;

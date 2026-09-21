@@ -226,7 +226,7 @@ export default function Settings() {
                       </div>
                     </div>
                     <div>
-                      Billings
+                      {/* Billings */}
                     </div>
                   </div>
                 )}

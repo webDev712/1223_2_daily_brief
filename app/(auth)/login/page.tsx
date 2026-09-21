@@ -61,7 +61,6 @@ useEffect(() => {
 }, []);
   return (
     <div className="login">
-      {loading && <Loader></Loader>}
       <div>
         <div>
           <span></span>
@@ -119,6 +118,7 @@ useEffect(() => {
           </div>
         </div>
       )}
+    {loading && <Loader></Loader>}
     </div>
   );
 }

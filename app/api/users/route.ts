@@ -32,7 +32,6 @@ export async function GET() {
                 r.id AS role_id
             FROM website_user w, department d, role r
             WHERE w.company_id = ${company_id}
-                AND d.company_id = ${company_id}
                 AND r.company_id = ${company_id}
                 AND d.id = w.department_id
                 AND r.id = w.role_id;`
