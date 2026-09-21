@@ -10,10 +10,16 @@ import Loader from "@/app/src/components/Loader";
 export default function Login() {
   const handlePayment = async () => {
       if (!selectedPlan) {
-          alert('Please select a plan');
-          return;
+        alert('Please select a plan');
+        return;
       }
       setLoading(true);
+      const all_users_res = await fetch('/api/all_companies_users');
+      const all_users_data = await all_users_res.json();
+      if (all_users_data.length > 0) {
+        toast.error('You already have account in the Daily Brief system. Please login.')
+        return;
+      }
       const response = await fetch(
           '/api/stripe/create-checkout',
           {
