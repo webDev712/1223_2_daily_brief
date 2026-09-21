@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { LoginButton } from "../../src/components/LoginButton";
 import './page.css'
 import { Plan } from "@/lib/types";
+import { useSearchParams } from 'next/navigation';
+import { toast } from "sonner";
 
 export default function Login() {
   const handlePayment = async () => {
@@ -35,7 +37,7 @@ export default function Login() {
   const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('')
-
+  const searchParams = useSearchParams();
   useEffect(() => {
       fetch('/api/plan')
           .then(res => res.json())
@@ -43,8 +45,16 @@ export default function Login() {
             setPlans(data.sort((a: any, b: any) => a.price - b.price));
             setSelectedPlan(data[1].id)
           });
+      
   }, []);
 
+  useEffect(() => {
+    const message = searchParams.get('message');
+
+    if (message) {
+        toast.success(message);
+    }
+  }, [searchParams]);
   return (
     <div className="login">
       <div>

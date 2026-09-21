@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
                     role_id,
                     user_role,
                     archived,
-                    department_id,)
+                    department_id)
                 VALUES (
                     ${adminEmail},
                     ${adminName},
