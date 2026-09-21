@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { LoginButton } from "../../src/components/LoginButton";
 import './page.css'
 import { Plan } from "@/lib/types";
-import { useSearchParams } from 'next/navigation';
 import { toast } from "sonner";
 
 export default function Login() {
@@ -37,24 +36,27 @@ export default function Login() {
   const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('')
-  const searchParams = useSearchParams();
   useEffect(() => {
       fetch('/api/plan')
           .then(res => res.json())
           .then(data => {
             setPlans(data.sort((a: any, b: any) => a.price - b.price));
-            setSelectedPlan(data[1].id)
+            setSelectedPlan(data[1]?.id)
           });
       
   }, []);
 
-  useEffect(() => {
-    const message = searchParams.get('message');
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const message = params.get('message');
 
-    if (message) {
-        toast.success(message);
-    }
-  }, [searchParams]);
+  if (message) {
+    toast.success(message);
+
+    // Убираем message из URL после показа
+    window.history.replaceState({}, '', '/login');
+  }
+}, []);
   return (
     <div className="login">
       <div>
