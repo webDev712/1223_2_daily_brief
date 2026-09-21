@@ -19,9 +19,9 @@ export function proxy(request: NextRequest) {
     // Страна пользователя
     const country = request.headers.get("x-vercel-ip-country");
 
+    return NextResponse.next();
     // Польша — обычный сайт
     if (country === "PL") {
-        return NextResponse.next();
     }
 
     // Остальные страны

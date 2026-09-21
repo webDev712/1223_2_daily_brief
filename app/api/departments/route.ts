@@ -4,24 +4,23 @@ import { auth } from "@/auth";
 
 export async function GET() {
     try{
-        const session = await auth();
+        // const session = await auth();
 
-        if (!session?.user) {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
+        // if (!session?.user) {
+        //     return NextResponse.json(
+        //         { error: "Unauthorized" },
+        //         { status: 401 }
+        //     );
+        // }
 
-        const user_id = session.user.id;
-        const company_id = session.user.company_id;
-        const permissions = session.user.permissions;
+        // const user_id = session.user.id;
+        // const company_id = session.user.company_id;
+        // const permissions = session.user.permissions;
 
         // await requireRole("lead");
         const rows = await sql`
             SELECT *
-            FROM department
-            WHERE company_id = ${company_id};`
+            FROM department;`
         return NextResponse.json(rows);
     } catch (error) {
         console.log(error);
