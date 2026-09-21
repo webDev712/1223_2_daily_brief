@@ -24,11 +24,8 @@ export async function POST(request: NextRequest) {
                 },
             ],
 
-            success_url:
-                `${process.env.NEXT_PUBLIC_URL}/payment/success`,
-
-            cancel_url:
-                `${process.env.NEXT_PUBLIC_URL}/payment/cancel`,
+            success_url: 'https://dailybrief-web.vercel.app/payment/success',
+            cancel_url: 'https://dailybrief-web.vercel.app/payment/cancel',
 
             customer_email: email,
         });
