@@ -34,9 +34,23 @@ export async function POST(request: NextRequest) {
     console.log('Stripe event:', event.type);
 
     switch (event.type) {
-        case 'checkout.session.completed':
-            console.log('Checkout completed');
-            break;
+        case 'checkout.session.completed': {
+            const session = event.data.object as Stripe.Checkout.Session;
+
+            const companyName = session.metadata?.company_name;
+            const adminEmail = session.metadata?.admin_email;
+            const planId = session.metadata?.plan_id;
+
+            if (!companyName || !adminEmail || !planId) {
+                console.error('Missing checkout metadata');
+                break;
+            }
+
+            // 1. найти пользователя по email
+            // 2. создать company
+            // 3. создать billing
+            // 4. сохранить Stripe customer/subscription
+        }
 
         case 'invoice.paid':
             console.log('Invoice paid');
