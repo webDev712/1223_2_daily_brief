@@ -274,11 +274,12 @@ div .progress-bar{
 }
 
 .red{
-  color: #F04438
+  color: #F04438;
 }
 
-.orange{
-  color: #ffb23e
+.orange,
+.orange::after{
+  color: #ffb23e;
 }
 
 .green{
@@ -292,6 +293,16 @@ div .progress-bar{
 [img-id="document-yellow"] h2{
   color: #F79009;
   background-color: #F7900918 !important;
+}
+
+
+[img-id="document-green"]{
+  background-image: url('../public/document-green.svg');
+}
+
+[img-id="document-green"] h2{
+  color: #28ae2a;
+  background-color: #28ae2a18 !important;
 }
 
 [img-id="book-blue"]{
@@ -425,7 +436,10 @@ div .progress-bar{
   font-size: 20px;
 }
 
-
+.no-padding-margin{
+  padding: 0 !important;
+  margin: 0 !important;
+}
 
 @media (max-width: 1000px) {
     .four-block{
@@ -453,5 +467,10 @@ div .progress-bar{
 
     .three-block{
       grid-template-columns: repeat(1, 1fr) !important;
+    }
+
+    .no-padding-margin{
+      padding: 0 !important;
+      margin: 0 !important;
     }
 }

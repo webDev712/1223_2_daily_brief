@@ -260,3 +260,9 @@ export interface Billing {
   stripe_subscription_id: string,
   stripe_price_id: string,
 }
+
+export interface PrivacyPageTopicInterface {
+  id?: number,
+  header: string,
+  description: string,
+}

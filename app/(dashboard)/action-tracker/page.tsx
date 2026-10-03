@@ -13,6 +13,7 @@ import { getActionLogCategories } from '@/lib/config';
 import UserCircle from '@/app/src/components/UserCircle';
 import formatDateWithoutTimezone from '@/lib/date';
 import { toast } from 'sonner';
+import { sendMessageGlobal } from '@/app/src/components/Chat';
 
 
 export default function ActionTracker () {
@@ -40,6 +41,8 @@ export default function ActionTracker () {
     const categories = getActionLogCategories().sort((a: IdName, b: IdName) => a.name.localeCompare(b.name));
     const [showAdd, setShowAdd] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
+    const [showResolve, setShowResolve] = useState(false);
+    const [rowToResolve, setRowToResolve] = useState<DailyLogRow | null>(null);
 
     const defaultNewAuditLogRow = {
         date: new Date().toISOString(),
@@ -59,7 +62,11 @@ export default function ActionTracker () {
     const [actionToAdd, setActionToAdd] = useState('');
 
 
-    const sendActionTrackerRow = async (newActionTrackerRow: DailyLogRow) => {
+    const sendActionTrackerRow = async (newActionTrackerRow: DailyLogRow | null) => {
+        if (!newActionTrackerRow) {
+            console.log('sendActionTrackerRow error - newActionTrackerRow is null or undefined');
+            return false;
+        }
         setLoading(true);
         newActionTrackerRow = {
             ...newActionTrackerRow,
@@ -78,7 +85,7 @@ export default function ActionTracker () {
         if (!action_tracker_res.ok){
             console.error('Error while sending Action Tracker Row.');
             setLoading(false);
-            return 0;
+            return false;
         }
         if (rowShowActions){
             setRowShowActions(newActionTrackerRow);
@@ -87,7 +94,9 @@ export default function ActionTracker () {
         setLoading(false);
         setShowAdd(false);
         setReload(reload + 1);
-        toast.success('Successfully sent Action Tracker row to the server.')
+        setShowResolve(false);
+        toast.success('Successfully updated Action Tracker row!');
+        return true;
     }
 
 
@@ -159,6 +168,28 @@ export default function ActionTracker () {
         <div>
             {loading ? (<Loader></Loader>) : (
                 <div className="action-tracker">
+                    <div className='four-block'>
+                        <div img-id="tasks-red">
+                            <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "Unset").length}</h1>
+                            <div>Issues/Observations</div>
+                            <span>With "Unset" status</span>
+                        </div>
+                        <div img-id="document-yellow">
+                            <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "In progress").length}</h1>
+                            <div>Issues/Observations</div>
+                            <span>With "In Progress" status</span>
+                        </div>
+                        <div img-id="document-green">
+                            <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "Resolved").length}</h1>
+                            <div>Issues/Observations</div>
+                            <span>With "Resolved" status</span>
+                        </div>
+                        <div img-id="error-yellow">
+                            <h1>{auditLogData.filter((row: DailyLogRow) => row.severity === "High").length}</h1>
+                            <div>Issues/Observations</div>
+                            <span>With "High" severity</span>
+                        </div>
+                    </div>
                     <div>
                         <div>
                             <label>
@@ -260,7 +291,19 @@ export default function ActionTracker () {
                                     ) : (
                                         <div className={differenceInCalendarDays(new Date(), row.date) < 3 ? 'green b' : (differenceInCalendarDays(new Date(), row.date) < 10 ? 'orange b' : 'red b')}>{differenceInCalendarDays(new Date(), row.date)}</div>
                                     )}</div>
-                                    <div before-text='Status' className={row.status === 'Resolved' ? 'green b' : (row.status === 'In progress' ? 'orange b' : 'red b')}>{row.status}</div>
+                                    <div before-text='Status'>
+                                        <div className={row.status === 'Resolved' ? 'green b' : (row.status === 'In progress' ? 'orange b resolve-button' : 'red b resolve-button')}>
+                                            {row.status.toLowerCase() === 'resolved' ? (
+                                                <div>Resolved</div>
+                                            ) : (
+                                                <select className={user.permissions.edit_action_tracker === true ? '' : 'd'} defaultValue={row.status} onChange={(e) => { if (user.permissions.edit_action_tracker === true) {setRowToResolve({...row, status: e.target.value}); setShowResolve(true); e.target.value = row.status} } }>
+                                                    <option className='red' value="Unset">Unset</option>
+                                                    <option className='orange' value="In progress">In progress</option>
+                                                    <option className='green' value="Resolved">Resolved</option>
+                                                </select>
+                                            )}
+                                    </div>
+                                    </div>
                                     {user.permissions.edit_action_tracker === true && (<div>
                                         <div className="button-w-bl" onClick={() => { setAuditLogRowToAdd({...row, date: format(row.date, 'MM-dd-yyyy')}); setShowAdd(true); }}>Edit</div>
                                     </div>)}
@@ -369,21 +412,27 @@ export default function ActionTracker () {
                                 <span onClick={() => {setRowShowActions(null)}} className='x'>x</span>
                                 {auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved !== null && (<b>-- RESOLVED SUCCESSFULLY --</b>)}
                                 <div className={auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved === null && user.permissions.add_actions_to_io === true ? '' : 'resolved'}>
-                                    <div className={user.permissions.add_actions_to_io === true ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={() => {sendActionTrackerRow({
-                                        ...rowShowActions,
-                                            actions: [
-                                            ...(rowShowActions.actions ?? []), 
-                                            {
-                                                id: crypto.randomUUID(), 
-                                                text: actionToAdd || 'No description', 
-                                                date: new Date().toISOString(), 
-                                                user_id: user.id
-                                            }
-                                    ],})}}>Add Action</div>
-                                    {/* rowShowActions.date_resolved: 
-                                    {typeof rowShowActions.date_resolved}
-                                    {rowShowActions.date_resolved} -
-                                    {' '}{JSON.stringify(rowShowActions.date_resolved)} */}
+                                    <div className={user.permissions.add_actions_to_io === true ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={async () => {
+                                        const result = await sendActionTrackerRow({
+                                            ...rowShowActions,
+                                                actions: [
+                                                ...(rowShowActions.actions ?? []),
+                                                {
+                                                    id: crypto.randomUUID(),
+                                                    text: actionToAdd || 'No description',
+                                                    date: new Date().toISOString(),
+                                                    user_id: user.id
+                                                }
+                                            ],})
+                                        if (result === true && user.id !== rowShowActions.user_id) {
+                                            sendMessageGlobal({
+                                                text: `NOTIFICATION: Added new action by this User to the Issue / Observation, you've added (${rowShowActions.text.slice(0, 10)}...): ${actionToAdd || 'No description'}`,
+                                                from_user: user.id,
+                                                to_user: rowShowActions.user_id,
+                                                timestamp: new Date()
+                                            })
+                                        }
+                                        }}>Add Action</div>
                                     <label className={user.permissions.add_actions_to_io === true ? "is-resolved" : "is-resolved d"} >
                                         <div>Issue Resolved?</div>
                                         <input type="checkbox" checked={rowShowActions?.date_resolved !== null || false} onChange={(e) => {
@@ -410,6 +459,19 @@ export default function ActionTracker () {
                                     <button className='button-w-r' onClick={() => { 
                                         deleteActionTrackerRow(auditLogRowToAdd ? auditLogRowToAdd.id ?? null : null)
                                     }}>Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showResolve && (
+                        <div className='confirm'>
+                            <div>
+                                <h1>Confirm changing status of this Issue / Observation?</h1>
+                                <div>
+                                    <div className='button-w-bl' onClick={() => {setShowResolve(false)}}>Cancel</div>
+                                    <button className='button-d-bl' onClick={() => { 
+                                        sendActionTrackerRow(rowToResolve)
+                                    }}>Confirm</button>
                                 </div>
                             </div>
                         </div>

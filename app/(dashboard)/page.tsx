@@ -8,8 +8,5 @@ export default async function Home() {
     redirect("/daily-brief");
   }
 
-  redirect("/login");
-  return (
-    <div className="page"></div>
-  );
+  redirect("/landing");
 }

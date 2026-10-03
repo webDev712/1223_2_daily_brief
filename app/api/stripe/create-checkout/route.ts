@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
             ],
 
             success_url:
-                `https://dailybrief-web.vercel.app/login?message=${encodeURIComponent(
+                `https://dailybrief-web.vercel.app/landing?message=${encodeURIComponent(
                     'Success! Now you can log in to your account.'
                 )}`,
 

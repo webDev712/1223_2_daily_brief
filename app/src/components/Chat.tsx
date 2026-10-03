@@ -9,6 +9,19 @@ import UserCircle from './UserCircle';
 import Loader from './Loader';
 import { toast } from 'sonner';
 
+export const sendMessageGlobal = async (message: NewMessage) => {
+    const chat_res = await fetch('/api/chat', {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(message)}
+    )
+    if (!chat_res.ok){
+        console.error('Error while sending message');
+        return;
+    }
+    toast.success('Issue / Observation owner is notified with new action!')
+}
+
 const Chat = () => {
     const [openChat, setOpenChat] = useState(false);
     const [loading, setLoading] = useState(false);

@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   
 
   if (!user) {
-    redirect("/login");
+    redirect("/landing");
   }
 
 

@@ -78,7 +78,7 @@ export default function Settings() {
     fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, archived: true})}).then(res => {
       if (res.status === 200) {
         toast.success('Your account archived now!');
-        setTimeout(() => { window.location.href = "/login" }, 5000)
+        setTimeout(() => { window.location.href = "/landing" }, 5000)
       }
     })
   }

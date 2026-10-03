@@ -184,7 +184,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <div className="shift">{b.shift || "No shift selected"}</div>
-                    <div>{b.driving ? (<div className="driving">Driving</div>) : (<div className="on-site">On-site</div>)}</div>
+                    <div>{b.driving ? (<div className="driving">Driving</div>) : (<div className="on-site">Floor</div>)}</div>
                   </div>
                   <div>
                     <div>

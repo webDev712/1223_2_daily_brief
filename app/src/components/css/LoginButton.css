@@ -1,7 +1,8 @@
 .loginGoogle{
     cursor: pointer;
     border: 1px solid #E9EAEB;
-    border-radius: 6px;
+    border-radius: 16px;
+    display: flex;
     
 }
 
@@ -17,7 +18,9 @@
     width: max-content;
     font-size: 14px;
     transition: all 0.3s ease;
-    margin: 0 auto;
+    margin: auto auto;
+    line-height: 1;
+    display: block;
 }
 
 

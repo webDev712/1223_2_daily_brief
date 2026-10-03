@@ -425,7 +425,7 @@ export default function DailyBrief() {
         {leads_to_display.length > 0 && (
           <div className="leads" style={{display: leads.length > 0 ? "flex" : "none", gap: "10px"}}>
             <div className='choose'>
-              <span>Choose ROUTE Lead</span>
+              <span>Choose Lead</span>
             </div>
             {leads_to_display.sort((a: User, b: User) => a.name.localeCompare(b.name)).map((u: User, i) => {
               let colors = getColorsFromName(u.name);
@@ -522,7 +522,7 @@ export default function DailyBrief() {
                           )}</div>
                         </div>
                         <div>
-                            <span>Driving Status</span>
+                            <span>Work Assignment</span>
                             <label className={b.driving ? (noAccessEdit(b) ? 'driving d' : 'driving') : (noAccessEdit(b) ? 'd' : '')}>
                               <input
                                 type="checkbox"
@@ -531,7 +531,7 @@ export default function DailyBrief() {
                                 checked={b.driving}
                                 onChange={(e) => changeDrivingStatus(b, e.target.checked)}
                               />
-                              <div>{b.driving ? 'Driving' : 'On-site'}</div>
+                              <div>{b.driving ? 'Driving' : 'Floor'}</div>
                             </label>
                         </div>
                       </div>

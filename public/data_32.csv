@@ -1,0 +1,13 @@
+external_id,date,employee_name,department,pieces,value,hours,ppoh,target_ppoh,delta_ppoh,efficiency,notes
+235,9/26/2026,"Lopez, Everardo (omar)",Assemble,8,,1.5,,,,,
+235,9/26/2026,"Lopez, Everardo (omar)",Bag,21,,1,,,,,
+321,9/26/2026,"Sanchez, Emerson",Deliver,31,,0.75,,,,,
+378,9/26/2026,"Saquic, Kevin",Deliver,310,,1.75,,,,,
+217,9/26/2026,"Stackhouse, Zar",Detail,5,,1,,,,,
+235,9/26/2026,"Lopez, Everardo (omar)",Detail,267,,3.25,,,,,
+365,9/26/2026,"Maldonado helenas, Andrea",Detail,142,,0.5,,,,,
+372,9/26/2026,"Tercero, Juan",Detail,1,,0.25,,,,,
+217,9/26/2026,"Stackhouse, Zar",Pick Up,4,,0.25,,,,,
+235,9/26/2026,"Lopez, Everardo (omar)",Pick Up,32,,2,,,,,
+321,9/26/2026,"Sanchez, Emerson",Rack,60,,1.25,,,,,
+378,9/26/2026,"Saquic, Kevin",Rack,311,,1,,,,,

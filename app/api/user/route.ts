@@ -104,7 +104,7 @@ export async function POST(request: Request) {
                     <h2>Welcome, ${name}!</h2>
                     <p>Your Daily Brief account has been created successfully.</p>
                     <p>You can sign in here:</p>
-                    <a href="https://dailybrief-web.vercel.app/login">dailybrief-web.vercel.app</a>
+                    <a href="https://dailybrief-web.vercel.app/landing">dailybrief-web.vercel.app</a>
                     <p>If you did not expect this account, please contact your administrator.</p>
                     <p>Best, Daily Brief.</p>
                 `,

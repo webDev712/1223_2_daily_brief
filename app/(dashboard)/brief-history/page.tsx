@@ -168,7 +168,7 @@ export default function BriefHistory() {
                           {}
                         </div>
                         <div>{b.shift || "-"}</div>
-                        <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? '🚐 Driving' : '🏢 On-site'}</div>
+                        <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? '🚐 Driving' : '🏢 Floor'}</div>
                         <div>
                           <div style={{color: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '')}}>{b.reports.filter(r => r.checked === true).length}/{b.reports.length}</div>
                           <div className="progress-bar">

@@ -30,7 +30,7 @@ export default function Sidebar({ user }: { user: User}) {
     {href: 'reports', text: 'Reports', permission_name: 'see_reports_page'},
     {href: 'teams-and-roles', text: 'Teams & Roles', permission_name: 'see_team_roles'},
     {href: 'production-dashboard', text: 'Production Dashboard', permission_name: 'see_production_dashboard'},
-    {href: 'action-tracker', text: 'Action Tracker', permission_name: 'see_action_tracker'},
+    {href: 'action-tracker', text: 'Action Tracker', permission_name: ''},
     {href: 'settings', text: 'Settings', permission_name: 'see_profile_settings'},
   ]
 
@@ -57,7 +57,7 @@ export default function Sidebar({ user }: { user: User}) {
         {!loading && (mobileShow || !isMobile) && (
           <div className='flex'>
             {pages.map((page) => {
-              if (user.permissions[page.permission_name] === true) {
+              if (page.permission_name === '' || user.permissions[page.permission_name] === true) {
                 return (<div key={`page_${page.href}`}>
                   <Link onClick={() => {setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}></Link>
                   <h1>{page.text}</h1>
