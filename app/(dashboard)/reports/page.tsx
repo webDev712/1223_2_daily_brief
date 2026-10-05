@@ -524,13 +524,13 @@ return (
                   </select>
                 </div>
               </div>
-              <div>
+              {/* <div>
                 <div>Assinged To</div>
                 <div className="button-d-bl-sm" onClick={() => {
                   setShowAssignedReport(reportToAdd);
                   setShowAssigned(true);
                 }}>SET</div>
-              </div>
+              </div> */}
             </div>
             <div>
               <div className='button-w-bl' onClick={() => {setShowAddReport(false)}}>Cancel</div>
