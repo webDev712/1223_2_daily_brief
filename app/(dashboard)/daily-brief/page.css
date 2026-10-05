@@ -96,6 +96,7 @@
     gap: 10px;
     padding: 5px 0;
     position: relative;
+    transition: none;
 }
 
 .daily-brief .report + .report.border-top{
@@ -108,6 +109,7 @@
 
 .daily-brief .report > *{
     margin: auto 0;
+    transition: none;
 }
 
 .daily-brief .report.reports-to-assign,

@@ -305,12 +305,36 @@ const getAssignedLeadIds = (report: Report): string[] => {
   return Array.from(assignedLeadIds);
 };
 
+// const total_reports = activeReports.reduce((total, report) => {
+//   const assignedLeadIds = getAssignedLeadIds(report);
+
+//   return total + assignedLeadIds.length;
+// }, 0);
+const getAssignedDepartmentIds = (report: Report): string[] => {
+  const assigned = report.assigned_to;
+
+  if (!assigned) {
+    return [];
+  }
+
+  // Report assigned to all departments
+  if (assigned.all?.assigned === true) {
+    return departments.map((department) => String(department.id));
+  }
+
+  // Report assigned to specific departments
+  if (assigned.department?.assigned === true) {
+    return assigned.department.list.map(String);
+  }
+
+  return [];
+};
+
 const total_reports = activeReports.reduce((total, report) => {
-  const assignedLeadIds = getAssignedLeadIds(report);
+  const assignedDepartmentIds = getAssignedDepartmentIds(report);
 
-  return total + assignedLeadIds.length;
+  return total + assignedDepartmentIds.length;
 }, 0);
-
   const isAllAssigned = (report: Report | null) => {
   if (!report) return false;
 

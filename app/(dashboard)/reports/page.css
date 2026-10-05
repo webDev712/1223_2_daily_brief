@@ -67,6 +67,10 @@
     box-shadow: 0px 1px 4px 0px #1018280A;
 }
 
+.reports *{
+    transition: none !important;
+}
+
 .reports .table-reports .report{
     display: flex;
     padding: 10px 20px;

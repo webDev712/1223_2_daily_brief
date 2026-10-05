@@ -615,7 +615,7 @@ export default function DailyBrief() {
                       </div>
                     </div>
                     <div className='reports'>
-                      <div>Reports of Department "{user.department}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} reviewed (yours {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
+                      <div>Reports of Department "{leads.find((lead_local: User) => b.lead_id === lead_local.id)?.department}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} reviewed (yours {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
                       <div>
                         <div className='progress-bar'>
                           <span style={{width: b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100 + "%"}}></span>
@@ -631,7 +631,7 @@ export default function DailyBrief() {
                               <div>Assignee: <div className=''>{leads.find((lead: User) => lead.id === r.holder_id)?.name ?? '-'}</div></div>
                               <div style={{color: '#000000'}}>{r.metric}</div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div className="button-d-bl-sm" onClick={() => updateReports(b, {...r, holder_id: user.id}, r.checked)}>Take</div>
+                              <div className={noAccessEdit(b) || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!noAccessEdit(b) && b.lead_id === user.id) updateReports(b, {...r, holder_id: user.id}, r.checked)}}>Take</div>
 
                             </div>)
                         )}
@@ -700,7 +700,7 @@ export default function DailyBrief() {
                                 )}
                             </div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div className={r.checked ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!r.checked) updateReports(b, {...r, holder_id: null}, r.checked)}}>Resign</div>
+                              <div className={r.checked || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!r.checked && user.id === b.lead_id && !noAccessEdit(b) ) updateReports(b, {...r, holder_id: null}, r.checked)}}>Resign</div>
                             </div>)
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id).map(
