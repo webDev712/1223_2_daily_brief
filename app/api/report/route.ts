@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         } = body;
 
         const rows = await sql`
-            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to, day_time, company_id, default_holder, metric, metric_range_from, metric_range_to, department_id)
+            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to, day_time, company_id, default_holder_id, metric, metric_range_from, metric_range_to, department_id)
             VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived}, ${assigned_to}, ${day_time}, ${company_id}, ${default_holder}, ${metric}, ${metric_range_from}, ${metric_range_to}, ${department_id})
             RETURNING id;
         `;

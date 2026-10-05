@@ -32,12 +32,12 @@ export const getWeekDays = () => {
 
 
 export const getRoles = (role: string) => {
-    switch (role){
-        case 'lead':
-            return 'Route Lead'
-        case 'manager':
-            return 'Route Manager'
-    }
+    // switch (role){
+    //     case 'lead':
+    //         return 'Route Lead'
+    //     case 'manager':
+    //         return 'Route Manager'
+    // }
     return capitalize(role);
 }
 

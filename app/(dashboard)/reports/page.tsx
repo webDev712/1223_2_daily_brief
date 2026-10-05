@@ -489,20 +489,24 @@ return (
               <div>
                 <div>Source</div>
                 <div>
-                  <input type="text" id="new_report_source" placeholder="Report Source" />
+                  <select id="new_report_source" className="input">
+                      {getReportsTypes().map((report_type: string) => (
+                        <option key={`report_type_option_${report_type}`} value={report_type}>{report_type}</option>
+                      ))}
+                    </select>
                 </div>
               </div>
               <div>
                 <div>Period</div>
-                <div>
-                  <select value={reportToAdd.once_per ?? 'day'} onChange={(e) => {setReportToAdd({...reportToAdd, once_per: e.target.value})}}>
+                <div style={{paddingLeft: 0}}>
+                  <select value={reportToAdd.once_per ?? 'day'} onChange={(e) => {setReportToAdd({...reportToAdd, once_per: e.target.value})}} className="input" >
                     <option value="day">Day</option>
                     <option value="week">Week</option>
                     <option value="month">Month</option>
                   </select>
                   {reportToAdd.once_per === 'week' && "at"}
                   {reportToAdd.once_per === 'week' && (
-                    <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} defaultValue={parseInt(reportToAdd.start_at_day || '1')}>
+                    <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} defaultValue={parseInt(reportToAdd.start_at_day || '1')} className="input">
                       {weekDays.map((day: {full: string, small: string}, i: number) => {
                         return (
                           <option key={`report_${reportToAdd.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
@@ -516,7 +520,7 @@ return (
                       {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                     </select>
                   )}
-                  <select value={reportToAdd.day_time ?? 'ongoing'} onChange={(e) => {setReportToAdd({...reportToAdd, day_time: e.target.value})}}>
+                  <select value={reportToAdd.day_time ?? 'ongoing'} onChange={(e) => {setReportToAdd({...reportToAdd, day_time: e.target.value})}} className="input" style={{width: 'max-content'}}>
                     <option value="opening">Opening</option>
                     <option value="midday">Midday</option>
                     <option value="closing">Closing</option>
