@@ -26,12 +26,17 @@ export async function POST(request: Request) {
             start_at_day=1,
             archived,
             assigned_to,
-            day_time
+            day_time,
+            default_holder,
+            metric,
+            metric_range_from,
+            metric_range_to,
+            department_id
         } = body;
 
         const rows = await sql`
-            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to, day_time, company_id)
-            VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived}, ${assigned_to}, ${day_time}, ${company_id})
+            INSERT INTO report (name, source, once_per, start_at_day, archived, assigned_to, day_time, company_id, default_holder, metric, metric_range_from, metric_range_to, department_id)
+            VALUES (${name}, ${source}, ${once_per}, ${start_at_day}, ${archived}, ${assigned_to}, ${day_time}, ${company_id}, ${default_holder}, ${metric}, ${metric_range_from}, ${metric_range_to}, ${department_id})
             RETURNING id;
         `;
 
@@ -71,19 +76,20 @@ export async function PATCH(request: Request) {
             start_at_day="",
             archived,
             assigned_to,
-            day_time
+            day_time,
+            metric,
+            metric_range_from,
+            metric_range_to,
+            department_id,
+            default_holder_id
         } = body;
+        const holder_id = default_holder_id !== '' ? default_holder_id : null;
+
         const rows = await sql`
             UPDATE report
-            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}, day_time = ${day_time}
+            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}, day_time = ${day_time}, default_holder_id = ${holder_id}, metric = ${metric}, metric_range_from = ${metric_range_from}, metric_range_to = ${metric_range_to}, department_id = ${department_id}
             WHERE id = ${id} AND company_id = ${company_id};
         `
-        // const rows_2 = await sql`
-        //     UPDATE saved_report
-        //     SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}
-        //     WHERE id = ${id};
-        // `
-
         
         return NextResponse.json({ success: true })
     }

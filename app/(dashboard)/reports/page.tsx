@@ -4,11 +4,12 @@ import { Department, Report, SavedBrief, User } from "@/lib/types";
 import scrollToElement from "@/lib/html_document";
 import Loader from "@/app/src/components/Loader";
 import { useEffect, useState } from "react";
-import { getWeekDays } from "@/lib/config";
+import getReportsTypes, { getWeekDays } from "@/lib/config";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import './page.css'
 import capitalize from "@/lib/text";
+import { useDate } from "@/app/src/components/DateContext";
 
 export default function Reports() {
   const [loading, setLoading] = useState(true)
@@ -17,6 +18,7 @@ export default function Reports() {
   const [briefs, setBriefs] = useState([]);
   const [user, setUser] = useState<User | null>(null);
   const [leads, setLeads] = useState<User[]>([])
+  const [allUsers, setAllUsers] = useState<User[]>([])
   const [departments, setDeparments] = useState<Department[]>([]);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showAssigned, setShowAssigned] = useState(false);
@@ -25,6 +27,7 @@ export default function Reports() {
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
   const weekDays = getWeekDays()
   const [reload, setReload] = useState(0);
+  const [deparmentsWithNoReports, setDeparmentsWithNoReports] = useState<Department[]>([]);
   
   const [scrollToIdAfterReload, setScrollToIdAfterReload] = useState<string | null>()
   
@@ -135,7 +138,15 @@ export default function Reports() {
           return;
       }
       let departments_data = await departments_res.json();
-      departments_data = departments_data.filter((department: Department) => department.is_main)
+      departments_data = departments_data
+      .filter((department: Department) => department.is_main)
+      .sort((a: Department, b: Department) => {
+        if (a.name === me_user?.department) return -1;
+        if (b.name === me_user?.department) return 1;
+
+        return a.name.localeCompare(b.name);
+      });
+
       setDeparments(departments_data)
 
 
@@ -185,8 +196,17 @@ export default function Reports() {
       }  
       let leads_data = await users_res.json();
       leads_data = leads_data.filter((a: User) => a.user_role !== 'manager' && a.archived !== true);
+      console.log('leads_data')
+      console.log(leads_data)
       setLeads(leads_data);
 
+      const departments_with_no_reports = departments_data.filter((department: Department) => {
+        return reports_data.filter((report: Report) => {
+          return report.archived === false && (report.assigned_to.all.assigned === true || (report.assigned_to.department.assigned === true && report.assigned_to.department.list.indexOf(department.id) !== -1)) 
+        }).length === 0
+      })
+
+      setDeparmentsWithNoReports(departments_with_no_reports)
       setLoading(false);
       if (scrollToIdAfterReload) {
         setTimeout(() => {
@@ -316,6 +336,7 @@ const total_reports = activeReports.reduce((total, report) => {
 
   return allLeadsSelected && allDepartmentsSelected;
 };
+const [reportSearch, setReportSearch] = useState('');
 
     const toggleAll = (checked: boolean) => {
       setShowAssignedReport((prev: Report | null) => {
@@ -370,6 +391,14 @@ const toggleLead = (
       },
     };
   });
+};
+const reportMatchesSearch = (report: Report) => {
+  return report.name
+    .toLowerCase()
+    .includes(reportSearch.toLowerCase()) ||
+    report.source
+    .toLowerCase()
+    .includes(reportSearch.toLowerCase());
 };
 
 const toggleDepartment = (
@@ -558,44 +587,62 @@ return (
 
       {loading ? (<Loader></Loader>) :
         (<div>
+
           <div className="four-block three-block">
             <div img-id="document-yellow">
               <h1>{total_reports}</h1>
               <div>Total Reports</div>
               <span>All reports Scheduled for Today</span>
             </div>
-            <div img-id="document-yellow">
-              <h1>{done_by_all}</h1>
-              <div>Reviewed By All Leads</div>
-              <span>{done_by_all_percent}% fully covered Today</span>
-            </div>
-            <div img-id="document-yellow">
+            <div img-id="tasks-red">
               <h1>{total_reports - done_by_all}</h1>
-              <div>Still Pending</div>
-              <span>Not reviewed by all leads</span>
+              <div>Reports</div>
+              <span>Still Pending Today</span>
+            </div>
+            <div img-id="document">
+              <h1>{deparmentsWithNoReports.length}</h1>
+              <div>Departments</div>
+              <span>With no reports</span>
             </div>
           </div>
-          <div className="how-to-use">
-            <strong>About Reports</strong>
-            <div>
-              Reports configured in this section automatically appear in each Route Lead's Daily Brief when it is started.
-              <ul>
-                <li>• Day reports appear every day.</li>
-                <li>• Week reports appear only on the selected day of the week.</li>
-                <li>• Month reports appear only on the selected day of the month.</li>
-              </ul>
-              <strong>Changes made to reports will be applied starting with the next day's Daily Brief and will not affect briefs that have already been created.</strong>
-            </div>
-          </div>
-          <h2>Departments:</h2>
+          <h2 style={{position: 'relative', lineHeight: '50px'}}>Departments:
+            <label className="how-to-use">
+              <input type="checkbox" />
+              <strong>About Reports</strong>
+              <div>
+                <div>Configure which reports appear on each department's daily board.</div>
+                <div>Assign reports to specific departments or make them available to everyone.</div>
+                <div>Set when reports should appear and who is responsible for reviewing them.</div>
+                <div>Reports are automatically included in the Daily Brief based on their configuration.</div>
+                <div>Use reports to make sure each department knows what work needs to be reviewed each day.</div>
+              </div>
+              <div className="x">x</div>
+          </label>
+
+          </h2>
+          <div style={{ marginBottom: '20px' }}>
+          <input
+            className="search"
+            type="text"
+            placeholder="Search reports by name or by source..."
+            value={reportSearch}
+            onChange={(e) => setReportSearch(e.target.value)}
+          />
+        </div>
           {departments.map((dep: Department) => {
             return (
               <div key={`reports_department_${dep.id}`}>
                 <div className="flex">
                   <h3>{dep.name}</h3>
-                  {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).length === 0 ? (
+                  {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).filter((report: Report) => {
+  return report.name
+    .toLowerCase()
+    .includes(reportSearch.toLowerCase()) || report.source
+    .toLowerCase()
+    .includes(reportSearch.toLowerCase());
+}).length === 0 ? (
                     <div className="flex j-s-b">
-                      <span>- no reports assigned for this department</span>
+                      <span>- no reports</span>
                       <div className="button-d-bl-sm add-report" onClick={() => {
                         if (!user?.permissions.edit_reports){
                           toast.error("You don't have permissions for this action.")
@@ -622,21 +669,40 @@ return (
                   <div className="table-reports">
                     <div>
                       <div>EDIT</div>
-                      <div>SAVE</div>
+                      {/* <div>SAVE</div> */}
                       <div>REPORTS</div>
                       <div>SOURCE</div>
                       <div>PERIOD</div>
                       <div>DAY TIME</div>
-                      <div>ASSIGNED TO</div>
+                      <div>METRIC</div>
+                      <div>DEFAULT HOLDER</div>
+                      {/* <div>ASSIGNED TO</div> */}
                       <div>DELETE</div>
                     </div>
                     {reports.map((r: Report) => {
-                      if (!r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)) {
-                        return (
+if (
+  !r.archived &&
+  reportMatchesSearch(r) &&
+  (
+    (r.assigned_to.department.assigned === true &&
+      r.assigned_to.department.list.indexOf(dep.id) !== -1) ||
+    r.assigned_to.all.assigned === true
+  )
+) {                        return (
                           <div className="report" key={`report_${r.id}`} id={`report_${r.id}`} >
                             <div>
-                              <label>
-                                <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
+                              {r.edit}
+                               {r.edit === true ? (
+                                  <label>
+                                    <input type="checkbox" checked={true} onChange={() => {}} />
+                                    <span
+                                      className={r.edit !== true ? "button-d-bl" : "button-d-bl"}
+                                      onClick={() => { if (r.edit === true) saveReport(r);}}> Save
+                                    </span>
+                                  </label>
+                                ) : (
+                                  <label>
+                                    <span className={'button-w-bl'}>Edit</span>
                                 <input
                                   type="checkbox"
                                   checked={r.edit ?? false}
@@ -655,11 +721,12 @@ return (
                                       )
                                     }
                                   }
-                                  disabled={r.edit === true}
                                 />
                               </label>
+                                )}
+                              
                             </div>
-                            <div>
+                            {/* <div>
                               <label>
                                 <span
                                   className={r.edit !== true ? "button-d-bl-sm d" : "button-d-bl-sm"}
@@ -674,29 +741,37 @@ return (
                                   Save
                                 </span>
                               </label>
-                            </div>
+                            </div> */}
                             <div>
                               <div className="show">{r.name}</div>
                               <div className="edit">
-                                <input type="text" value={r.name} onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
+                                <textarea value={r.name} className="input" onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
                               </div>
                             </div>
                             <div>
                               <div className="show">{r.source}</div>
                               <div className="edit">
-                                <input type="text" value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}} />
+                                <select value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}}>
+                                  {getReportsTypes().map((report_type: string) => (
+                                    <option key={`report_type_option_${report_type}`} value={report_type}>{report_type}</option>
+                                  ))}
+                                </select>
                               </div>
                             </div>
                             <div>
                               <div>
-                                <div className="show">
+                                <div className="show" style={{gap: '8px', display: 'flex'}}>
                                   <div>{r.once_per}</div>
-                                  {r.once_per !== 'day' && (<div style={{display: 'flex'}}>at {r.once_per === 'week' ? weekDays[Number(r.start_at_day) - 1]?.full : r.start_at_day}
-                                    {r.once_per === 'month' && ''}
-                                  </div>)}
+                                  {r.once_per !== 'day' && 
+                                    (<div style={{display: 'flex', gap: "6px"}}><div>at</div> {r.once_per === 'week' ? weekDays
+          .filter((_, i) => Number(r.start_at_day || 0) & (1 << i))
+          .map(day => day.small)
+          .join(', ') : r.start_at_day}
+                                      {r.once_per === 'month' && ''}
+                                    </div>)}
                                   {r.once_per === 'month' && 'day'}
                                 </div>
-                                <div className="edit">
+                                <div className="edit" style={{gap: '8px', display: 'flex'}}>
                                   <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
                                     if (e.target.value === 'week') {
                                       changeReports({...r, once_per: e.target.value, start_at_day: '1'})
@@ -704,20 +779,46 @@ return (
                                     else {
                                       changeReports({...r, once_per: e.target.value})
                                     }
-                                  }} style={{paddingLeft: 7}}>
+                                  }} style={{paddingLeft: 7, height: 'max-content'}}>
                                     <option value="day">Day</option>
                                     <option value="week">Week</option>
                                     <option value="month">Month</option>
                                   </select>
-                                  {r.once_per !== 'day' && 'At'}
+                                  {r.once_per !== 'day' && (<div style={{height: 'min-content'}}>At</div>)}
                                   {r.once_per === 'week' && (
-                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
-                                      {weekDays.map((day: {full: string, small: string}, i: number) => {
+                                    <div>
+                                      {weekDays.map((day: { full: string; small: string }, i: number) => {
+                                        const dayNumber = i + 1;
+                                        const dayBit = 1 << (dayNumber - 1);
+
                                         return (
-                                          <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
-                                        )
+                                          <label
+                                            key={`select_weekDay_${i}`}
+                                            className="week_day_select"
+                                          >
+                                            <span>{day.small}</span>
+
+                                            <input
+                                              type="checkbox"
+                                              name="select_weekDay"
+                                              checked={(Number(r.start_at_day || 0) & dayBit) !== 0}
+                                              onChange={(e) => {
+                                                const currentMask = Number(r.start_at_day || 0);
+
+                                                const newMask = e.target.checked
+                                                  ? currentMask | dayBit
+                                                  : currentMask & ~dayBit;
+
+                                                changeReports({
+                                                  ...r,
+                                                  start_at_day: newMask.toString(),
+                                                });
+                                              }}
+                                            />
+                                          </label>
+                                        );
                                       })}
-                                    </select>
+                                    </div>
                                   )}
                                   {r.once_per === 'month' && (
                                     <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} value={r.start_at_day || '1'}>
@@ -740,190 +841,59 @@ return (
                               </div>
                             </div>
                             <div>
-                              <div className="button-d-bl-sm" onClick={() => {
-                                if (!user?.permissions.edit_reports){
-                                  toast.error("You don't have permissions for this action.")
-                                  return;
-                                }
-                                setShowAssignedReport(r);
-                                setShowAssigned(true);
-                              }}>Set</div>
+                              <div className="show">{r.metric}{r.metric === 'Metric' && ` (from ${r.metric_range_from} to ${r.metric_range_to})`}</div>
+                              <div className="edit" style={{gap: '8px', display: 'flex', flexDirection: "column"}}>
+                                <select value={r.metric ?? 'No Metric'} onChange={(e) => {changeReports({...r, metric: e.target.value})}} style={{height: 'max-content', margin: 'auto 0'}}>
+                                  <option value="No Metric">No Metric</option>
+                                  <option value="Count">Count</option>
+                                  <option value="Metric">Metric</option>
+                                </select>
+                                {r.metric === 'Metric' && (
+                                <div className="metric_range">
+                                  <label style={{display: 'flex', flexDirection: 'column', minWidth: 100}}>
+                                    <span>From</span>
+                                    <input type='number' value={r.metric_range_from ?? 0} onChange={(e) => {changeReports({...r, metric_range_from: Number(e.target.value)})}} />
+                                  </label>
+                                  <label style={{display: 'flex', flexDirection: 'column', minWidth: 100}}>
+                                    <span>To</span>
+                                    <input type='number' value={r.metric_range_to ?? 100} onChange={(e) => {changeReports({...r, metric_range_to: Number(e.target.value)})}} />
+                                  </label>
+
+                                </div>
+                              )}
+                              </div>
+                              
                             </div>
                             <div>
-                              <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
-                                if (!user?.permissions.edit_reports){
-                                  toast.error("You don't have permissions for this action.")
-                                  return;
-                                }
-                                setReportToDelete({...r, archived: true});
-                                setShowConfirmDelete(true)
-                              }}>Delete</div>
-                            </div>
-                          </div>)
-                      }
-                    })}
-                  </div>
-                </div>)}
-                
-              </div>)
-          })}
-          <h2 className="b-t">Users</h2>
-          {leads.sort((a: User, b: User) => {
-            let a_result = reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(a.id) !== -1 || r.assigned_to.all.assigned === true)).length;
-            let b_result = reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(b.id) !== -1 || r.assigned_to.all.assigned === true)).length;
-            return b_result - a_result
-          }).map((lead: User) => {
-            return (
-              <div key={`reports_lead_${lead.id}`}>
-                <div className="flex">
-                  <h3>{lead.name}</h3>
-                  {reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)).length === 0 ? (
-                    <div className="flex j-s-b">
-                      <span>- no reports assigned for this employee</span>
-                      <div className="button-d-bl-sm add-report" onClick={() => {
-                        if (!user?.permissions.edit_reports){
-                          toast.error("You don't have permissions for this action.")
-                          return;
-                        }
-                        setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
-                        setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
-                        setShowAddReport(true);
-                      }}>Add Report</div>
-                      </div>
-                  ) : (
-                    <div className="button-d-bl add-report" onClick={() => {
-                      if (!user?.permissions.edit_reports){
-                        toast.error("You don't have permissions for this action.")
-                        return;
-                      }
-                      setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
-                      setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: true, list: [lead.id], }, department: { assigned: false, list: [], }, } });
-                      setShowAddReport(true);
-                    }}>Add Report</div>
-                  )}
-                </div>
-                {reports.filter((r: Report) => !r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)).length > 0 && (<div className="table-wrapper">
-                  <div className="table-reports">
-                    <div>
-                      <div>EDIT</div>
-                      <div>SAVE</div>
-                      <div>REPORTS</div>
-                      <div>SOURCE</div>
-                      <div>PERIOD</div>
-                      <div>DAY TIME</div>
-                      <div>ASSIGNED TO</div>
-                      <div>DELETE</div>
-                    </div>
-                    {reports.map((r: Report) => {
-                      if (!r.archived && (r.assigned_to.person.assigned === true && r.assigned_to.person.list.indexOf(lead.id) !== -1 || r.assigned_to.all.assigned === true)) {
-                        return (
-                          <div className="report" key={`report_${r.id}`} id={`report_${r.id}`}>
-                            <div>
-                              <label>
-                                <span className={r.edit === true ? "button-d-bl-sm d" : "button-d-bl-sm"}>Edit</span>
-                                <input
-                                  type="checkbox"
-                                  checked={r.edit ?? false}
+                              <div className="show">
+                                {leads.find(
+                                  (lead: User) => lead.id === r.default_holder_id
+                                )?.name || '-'}
+                              </div>
+
+                              <div className="edit">
+                                <select
+                                  value={r.default_holder_id ?? ''}
                                   onChange={(e) => {
-                                    if (!user?.permissions.edit_reports){
-                                      toast.error("You don't have permissions for this action.")
-                                      return;
-                                    }
-                                    if (r.edit !== true)
-                                      setReports(prev =>
-                                        prev.map(report =>
-                                          report.id === r.id
-                                            ? { ...report, edit: e.target.checked }
-                                            : report
-                                        )
-                                      )
-                                    }
-                                  }
-                                  disabled={r.edit === true}
-                                />
-                              </label>
-                            </div>
-                            <div>
-                              <label>
-                                <span
-                                  className={r.edit !== true ? "button-d-bl-sm d" : "button-d-bl-sm"}
-                                  onClick={() =>
-                                    {
-                                      if (r.edit === true){
-                                        saveReport(r);
-                                      }
-                                    }
-                                  }
+                                    changeReports({
+                                      ...r,
+                                      default_holder_id: e.target.value,
+                                    });
+                                  }}
                                 >
-                                  Save
-                                </span>
-                              </label>
-                            </div>
-                            <div>
-                              <div className="show">{r.name}</div>
-                              <div className="edit">
-                                <input type="text" value={r.name} onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
-                              </div>
-                            </div>
-                            <div>
-                              <div className="show">{r.source}</div>
-                              <div className="edit">
-                                <input type="text" value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}} />
-                              </div>
-                            </div>
-                            <div>
-                              <div>
-                                <div className="show">
-                                  <div>{r.once_per}</div>
-                                  {r.once_per !== 'day' && (<div style={{display: 'flex'}}>at {r.once_per === 'week' ? weekDays[Number(r.start_at_day) - 1]?.full : r.start_at_day}
-                                    {r.once_per === 'month' && ''}
-                                  </div>)}
-                                  {r.once_per === 'month' && 'day'}
-                                </div>
-                                <div className="edit">
-                                  <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
-                                    if (e.target.value === 'week') {
-                                      changeReports({...r, once_per: e.target.value, start_at_day: '1'})
-                                    }
-                                    else {
-                                      changeReports({...r, once_per: e.target.value})
-                                    }
-                                  }} style={{paddingLeft: 7}}>
-                                    <option value="day">Day</option>
-                                    <option value="week">Week</option>
-                                    <option value="month">Month</option>
-                                  </select>
-                                  {r.once_per !== 'day' && 'At'}
-                                  {r.once_per === 'week' && (
-                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} defaultValue={parseInt(r.start_at_day || '1')}>
-                                      {weekDays.map((day: {full: string, small: string}, i: number) => {
-                                        return (
-                                          <option key={`report_${r.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
-                                        )
-                                      })}
-                                    </select>
-                                  )}
-                                  {r.once_per === 'month' && (
-                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} value={r.start_at_day || '1'}>
-                                      {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
-                                    </select>
-                                  )}
-                                  {r.once_per === 'month' && 'day'}
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="show">{capitalize(r.day_time)}</div>
-                              <div className="edit">
-                                <select value={r.day_time} onChange={(e) => {changeReports({...r, day_time: e.target.value})}}>
-                                  <option value="opening">Opening</option>
-                                  <option value="midday">Midday</option>
-                                  <option value="closing">Closing</option>
-                                  <option value="ongoing">Ongoing</option>
+                                  <option value="">-</option>
+
+                                  {leads
+                                    .filter((lead: User) => lead.department === dep.name)
+                                    .map((lead: User) => (
+                                      <option key={lead.id} value={lead.id}>
+                                        {lead.name}
+                                      </option>
+                                    ))}
                                 </select>
                               </div>
                             </div>
-                            <div>
+                            {/* <div>
                               <div className="button-d-bl-sm" onClick={() => {
                                 if (!user?.permissions.edit_reports){
                                   toast.error("You don't have permissions for this action.")
@@ -932,7 +902,7 @@ return (
                                 setShowAssignedReport(r);
                                 setShowAssigned(true);
                               }}>Set</div>
-                            </div>
+                            </div> */}
                             <div>
                               <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
                                 if (!user?.permissions.edit_reports){

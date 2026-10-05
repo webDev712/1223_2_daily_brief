@@ -52,7 +52,7 @@ export default function Header({user_name, user_role}: HeaderProps) {
       break;
     case 'reports':
       header_text = 'Reports';
-      header_description = 'Daily operational reports reviewed by each Route Lead';
+      header_description = "Configure what work appears on each department's daily board.";
       break;
     case 'reports-scheduling':
       header_text = 'Report Scheduling';

@@ -1,4 +1,31 @@
 .reports .how-to-use{
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    z-index: 1;
+    background-color: #EEF1FD;
+    background-position: center;
+        border: 1px solid #C7D2FE;
+    border-radius: 16px;
+    background-color: #EEF1FD;
+    padding: 15px;
+    color: #5B73CC;
+    background-image: url('../../../public/info_round.svg');
+    /* transition: width 0.3s; */
+    transition: none;
+    cursor: pointer;
+    right: 0px;
+    top: 0px;
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 400;
+    text-wrap-mode: wrap;
+}
+
+.reports .how-to-use * {
+    display: none;
+}
+.reports .how-to-use:has(input[type="checkbox"]:checked){
     border: 1px solid #C7D2FE;
     border-radius: 16px;
     background-color: #EEF1FD;
@@ -9,6 +36,26 @@
     padding-left: 55px;
     background-size: 20px;
     margin-bottom: 30px;
+    width: 100%;
+    height: max-content;
+}
+
+.reports .how-to-use:has(input[type="checkbox"]:checked) * {
+    display: block;
+}
+
+.reports .how-to-use input[type="checkbox"] {
+    display: none !important;
+}
+
+.reports .how-to-use .x{
+    position: absolute;
+    top: 10px;
+    right: 15px;
+}
+
+.reports .how-to-use > div > div{
+    margin-top: 10px;
 }
 
 .reports .table-reports{
@@ -40,9 +87,15 @@
     padding: 0 5px;
 }
 
+.reports .table-reports > div > :nth-child(4){
+        flex: 3;
+    text-align: center;
+    padding: 0 10;
+}
 
 .reports .table-reports > div > :first-child,
-.reports .table-reports > div > :nth-child(2),
+.reports .table-reports > div > :nth-child(3),
+.reports .table-reports > div > :nth-child(5),
 .reports .table-reports > div > :nth-child(6),
 .reports .table-reports > div > :nth-child(7),
 .reports .table-reports > div > :nth-child(8){
@@ -70,11 +123,11 @@
 }
 
 .reports .table-reports > .report:has(> div:first-child input:checked) .show{
-    display: none;
+    display: none !important;
 }
 
 .reports .table-reports > .report:not(:has(> div:first-child input:checked)) .edit{
-    display: none;
+    display: none !important;
 }
 
 .reports .table-reports .report label{
@@ -93,9 +146,9 @@
     width: 100%;
 }
 
-.reports .table-reports > .report > div:first-child:has(input:checked) span{
+/* .reports .table-reports > .report > div:first-child:has(input:checked) span{
     opacity: 0.5;
-}
+} */
 
 .reports .table-reports > .report:not(:has(div:first-child input:checked)) > div:nth-child(2) span{
     opacity: 0.5;
@@ -120,7 +173,7 @@
 
 .reports .table-reports > .report .edit input:focus,
 .reports .table-reports > .report .edit select:focus {
-    border: 1px solid #0d6efd; /* или оставь тот же цвет */
+    border: 1px solid #0d6efd;
     outline: none;
 }
 
@@ -193,6 +246,10 @@
     margin-bottom: 30px;
 }
 
+.reports .table-wrapper:not(:has( .table-reports > div + div)){
+    display: none;
+}
+
 .reports .confirm.assign{
     z-index: 100000000;
 }
@@ -244,6 +301,72 @@
     margin: auto 0;
 }
 
+.reports .four-block > div{
+    padding: 30px 20px 30px 80px;
+    background-position: left 20px center;
+}
+
+.reports .four-block {
+    margin-bottom: 10px;
+
+}
+
+.reports .week_day_select{
+    background-image: url('../../../public/checkbox_0.svg');
+    background-size: 10px;
+    background-position: left center;
+    padding-left: 15px;
+    width: max-content;
+    cursor: pointer;
+}
+
+.reports .week_day_select:has(input:checked){
+    background-image: url('../../../public/checkbox_1.svg');
+}
+.reports .week_day_select input{
+    display: block;
+    width: 10px;
+    height: 10px;
+}
+
+.reports div:has( > div:nth-child(2) > .week_day_select){
+    display: flex;
+    gap: 8px;
+    margin: auto 0;
+}
+
+.reports div:has( > div:nth-child(2) > .week_day_select) > *{
+    margin: auto 0;
+}
+
+.reports div:has( > div:nth-child(2) > .week_day_select) > select:first-child{
+    height: max-content;
+}
+
+.reports div:has( > .week_day_select){
+    display: flex;
+    flex-direction: column;
+    width: max-content;
+}
+
+.reports .metric_range input{
+    display: block !important;
+}
+
+.report .report textarea{
+    transition: none;
+    height: 100%;
+}
+
+.reports .search{
+    width: 100%;
+        border: 1px solid #E8EAED;
+    background-color: white;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+
+}
 
 @media (max-width: 500px) {
     .reports .table-wrapper{

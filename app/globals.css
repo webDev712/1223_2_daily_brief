@@ -413,6 +413,14 @@ div .progress-bar{
     gap: 20px;
 }
 
+.input{
+
+    border: 1px solid #E8EAED;
+    border-radius: 8px;
+    width: 100%;
+    padding: 3px 10px;
+}
+
 
 .x{
   cursor: pointer;

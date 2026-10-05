@@ -2,10 +2,18 @@ import capitalize from "./text"
 
 const getReportsTypes = () => {
     return [
-        'Ops',
-        'SMRT',
-        'Fleet',
-        'Other'
+        "Daily Brief",
+        "SMRT",
+        "Armoire Sheet",
+        "Invenasset",
+        "Google Sheets",
+        "Email",
+        "90 IO",
+        "WB",
+        "Fleetio",
+        "Paycom",
+        "MP Dashboard",
+        "Other",
     ]
 }
 

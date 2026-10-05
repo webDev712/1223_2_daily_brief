@@ -13,6 +13,7 @@ import SmallLoader from '@/app/src/components/SmallLoader';
 import { useSearchParams } from 'next/navigation';
 import { randomInt } from 'crypto';
 import capitalize from '@/lib/text';
+import UserCircle from '@/app/src/components/UserCircle';
 
 
 
@@ -248,11 +249,14 @@ export default function DailyBrief() {
   };
 
 
-  const updateReports = async ( b: any, r: any, checked: boolean ) => {
-    if (savingRef.current) return;
+  const updateReports = async ( b: any, r: any, checked: boolean, send=true ) => {
+    if (send){
+      if (savingRef.current) return;
+  
+      savingRef.current = true;
+      
 
-    savingRef.current = true;
-    
+    }
     const reportExists = b.reports.some((report: any) => report.id === r.id);
     const updatedBrief = {
       ...b,
@@ -282,15 +286,16 @@ export default function DailyBrief() {
         brief.id === b.id ? updatedBrief : brief
       )
     );
-
-    await fetch("/api/update_todays_brief", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedBrief),
-    });
-    savingRef.current = false;
+    if (send) {
+      await fetch("/api/update_todays_brief", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedBrief),
+      });
+      savingRef.current = false;
+    }
   };
 
   const handoffBrief = async (b: any) => {
@@ -463,6 +468,7 @@ export default function DailyBrief() {
                   AB_name += b.lead_name.split(" ")[0][0];
                   if (b.lead_name.split(" ")[1]) AB_name += b.lead_name.split(" ")[1][0];
                 }catch{}
+                const reports_sorted = b.reports.sort((a: Report, b: Report) => ['opening', 'midday', 'closing', 'ongoing'].indexOf(a.day_time) - ['opening', 'midday', 'closing', 'ongoing'].indexOf(b.day_time));
                 return (
                   <div className='brief' id={`b-${b.id}`} key={`b-${b.id}`}>
                     <div className='shift-info'>
@@ -609,21 +615,109 @@ export default function DailyBrief() {
                       </div>
                     </div>
                     <div className='reports'>
-                      <div>Reports: <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} reviewed</span></div>
+                      <div>Reports of Department "{user.department}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} reviewed (yours {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
                       <div>
                         <div className='progress-bar'>
                           <span style={{width: b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100 + "%"}}></span>
                         </div>
-                        {b.reports.sort((a: Report, b: Report) => ['opening', 'midday', 'closing', 'ongoing'].indexOf(a.day_time) - ['opening', 'midday', 'closing', 'ongoing'].indexOf(b.day_time)).map(
-                        (r: Report) => (
-                        <div className='report' key={r.id}>
-                          <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} />
-                          <div>{r.name}</div>
-                          <div>{capitalize(r.day_time)}</div>
-                          <div>{r.source}</div>
-                          <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                        </div>)
-                      )}</div>
+                        {reports_sorted.filter((r: Report) => !r.holder_id).map(
+                          (r: Report, i: number) => (
+                            <div className={i === 0 ? 'report reports-to-assign' : 'report'} key={r.id}>
+                              {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
+                              <div>{r.name}</div>
+                              <div>{capitalize(r.day_time)}</div>
+                              <div>{r.source}</div>
+                              <div></div>
+                              <div>Assignee: <div className=''>{leads.find((lead: User) => lead.id === r.holder_id)?.name ?? '-'}</div></div>
+                              <div style={{color: '#000000'}}>{r.metric}</div>
+                              <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
+                              <div className="button-d-bl-sm" onClick={() => updateReports(b, {...r, holder_id: user.id}, r.checked)}>Take</div>
+
+                            </div>)
+                        )}
+                        {reports_sorted.filter((r: Report) => r.holder_id === user.id).map(
+                          (r: Report, i: number) => (
+                            <div className={i === 0 ? 'report border-top reports-you-took' : 'report'} key={r.id}>
+                              <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} />
+                              <div>{r.name}</div>
+                              <div>{capitalize(r.day_time)}</div>
+                              <div>{r.source}</div>
+                              <div>Assignee: <div className='green' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name} (You)</div></div>
+                              <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}>
+                                {r.metric}
+
+                                {r.metric !== 'No Metric' && (
+                                    <input
+                                        className={r.checked ? 'input d' : 'input'}
+                                        value={r.text ?? ''}
+                                        disabled={r.checked ?? false}
+                                        type="number"
+
+                                        onChange={(e) => {
+                                            if (!r.checked) {
+                                                updateReports(
+                                                    b,
+                                                    {
+                                                        ...r,
+                                                        text: e.target.value
+                                                    },
+                                                    r.checked,
+                                                    false
+                                                );
+                                            }
+                                        }}
+
+                                        onBlur={(e) => {
+                                            let value = e.target.value;
+                                            let start_value = e.target.value;
+
+                                            if (
+                                                r.metric_range_from != null &&
+                                                Number(value) < Number(r.metric_range_from)
+                                            ) {
+                                                value = String(r.metric_range_from);
+                                            }
+
+                                            if (
+                                                r.metric_range_to != null &&
+                                                Number(value) > Number(r.metric_range_to)
+                                            ) {
+                                                value = String(r.metric_range_to);
+                                            }
+
+                                            updateReports(
+                                                b,
+                                                {
+                                                    ...r,
+                                                    text: r.metric === 'Metric' ? value : start_value
+                                                },
+                                                r.checked
+                                            );
+                                        }}
+
+                                        placeholder={r.metric === 'Metric' ? `From ${r.metric_range_from} to ${r.metric_range_to}` : 'Value'}
+                                    />
+                                )}
+                            </div>
+                              <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
+                              <div className={r.checked ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!r.checked) updateReports(b, {...r, holder_id: null}, r.checked)}}>Resign</div>
+                            </div>)
+                        )}
+                        {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id).map(
+                          (r: Report, i: number) => (
+                            <div className={i === 0 ? 'report border-top reports-other-users-took' : 'report'} key={r.id}>
+                              {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
+                              <div></div>
+                              <div>{r.name}</div>
+                              <div>{capitalize(r.day_time)}</div>
+                              <div>{r.source}</div>
+                              <div>Assignee: <div className='' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name}</div></div>
+                              <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric}</div><div>{r.text}</div></div>
+                              <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
+                              <div></div>
+                            </div>)
+                        )}
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: 10 }}>

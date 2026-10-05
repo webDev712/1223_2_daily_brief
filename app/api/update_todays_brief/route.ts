@@ -74,7 +74,12 @@ export async function POST(request: Request) {
                                 timestamp,
                                 saved_brief_id,
                                 day_time,
-                                company_id
+                                company_id,
+                                metric,
+                                metric_range_from,
+                                metric_range_to,
+                                department_id,
+                                holder_id
                             )
                             VALUES (
                                 ${r.text},
@@ -84,7 +89,12 @@ export async function POST(request: Request) {
                                 ${r.timestamp},
                                 ${id},
                                 ${r.dat_time},
-                                ${company_id}
+                                ${company_id},
+                                ${r.metric},
+                                ${r.metric_range_from},
+                                ${r.metric_range_to},
+                                ${r.department_id},
+                                ${r.holder_id},
                             );
                         `;
                     } else {
@@ -96,7 +106,13 @@ export async function POST(request: Request) {
                                 source = ${r.source},
                                 checked = ${r.checked},
                                 timestamp = ${r.timestamp},
-                                day_time = ${r.day_time}
+                                day_time = ${r.day_time},
+                                metric = ${r.metric},
+                                metric_range_from = ${r.metric_range_from},
+                                metric_range_to = ${r.metric_range_to},
+                                department_id = ${r.department_id},
+                                holder_id = ${r.holder_id}
+
                             WHERE id = ${r.id}
                                 AND company_id = ${company_id};
                         `;

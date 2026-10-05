@@ -95,23 +95,77 @@
     display: flex;
     gap: 10px;
     padding: 5px 0;
+    position: relative;
+}
+
+.daily-brief .report + .report.border-top{
+    border-top: 1px solid #a2a0a0 !important;
 }
 
 .daily-brief .report:has(+ .report){
     border-bottom: 1px solid #E8EAED;
 }
 
-
-.daily-brief .report > :nth-child(3) {
-    font-size: 14px;
-    margin: auto 0 auto auto;
+.daily-brief .report > *{
+    margin: auto 0;
 }
 
+.daily-brief .report.reports-to-assign,
+.daily-brief .report.reports-you-took,
+.daily-brief .report.reports-other-users-took{
+    padding-top: 30px;
+}
+
+.daily-brief .report.reports-to-assign::before,
+.daily-brief .report.reports-you-took::before,
+.daily-brief .report.reports-other-users-took::before{
+    content: "Reports assigned to other users:";
+    display: block;
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    opacity: 0.9;
+    font-style: italic;
+    font-weight: 600;
+}
+
+.daily-brief .report.reports-to-assign::before{
+    content: "Not assigned reports:"
+}
+
+.daily-brief .report.reports-you-took::before{
+    content: "Reports assigned to you:"
+}
+
+.daily-brief .report > :nth-child(2){
+    text-wrap-mode: wrap;
+}
+
+.daily-brief .report > :nth-child(3),
 .daily-brief .report > :nth-child(4) {
-    color: #9CA3AF;
+    margin: auto 5px auto 0;
+}
+.daily-brief .report > :nth-child(3){
+    margin-left: auto;
 }
 
 .daily-brief .report > :nth-child(5) {
+    font-size: 14px;
+    margin: auto 0 auto 0;
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    text-wrap-mode: wrap;
+}
+
+.daily-brief .report > :nth-child(6) {
+    color: #9CA3AF;
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
+}
+
+.daily-brief .report > :nth-child(7) {
     background-color: #F5F7FA;
     padding: 4px 10px;
     border-radius: 10px;
@@ -119,15 +173,29 @@
     font-weight: 600;
     font-size: 12px;
     width: 80px;
+    min-width: 80px;
+    max-width: 80px;
     text-align: center;
     text-wrap-mode: nowrap;
+    height: max-content;
 }
 
-.daily-brief .report > :nth-child(5).done {
+.daily-brief .report .user-circle{
+    margin: auto 0;
+}
+
+.daily-brief .report > :nth-child(7).done {
     background-color: #ECFDF5;
     color: #059669;
+    height: max-content;
 }
 
+.daily-brief .report > :nth-child(8) {
+    width: 80px;
+    max-width: 80px;
+    min-width: 80px;
+    text-align: center;
+}
 
 .daily-brief .report input[type="checkbox"]{
     display: block;

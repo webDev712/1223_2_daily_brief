@@ -109,6 +109,10 @@ export async function POST(request: Request) {
             VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date}, ${company_id})
             RETURNING id;
         `
+
+        // DONE 
+        // DONE 
+        // DONE 
         const new_id = rows[0].id;
         if (previous_brief_rows && previous_brief_rows[0] && previous_brief_rows[0]?.id){
             const previous_brief_id = previous_brief_rows[0].id;
@@ -136,54 +140,56 @@ export async function POST(request: Request) {
             `
         }
 
-        const reports_rows = await sql`
-            WITH params AS (
-                SELECT CAST(${lead_id} AS uuid) AS lead_uuid,
-                    CAST(${lead_id} AS text) AS lead_text
-            )
-            SELECT r.*
-            FROM report r
-            JOIN website_user u
-                ON u.id = (SELECT lead_uuid FROM params)
-                AND u.company_id = ${company_id}
-            WHERE (
-                r.once_per = 'day'
-                OR (
-                    r.once_per = 'week'
-                    AND EXTRACT(ISODOW FROM CURRENT_DATE) + 1 = r.start_at_day::integer
-                )
-                OR (
-                    r.once_per = 'month'
-                    AND EXTRACT(DAY FROM CURRENT_DATE) = r.start_at_day::integer
-                )
-            )
-            AND r.archived = FALSE
-            AND (
-                (r.assigned_to->'all'->>'assigned')::boolean = TRUE
-                OR (
-                    (r.assigned_to->'person'->>'assigned')::boolean = TRUE
-                    AND EXISTS (
-                        SELECT 1
-                        FROM jsonb_array_elements_text(r.assigned_to->'person'->'list') AS assigned_person_id
-                        WHERE assigned_person_id = (SELECT lead_text FROM params)
-                    )
-                )
-                OR (
-                    (r.assigned_to->'department'->>'assigned')::boolean = TRUE
-                    AND EXISTS (
-                        SELECT 1
-                        FROM jsonb_array_elements_text(r.assigned_to->'department'->'list') AS assigned_department_id
-                        WHERE assigned_department_id = CAST(u.department_id AS text)
-                    )
-                )
-            )
-            AND u.company_id = ${company_id};
-        `;
+       const reports_rows = await sql`
+    SELECT r.*
+    FROM report r
+    JOIN website_user u
+        ON u.id = ${lead_id}::uuid
+        AND u.company_id = ${company_id}
+    WHERE r.company_id = ${company_id}
+      AND r.archived = FALSE
+
+      -- Report is scheduled for this date
+      AND (
+          r.once_per = 'day'
+
+          OR (
+              r.once_per = 'week'
+              AND (
+                  r.start_at_day
+                  & (
+                      1 << (
+                          EXTRACT(ISODOW FROM ${date}::date)::integer - 1
+                      )
+                  )
+              ) <> 0
+          )
+
+          OR (
+              r.once_per = 'month'
+              AND EXTRACT(DAY FROM ${date}::date) = r.start_at_day::integer
+          )
+      )
+
+      -- Report is assigned to this department / all
+      AND (
+          r.assigned_to->'all'->>'assigned' = 'true'
+
+          OR (
+              r.assigned_to->'department'->>'assigned' = 'true'
+              AND r.assigned_to->'department'->'list'
+                  @> jsonb_build_array(u.department_id::text)
+          )
+      );
+`;
+        console.log('REPORTS TO CREATE:', reports_rows);
         await Promise.all(
             reports_rows.map((r) =>
                 sql`
-                INSERT INTO saved_report (text, name, source, checked, saved_brief_id, day_time, company_id)
-                VALUES ('', ${r.name}, ${r.source}, FALSE, ${new_id}, ${r.day_time}, ${r.company_id});
+                INSERT INTO saved_report (text, name, source, checked, day_time, company_id, metric, metric_range_from, metric_range_to, department_id, holder_id, date, report_id)
+                VALUES ('', ${r.name}, ${r.source}, FALSE, ${r.day_time}, ${r.company_id}, ${r.metric}, ${r.metric_range_from}, ${r.metric_range_to}, ${r.department_id}, ${r.holder_id ?? r.default_holder_id}, ${date}, ${r.id} )
+                ON CONFLICT (report_id, date)
+                DO NOTHING;
                 `
             )
             );

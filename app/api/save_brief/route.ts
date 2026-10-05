@@ -78,7 +78,12 @@ export async function POST(request: Request) {
                             checked,
                             saved_brief_id,
                             day_time,
-                            company_id
+                            company_id,
+                            metric,
+                            metric_range_from,
+                            metric_range_to,
+                            department_id,
+                            holder_id
                         )
                         VALUES (
                             ${r.text},
@@ -87,7 +92,13 @@ export async function POST(request: Request) {
                             ${r.checked},
                             ${new_id},
                             ${r.day_time},
-                            ${company_id}
+                            ${company_id},
+                            ${r.metric},
+                            ${r.metric_range_from},
+                            ${r.metric_range_to},
+                            ${r.department_id},
+                            ${r.holder_id}
+                            
                         )
                     `;
                 }

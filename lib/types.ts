@@ -48,6 +48,12 @@ export interface Report {
   edit: boolean;
   assigned_to: Assignment;
   day_time: string;
+  metric?: string;
+  metric_range_from?: number;
+  metric_range_to?: number;
+  department_id?: number;
+  holder_id?: string;
+  default_holder_id?: string;
 }
 
 export interface Finding {
