@@ -22,7 +22,7 @@ export async function getCurrentUser(): Promise<User | null> {
             r.permissions,
             w.company_id
         FROM website_user w, department d, role r
-        WHERE email = ${session.user.email}
+        WHERE LOWER(email) = LOWER(${session.user.email})
           AND archived = false
           AND d.id = w.department_id
           AND w.role_id = r.id

@@ -30,7 +30,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     FROM website_user w
                     JOIN role r
                         ON r.id = w.role_id
-                    WHERE w.email = ${user.email}
+                    WHERE LOWER(w.email) = LOWER(${user.email})
                       AND w.archived = false
                     LIMIT 1;
                 `;
