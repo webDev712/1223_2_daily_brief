@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <div>Update real-time data for <span id="today" style="font-style: italic;">Loading...</span></div>
+    <div id="dots_container" style="display: none;">Updating data (average 80 sec)<span id="dots"></span></div>
+    <input type="button" value="Update" id="save_btn" style="margin: 7px 0 0 auto;
+                                                          display: block;
+                                                          font-size: 16px;
+                                                          border-radius: 14px;
+                                                          padding: 2px 12px;
+                                                          cursor: pointer;" />
+    <script>
+      function showLoader() {
+        document.getElementById('dots_container').style.display = 'block';
+        document.getElementById('save_btn').disabled = true;
+      }
+
+      function hideLoader() {
+        document.getElementById('dots_container').style.display = 'none';
+        document.getElementById('save_btn').disabled = false;
+        document.getElementById('dots_container').innerHTML = 'Updating data (average 80 sec)<span id="dots"></span>';
+      }
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        // COMMENTNED TO AVOID ERRORS
+        // const data = <?= JSON.stringify(data) ?>;
+        console.log(data)
+        document.getElementById('today').innerText = JSON.parse(data).date + " (Today)" || "";
+        const dotsEl = document.getElementById('dots');
+        let dotCount = 0;
+
+        const interval = setInterval(() => {
+          dotCount = (dotCount + 1) % 4;
+          dotsEl.innerText = '.'.repeat(dotCount);
+        }, 500);
+
+        document.getElementById('save_btn').onclick = () => {
+          showLoader()
+          google.script.run
+          .withSuccessHandler((result) => {
+            document.getElementById('dots_container').innerHTML = 'Data updated successfully!';
+            document.getElementById('dots_container').style.fontStyle = 'italic';
+          })
+          .withFailureHandler((e) => {
+            alert(e)
+          })
+          .fill_ppoh_master()
+        }
+      });
+    
+    </script>
+  </body>
+</html>

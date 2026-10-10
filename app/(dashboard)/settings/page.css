@@ -25,6 +25,7 @@
     user-select: none;
     width: 100%;
     min-width: 200px;
+    background-size: 12px !important;
 }
 
 .settings > div > div:first-child > div.selected{
@@ -59,6 +60,16 @@
 
 .settings > div > div:first-child > div.selected[data-img="shield"]{
     background-image: url('../../../public/shield-blue.svg');
+}
+
+
+
+.settings > div > div:first-child > div[data-img="lists"]{
+    background-image: url('../../../public/list_0.png');
+}
+
+.settings > div > div:first-child > div.selected[data-img="lists"]{
+    background-image: url('../../../public/list_1.png');
 }
 
 
@@ -267,6 +278,7 @@
     line-height: 25px;
 }
 
+.settings .lists .small-table,
 .settings .data > div:nth-child(3),
 .settings .data > div:nth-child(4) {
     background-color: #fff;
@@ -277,6 +289,13 @@
     box-shadow: 0 1px 4px #1018280a;
 }
 
+.settings .lists .small-table{
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+}
+
+
+.settings .lists .small-table > :first-child,
 .settings .data > div:nth-child(3) > div:first-child,
 .settings .data > div:nth-child(4) > div:first-child{
     color: #98a2b3;
@@ -287,7 +306,13 @@
     padding: 10px 20px;
     font-weight: 600;
     display: flex;
+    font-size: 16px;
 }
+
+.settings .lists .small-table > :first-child > div{
+    margin: auto 0;
+}
+
 
 .settings .data > div:nth-child(3) > div:nth-child(2),
 .settings .data > div:nth-child(4) > div:nth-child(2){
@@ -296,6 +321,33 @@
     justify-content: space-between;
     gap: 10px;
 }
+
+.settings .lists .small-table > :nth-child(n + 2){
+    padding: 5px 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+
+.settings .lists .small-table > :nth-child(n + 3){
+    border-top: 1px solid #E8EAED;
+    gap: 5px;
+}
+
+
+.settings .lists .small-table > :nth-child(n + 2) > div:nth-child(1){
+    display: flex;
+    flex: 1;
+}
+
+.settings .lists .small-table > :nth-child(n + 2) > div:nth-child(1) > div:first-child{
+    flex: 1;
+}
+
+.settings .lists .small-table > :nth-child(n + 2) > div:nth-child(1) > div:nth-child(2){
+    flex: 5;
+}
+
 
 .settings .data > div:nth-child(3) > div:nth-child(2) > div:first-child,
 .settings .data > div:nth-child(4) > div:nth-child(2) > div:first-child{
@@ -359,6 +411,10 @@
 
 }
 
+.settings .confirm *:not(.button-w-bl):not(.button-w-r):not(.button-d-bl) {
+    color: #101828;
+}
+
 .settings .confirm > div > div:nth-child(2) {
     display: flex;
     flex-direction: column;
@@ -374,7 +430,25 @@
     color: #101828;
 }
 
+.settings .confirm > div > div:not(:last-child){
+    cursor: default !important;
+}
 
+.settings .confirm p {
+    margin-bottom: 0 !important;
+}
+
+.settings .confirm.add-shift > div > :nth-child(2) {
+    flex-direction: row;
+    gap: 10px;
+}
+
+.settings .confirm.add-shift > div > :nth-child(2) > div{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
 
 
 @media (max-width: 500px) {
@@ -462,6 +536,29 @@
         min-width: 100%;
         text-align: center;
         justify-content: center;
+    }
+
+    .settings .lists .small-table > :nth-child(n+2){
+        flex-direction: column;
+        gap: 10px;
+        padding-bottom: 15px;
+        padding-top: 10px;
+    }
+
+    .settings .lists .small-table > :nth-child(n+2) > :last-child{
+        width: 100%;
+        min-width: 100%;
+        text-align: center;
+        display: block;
+        flex-basis: 100%;
+    }
+
+    .settings .lists .small-table > :nth-child(n+2) > div:first-child > div:first-child{
+        flex: 3;
+    }
+
+    .settings .lists .small-table > :nth-child(n+2) > div:first-child > div:nth-child(2){
+        flex: 1;
     }
 }
 

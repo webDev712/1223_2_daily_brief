@@ -8,6 +8,8 @@ import { format } from 'date-fns';
 import UserCircle from './UserCircle';
 import Loader from './Loader';
 import { toast } from 'sonner';
+import { Dispatch, SetStateAction } from "react";
+
 
 export const sendMessageGlobal = async (message: NewMessage) => {
     const chat_res = await fetch('/api/chat', {
@@ -22,8 +24,11 @@ export const sendMessageGlobal = async (message: NewMessage) => {
     toast.success('Issue / Observation owner is notified with new action!')
 }
 
-const Chat = () => {
-    const [openChat, setOpenChat] = useState(false);
+const Chat = ({openChat, setOpenChat, class_name}: {
+  openChat: boolean;
+  setOpenChat: Dispatch<SetStateAction<boolean>>;
+  class_name?: string;
+}) => {
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState('');
 
@@ -47,6 +52,7 @@ const Chat = () => {
 
     const [scrollChats, setScrollChats] = useState(0);
     const [scrollMessages, setScrollMessages] = useState(false);
+    const [loadingFalseNextChatReload, setLoadingFalseNextChatReload] = useState(false);
 
 
     const sendMessage = async (message: NewMessage) => {
@@ -60,8 +66,8 @@ const Chat = () => {
             return;
         }
         setMessageText('');
-        setReloadMessages(prev => prev + 1);
         setReloadChats(prev => prev + 1);
+        setReloadMessages(prev => prev + 1);
     }
 
     const updateMessage = async (message: Message) => {
@@ -96,8 +102,8 @@ const Chat = () => {
             toast.error(`Error while sending message to all employees. Refresh the page and try once more`)
             return;
         }
-        setReloadMessages(prev => prev + 1);
         setReloadChats(prev => prev + 1);
+        setReloadMessages(prev => prev + 1);
         const chats_json = await chats_res.json();
         toast.success(`Success! Message sent to ${chats_json.rows.length} users!`)
         setShowSendMessageToAll(false);
@@ -120,6 +126,7 @@ const Chat = () => {
                 read: true
             });
         }
+        setReloadChats(prev => prev + 1)
 
         setScrollMessages(true);
     }
@@ -182,8 +189,8 @@ const Chat = () => {
                     updateMessage({...lastMessage, read: true})
                     
                 }
+                console.log(`/api/chat?id_1=${seeUserMessageAs.id}&id_2=${selectedUserId}`)
                 setLoading(false);
-
             }
         }
 
@@ -223,7 +230,12 @@ const Chat = () => {
                 }
                 setUsers(users_data);
                 setChats(chat_data);
-                setLoading(false);
+                console.log(`/api/chats?id=${seeUserMessageAs.id}`)
+                if (loadingFalseNextChatReload === true) {
+                    setLoading(false);
+                    setLoadingFalseNextChatReload(false);
+                }
+                // setLoading(false);
             }
         load();
     }, [reloadChats])
@@ -256,8 +268,9 @@ const Chat = () => {
     }, [openChat]);
 
     return (
-        <div className="chat">
-            {openChat ? (
+        <div className={class_name ? class_name : "chat"}>
+            <span onClick={() => setOpenChat(prev => !prev)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
+            {openChat && (
                 <div>
                     <div>
                         <div>{selectedUserId
@@ -282,7 +295,7 @@ const Chat = () => {
                                                 <div>Viewing as</div>
                                                 <UserCircle user_name={seeUserMessageAs.name} size={25}></UserCircle>
                                                 <div>{seeUserMessageAs.name}</div>
-                                                <div onClick={() => {setLoading(true); setSeeUserMessageAs(me_user); setReloadChats(prev => prev + 1); }} className='exit button-w-bl'>{`Exit`}</div>
+                                                <div onClick={() => {setLoading(true); setSeeUserMessageAs(me_user); setLoadingFalseNextChatReload(true); setReloadChats(prev => prev + 1); }} className='exit button-w-bl'>{`Exit`}</div>
                                             </div>
                                         ) : (
                                             <div>All Messages</div>
@@ -357,14 +370,20 @@ const Chat = () => {
                                     <div>
                                         <input type="text" name="" id="" value={filter} onChange={(e) => {setFilter(e.target.value)}} placeholder='Input user name to filter here...' className='filter'/>
                                     </div>
-                                    {loading === true && (<Loader solid={true} small={true}></Loader>)}
+                                    {loading === true && (
+                                        <div style={{width: '100vw', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: '10000000000000'}}>
+                                            <Loader solid={false} small={false}></Loader>
+                                        </div>)}
+                                    {loading === true && (
+                                            <Loader solid={true} small={false}></Loader>)}
                                     <div className='chats' ref={chatsRef}>
                                         {users
                                             .map((user: UserForChat) => {
                                             if (filter === '' || user.name.toLowerCase().includes(filter.toLowerCase()))
                                             return (
                                                 <div key={user.id} className='flex j-s-b'>
-                                                    {seeUserMessageAs.id === me_user.id && me_user.permissions.see_other_employees_messages === true && (<div className='see-chats' onClick={() => {setLoading(true); setSeeUserMessageAs(user); setReloadChats(prev => prev + 1); }}></div>)}
+                                                    {seeUserMessageAs.id === me_user.id && me_user.permissions.see_other_employees_messages === true 
+                                                        && (<div className='see-chats' onClick={() => {setLoading(true); setSeeUserMessageAs(user); setLoadingFalseNextChatReload(true); setReloadChats(prev => prev + 1); }}></div>)}
                                                     <div className={chats.find((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user === user.id)?.read === true 
                                                                     || !chats.find((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user === user.id) ? "flex chat-user-name" : "unread flex chat-user-name"}
                                                                     onClick={() => {openChatById(user.id)}}
@@ -407,8 +426,6 @@ const Chat = () => {
                             )}
                     </div>
                 </div>
-            ) : (
-                <span onClick={() => setOpenChat(true)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
             )}
             {showSendMessageToAll && (
                 <div className='confirm send-message-to-all'>

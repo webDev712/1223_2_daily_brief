@@ -18,7 +18,7 @@
     max-width: max-content;
 
     position: sticky;
-    z-index: 10000;
+    z-index: 100000;
 }
 
 .sidebar {
@@ -33,12 +33,12 @@
     /* overflow: hidden; */
     display: block;
     width: 40px;
-    height: 40px;
+    height: 30px;
     background-size: 30px;
     background-position: center;
     margin: 0 auto;
     background-repeat: no-repeat;
-    padding: 25px;
+    padding: 25px 25px;
     border-radius: 14px;
     position: relative;
     z-index: 1000;
@@ -56,7 +56,7 @@
     top: 10px;
     left: 50px;
     width: max-content;
-    z-index: 1000;
+    z-index: 1000000000;
     background-color: #383839bb;
     font-size: 14px;
     padding: 3px 7px;
@@ -108,6 +108,10 @@
 
 
 div:has(> [data-img="settings"]){
+    margin-top: auto !important;
+}
+
+div:not(:has(> [data-img="settings"])) + div.chat{
     margin-top: auto !important;
 }
 
@@ -174,7 +178,7 @@ teams-and-roles */
     flex-direction: column;
     padding: 0;
     margin: 0;
-    gap: 15px;
+    gap: 7px;
 }
 
 .sidebar span{

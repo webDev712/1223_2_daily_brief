@@ -21,11 +21,11 @@ const getReportsTypes = () => {
 export const getWeekDays = () => {
     return [
         {full: 'Sunday', small: 'Sun'},
-        {full: 'Monday', small: 'Md'},
+        {full: 'Monday', small: 'Mon'},
         {full: 'Tuesday', small: 'Tue'},
         {full: 'Wednesday', small: 'Wed'},
-        {full: 'Thursday', small: 'Th'},
-        {full: 'Friday', small: 'Fr'},
+        {full: 'Thursday', small: 'Thu'},
+        {full: 'Friday', small: 'Fri'},
         {full: 'Saturday', small: 'Sat'},
     ]
 }
@@ -62,9 +62,9 @@ export const getPermissions = () => {
         {id: 17, name: "See Production Dashboard", js_name: "see_production_dashboard"},                //done
         {id: 18, name: "Send messages to all employees at once", js_name: "send_messages_to_all"},      //done
         {id: 19, name: "See other employees` messages", js_name: "see_other_employees_messages"},       //done
-        {id: 20, name: "See Action Tracker page", js_name: "see_action_tracker"},                       //done
         {id: 21, name: "Edit Action Tracker data", js_name: "edit_action_tracker"},                     //done
         {id: 22, name: "Add Actions to Issues / Observations", js_name: "add_actions_to_io"},           //done
+        {id: 23, name: "Reassign other users reports on Daily Brief page", js_name: "reasign_reports"},           //done
     ]
 }
 

@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { format, parse } from "date-fns";
 import './page.css'
 import UserCircle from "@/app/src/components/UserCircle";
+import scrollToElement from "@/lib/html_document";
 
 
 export function getGreeting() {
@@ -107,7 +108,7 @@ export default function Dashboard() {
           <h1>{getGreeting()}, {user.name.split(' ')[0]} 👋</h1>
           <p>Stay on top of your data. Here's what needs your attention today.</p>
           <div className="four-block">
-            <div img-id="document-yellow">
+            <div img-id="document-yellow" onClick={() => {scrollToElement('briefs')}}>
               <h1>{briefs.length - in_progress_count}/{briefs.length}</h1>
               <div>Daily Briefs</div>
               {in_progress_count === 0 ? 
@@ -116,7 +117,7 @@ export default function Dashboard() {
               {in_progress_count > 0 && 
                 (<h2>{in_progress_count} not submitted</h2>)}
             </div>
-            <div img-id="book-blue">
+            <div img-id="book-blue" onClick={() => {scrollToElement('duties-done')}}>
               <h1>{reports_done_count}/{reports_all_count}
               </h1>
               {" "}
@@ -126,7 +127,7 @@ export default function Dashboard() {
                 <h2>{(reports_done_count / reports_all_count * 100).toFixed()}% done</h2>
               )}
             </div>
-            <div img-id="error-yellow">
+            <div img-id="error-yellow" onClick={() => {scrollToElement('requires-attention')}}>
               <h1>{findning_count}</h1>
               <div>Open Findings</div>
               <span>{h_p_finding_count} high-priority finding</span>
@@ -134,7 +135,7 @@ export default function Dashboard() {
                 <h2>{h_p_finding_count} high</h2>
               )}
             </div>
-            <div img-id="tasks-red">
+            <div img-id="tasks-red" onClick={() => {scrollToElement('requires-attention')}}>
               <h1>{tasks_count}</h1>
               <div>Tasks this day</div>
               <span>{tasks_done_count} tasks done</span>
@@ -143,7 +144,7 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          <div className="flex j-s-b">
+          <div className="flex j-s-b" id="briefs">
             <div>
               <h3>Daily Briefs</h3>
               <p>Click a card to open the Daily Brief</p>
@@ -185,6 +186,7 @@ export default function Dashboard() {
                   <div>
                     <div className="shift">{b.shift || "No shift selected"}</div>
                     <div>{b.driving ? (<div className="driving">Driving</div>) : (<div className="on-site">Floor</div>)}</div>
+                    {b?.created_at && (<div>Started At {format(b.created_at, 'hh:mm a')}</div>)}
                   </div>
                   <div>
                     <div>
@@ -265,7 +267,7 @@ export default function Dashboard() {
           </div>
           <div style={{marginTop: 20}}>
             <div className="flex j-s-b">
-              <div>
+              <div id="requires-attention">
                 <h3>Requires attention</h3>
                 <p>Ordered by urgency</p>
               </div>
@@ -373,7 +375,7 @@ export default function Dashboard() {
           </div>
           <div style={{marginTop: 20}}>
             <div className="flex j-s-b">
-              <div>
+              <div id="duties-done">
                 <h3>Duties Done</h3>
                 <p>All activities users done today</p>
               </div>

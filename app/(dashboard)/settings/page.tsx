@@ -2,7 +2,7 @@
 
 import Loader from '@/app/src/components/Loader';
 import { useState, useEffect } from 'react';
-import { User, CompanyToDisplay, Company, Plan, Billing } from '@/lib/types';
+import { User, CompanyToDisplay, Company, Plan, Billing, Department, Shift } from '@/lib/types';
 import './page.css'
 import UserCircle from '@/app/src/components/UserCircle';
 import { getRoles } from '@/lib/config';
@@ -10,6 +10,8 @@ import generatePhoneNumber from '@/lib/phone';
 import { toast } from 'sonner';
 import capitalize from '@/lib/text';
 import { format } from 'date-fns';
+import Link from 'next/link';
+import formatTime12Hour from '@/lib/time';
 
 export default function Settings() {
   const [user, setUser] = useState<User | null>()
@@ -25,7 +27,16 @@ export default function Settings() {
   const [companyName, setCompanyName] = useState<string>();
   const [allowSave, setAllowSave] = useState(false);
   const [billings, setBillings] = useState<Billing[]>();
-  
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [showDeleteDepartment, setShowDeleteDepartment] = useState(false);
+  const [showDeleteShift, setShowDeleteShift] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState<Department>();
+  const [shiftToDelete, setShiftToDelete] = useState<Shift>();
+  const [showAddDepartment, setShowAddDepartment] = useState(false);
+  const [showAddShift, setShowAddShift] = useState(false);
+  const [newDeparmentName, setNewDeparmentName] = useState('');
+  const [shifts, setShifts] = useState<Shift[]>([]);
+
   const changeUser = (user: User) => {
     if (dataChanged === false) setDataChanged(true);
     setUser(user);
@@ -48,6 +59,29 @@ export default function Settings() {
       // setPlans(plans_data);
       const billings_res = await fetch('/api/billing');
       const billings_data = await billings_res.json();
+      const departments_res = await fetch(`/api/departments`);
+      if (!departments_res.ok) {
+        console.error("Failed to load departments");
+        setLoading(false);
+        return;
+      }
+      let departments_data = await departments_res.json();
+      departments_data = departments_data.filter((dep: Department) => dep.is_main === true).sort((a: Department, b: Department) => a.name.localeCompare(b.name))
+      console.log('departments_data')
+      console.log(departments_data)
+      setDepartments(departments_data);
+      const shifts_res = await fetch(`/api/shifts`);
+      if (!shifts_res.ok) {
+        console.error("Failed to load shifts");
+        setLoading(false);
+        return;
+      }
+      let shifts_data = await shifts_res.json();
+      shifts_data = shifts_data.filter((shift: Shift) => shift.archived != true).sort((a: Shift, b: Shift) => a.name.localeCompare(b.name))
+      console.log('shifts_data')
+      console.log(shifts_data)
+      setShifts(shifts_data);
+
       setBillings(billings_data)
       setUsers(users_data)
       setCompany(company_data[0]);
@@ -101,6 +135,119 @@ export default function Settings() {
     }
     setReload(prev => prev + 1);
   }
+
+  const addDepartment = async () => {
+    setLoading(true);
+      const department_res = await fetch('/api/departments', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({name: newDeparmentName})
+    })
+    if (!department_res.ok) {
+      console.log("Error while sending company data.");
+      setLoading(false)
+      return;
+    }
+    setShowAddDepartment(false);
+    setReload(prev => prev + 1);
+    
+    toast.success(`Added new deparment "${newDeparmentName}"`)
+    
+    setLoading(false);
+  }
+
+  const editDepartment = async (dep: Department) => {
+    setLoading(true);
+      const department_res = await fetch('/api/departments', {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dep)
+    })
+    if (!department_res.ok) {
+      console.log("Error while sending company data.");
+      setLoading(false)
+      return;
+    }
+    setShowDeleteDepartment(false);
+    toast.info(`Deleted department "${dep.name}"`)
+    if (dep.is_main === false){
+      setDepartments(prev => prev.filter((department: Department) => 
+        dep.id === department.id ? false : true
+      ))
+
+    }
+    else{
+      setDepartments(prev =>
+        prev.map((department: Department) =>
+          department.id === dep.id ? dep : department
+        )
+      );
+    }
+    setLoading(false);
+  }
+
+  const addShift = async () => {
+    setLoading(true);
+      const shift_res = await fetch('/api/shift', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({name: `${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}`})
+    })
+    if (!shift_res.ok) {
+      console.log("Error while sending shift data.");
+      setLoading(false)
+      return;
+    }
+    setShowAddShift(false);
+    setReload(prev => prev + 1);
+    
+    toast.success(`Added new shift "${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}"`)
+    
+    setLoading(false);
+  }
+
+
+  const editShift = async (shift: Shift) => {
+    setLoading(true);
+      const shift_res = await fetch('/api/shift', {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(shift)
+    })
+    if (!shift_res.ok) {
+      console.log("Error while shift data.");
+      setLoading(false)
+      return;
+    }
+    setShowDeleteShift(false);
+    toast.info(`Deleted shift "${shift.name}"`)
+    if (shift.archived === false){
+      setShifts(prev => prev.filter((shift_local: Shift) => 
+        shift.id === shift_local.id ? false : true
+      ))
+
+    }
+    else{
+      setShifts(prev =>
+        prev.map((shift_local: Shift) =>
+          shift_local.id === shift.id ? shift : shift_local
+        )
+      );
+    }
+    setReload(prev => prev + 1)
+    setLoading(false);
+  }
+const [shiftFrom, setShiftFrom] = useState('08:00');
+const [shiftTo, setShiftTo] = useState('16:00');
+
   return (
     <div className="settings">
       {showSubmitArchive && (
@@ -116,6 +263,107 @@ export default function Settings() {
           </div>
         </div>
       )}
+      {showAddDepartment && (
+        <div className='confirm'>
+          <div>
+            <h1>Add New Department</h1>
+            <div>
+              <span>Department Name</span>
+              <input type="text" placeholder='Deparment ABC...' className='input' value={newDeparmentName} onChange={(e) => setNewDeparmentName(e.target.value)}/>
+            </div>
+            <div>
+              <div className='button-w-bl' onClick={() => {setShowAddDepartment(false)}}>Cancel</div>
+              <div className='button-d-bl' onClick={() => addDepartment()}>Confirm</div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showAddShift && (
+        <div className="confirm add-shift">
+          <div>
+            <h1>Add New Shift</h1>
+
+            <div>
+              <div>
+                <span>From</span>
+                <input
+                  type="time"
+                  className="input"
+                  value={shiftFrom}
+                  onChange={(e) => setShiftFrom(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <span>To</span>
+                <input
+                  type="time"
+                  className="input"
+                  value={shiftTo}
+                  onChange={(e) => setShiftTo(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            {/* {formatTime12Hour(shiftFrom)} - {formatTime12Hour(shiftTo)} */}
+            <div>
+              <div
+                className="button-w-bl"
+                onClick={() => setShowAddShift(false)}
+              >
+                Cancel
+              </div>
+
+              <div
+                className="button-d-bl"
+                onClick={() => {
+                  addShift();
+                }}
+              >
+                Confirm
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteDepartment && departmentToDelete?.users && (
+        <div className='confirm'>
+          <div>
+              <h1>Delete department {departmentToDelete?.name}?</h1>
+              {departmentToDelete?.users?.length > 0 ? (
+                <div style={{textAlign: 'center'}}>
+                  <p style={{marginBottom: 0}}>There are still users in this department:</p>
+                  <div style={{marginBottom: '10px'}}>
+                    {departmentToDelete.users.map((user: User) => (
+                      <Link href={`teams-and-roles?scroll_to_id=${user.id}`} key={`deparmentToDelete-${departmentToDelete.id}-list-user-${user.id}`}><strong style={{textAlign: 'left', padding: '0px 30px', display: 'block'}}>{user.name}</strong></Link>
+                    ))}
+                  </div>
+                  <p>Change their department first and then you will be able to delete this department.</p>
+                </div>
+              ) : (
+                <p>After deleting department <strong>you won't be able to return it</strong></p>
+              )}
+            <div>
+              <div className='button-w-bl' onClick={() => {setShowDeleteDepartment(false)}}>Cancel</div>
+              {departmentToDelete?.users?.length === 0 && (<div className='button-w-r' onClick={() => editDepartment({...departmentToDelete, is_main: false})} style={{lineHeight: '32px'}}>Delete</div>)}
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteShift && shiftToDelete && (
+        <div className='confirm'>
+          <div>
+              <h1>Delete shift {shiftToDelete?.name}?</h1>
+              <p>After deleting this shift, you won't be able to return it</p>
+              <div>
+                <div className='button-w-bl' onClick={() => {setShowDeleteShift(false)}}>Cancel</div>
+                <div className='button-w-r' onClick={() => editShift({...shiftToDelete, archived: true})} style={{lineHeight: '32px'}}>Delete</div>
+              </div>
+          </div>
+        </div>
+      )}
+
       {loading || !user ?
         (<Loader></Loader>)
         : (
@@ -126,6 +374,7 @@ export default function Settings() {
               {user.permissions.see_app_settings && (
                 <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>Data & Security</div>
               )}
+              {company?.main_admin_id === user.id && (<div data-img="lists" className={selectedSettings === 'lists' ? 'selected' : ''} onClick={() => {setSelectedSettings('lists')}}>Lists</div>)}
             </div>
             {selectedSettings === 'my' && (
               <div className='my'>
@@ -256,6 +505,41 @@ export default function Settings() {
                     <div className='button-w-r-sm d'>Delete all history</div>
                   </div>
                 </div>
+              </div>)}
+            {selectedSettings === 'lists' && (
+              <div className='lists'>
+                <h1>Lists</h1>
+                <p>Manage config, add or delete options</p>
+                <div className='small-table'>
+                  <h2>
+                    <div>DEPARTMENTS</div>
+                    <div className="button-d-bl-sm" onClick={() => {setShowAddDepartment(true)}}>Add Department</div>
+                  </h2>
+                  {departments.map((dep: Department) => (
+                    <div key={`department-list-${dep.id}`}>
+                      <div>
+                        <div>{dep.name}</div>
+                        <div>(Users: {dep.users?.length})</div>
+                      </div>
+                      <div className='button-r-sm' onClick={() => {setDepartmentToDelete(dep); setShowDeleteDepartment(true);}}>Delete</div>
+                    </div>
+                  ))}
+                </div>
+                <div className='small-table'>
+                  <h2>
+                    <div>SHIFTS</div>
+                    <div className="button-d-bl-sm" onClick={() => {setShowAddShift(true)}}>Add Shift</div>
+                  </h2>
+                  {shifts && shifts.map((shift: Shift) => (
+                    <div key={`shift-list-${shift.id}`}>
+                      <div>
+                        <div>{shift.name}</div>
+                      </div>
+                      <div className='button-r-sm' onClick={() => {setShiftToDelete(shift); setShowDeleteShift(true);}}>Delete</div>
+                    </div>
+                  ))}
+                </div>
+
               </div>)}
           </div>
         )}

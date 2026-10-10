@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import generatePhoneNumber from '@/lib/phone';
 import { getPermissions } from '@/lib/config';
 import capitalize, { randomEmployeeID } from '@/lib/text';
+import { useSearchParams } from 'next/navigation';
 
 
 
@@ -266,6 +267,34 @@ export default function TeamsAndRoles() {
     load();
   }, [reload]);
   
+  const searchParams = useSearchParams();
+  const scrollToId = searchParams.get('scroll_to_id');
+  const [highlightedUserId, setHighlightedUserId] = useState<string | null>(null);
+  useEffect(() => {
+    if (loading || !scrollToId || users.length === 0) return;
+
+    const user = users.find(user => String(user.id) === scrollToId);
+    if (!user) return;
+
+    const userElement = document.getElementById(scrollToId);
+    if (!userElement) return;
+
+    userElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+
+
+    const timeout_0 = setTimeout(() => {
+      setHighlightedUserId(scrollToId);
+    }, 800);
+    // clearTimeout(timeout_0);
+    const timeout_1 = setTimeout(() => {
+      setHighlightedUserId(null);
+    }, 2000);
+
+    return () => clearTimeout(timeout_1);
+  }, [loading, scrollToId, users]);  
   return (
     <div className="teams-and-roles">
       {loading ? (<Loader></Loader>) :
@@ -431,7 +460,11 @@ export default function TeamsAndRoles() {
           <div className='employees-container'>
             {users.map(user => {
               return (
-                <div key={`user_${user.id}`} className={user.archived === true ? 'employee archived' : 'employee'}>
+                <div key={`user_${user.id}`} id={user.id} className={[
+                  'employee',
+                  user.archived === true ? 'archived' : '',
+                  highlightedUserId === String(user.id) ? 'highlighted' : '',
+                ].filter(Boolean).join(' ')}>
                   <div>
                     <UserCircle user_name={user.name} size={40} />
                     <div>

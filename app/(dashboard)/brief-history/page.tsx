@@ -41,14 +41,20 @@ export default function BriefHistory() {
           if (selectedLead !== '' && b.lead_id !== selectedLead) return false;
           const briefDate = new Date(b.date);
           if (status !== ''){
+            const isToday =
+              briefDate.getFullYear() === today.getFullYear() &&
+              briefDate.getMonth() === today.getMonth() &&
+              briefDate.getDate() === today.getDate();
             if (status === 'progress'){
-              if (!((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < 1) || b.freezed) return false;
+              if ((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 > 1 || b.freezed) return false;
             }
             if (status === 'submitted'){
-              if (!((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 > 1 || b.freezed)) return false;
+
+              if (!b.freezed) return false;
             }
             if (status === 'incomplete'){
-              if (!((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 > 1 && !b.freezed)) return false;
+              
+              if ((today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < 1 || b.freezed) return false;
             }
           }
           return (today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 < parseInt(days);
@@ -74,14 +80,10 @@ export default function BriefHistory() {
       }
       load();
     }, [status, days, selectedLead]);
-  const briefs_submitted = allBriefs.filter((b: SavedBrief) => { return b.freezed === true }).length
-  const briefs_incomplete = allBriefs.filter((b: SavedBrief) => { 
+  const briefs_submitted = briefs.filter((b: SavedBrief) => { return b.freezed === true }).length
+  const briefs_incomplete = briefs.filter((b: SavedBrief) => { 
     const briefDate = new Date(b.date);
-    const isToday =
-      briefDate.getFullYear() === today.getFullYear() &&
-      briefDate.getMonth() === today.getMonth() &&
-      briefDate.getDate() === today.getDate();
-    return b.freezed === false && !isToday }).length
+    return b.freezed === false && (today.getTime() - briefDate.getTime()) / 60 / 60 / 24 / 1000 > 1 }).length
                   
   return (
     <div className="brief-history">
@@ -90,25 +92,25 @@ export default function BriefHistory() {
           <div>
               <div>
                 <div className="four-block">
-                  <div img-id="document">
-                    <h1>{allBriefs.length}</h1>
+                  <div img-id="document" onClick={() => setStatus('')}>
+                    <h1>{briefs.length}</h1>
                     <div>Total Briefs</div>
                     <span>Last {days} days, {leadsCount} leads</span>
                   </div>
-                  <div img-id="done">
+                  <div img-id="done" onClick={() => setStatus('submitted')}>
                     <h1>{briefs_submitted}</h1>
                     <div>Submitted</div>
                     <span>{(briefs_submitted / allBriefs.length * 100).toFixed(0)}% completion rate</span>
                   </div>
-                  <div img-id="clock">
-                    <h1>{allBriefs.length - briefs_submitted - briefs_incomplete}</h1>
+                  <div img-id="clock" onClick={() => setStatus('progress')}>
+                    <h1>{briefs.length - briefs_submitted - briefs_incomplete}</h1>
                     <div>In Progress</div>
                     <span>Awaiting submission today</span>
                   </div>
-                  <div img-id="error">
-                    <h1>{briefs.reduce((a: number, b: SavedBrief) => b.findings ? a + b.findings.length : a + 0, 0)}</h1>
-                    <div>Total Findings</div>
-                    <span>Across all briefs last {days} days</span>
+                  <div img-id="error" onClick={() => setStatus('incomplete')}>
+                    <h1>{briefs_incomplete}</h1>
+                    <div>Incomplete</div>
+                    <span>{(briefs_incomplete / allBriefs.length * 100).toFixed(0)}% of all briefs</span>
                   </div>
                 </div>
                 <div className="filters">
@@ -155,7 +157,7 @@ export default function BriefHistory() {
                     return (
                       <label key={b.id}>
                         <div>
-                          <div>{isToday ? 'Today' : format(briefDate, 'MMM d')}</div>
+                          <div>{isToday ? 'Today' : format(briefDate, 'MMM d')} {b?.created_at && format(b.created_at, 'hh:mm a')}</div>
                           <span>{format(briefDate, 'MMMM d, yyyy')}</span>
                         </div>
                         <div>

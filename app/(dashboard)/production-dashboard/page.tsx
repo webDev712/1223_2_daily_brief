@@ -28,6 +28,8 @@ export default function ProductionDashboard() {
     const [dateTo, setDateTo] = useState(yesterday)
     const [employee, setEmployee] = useState('')
     const [department, setDeparment] = useState('')
+    const [showOnlyWithNotes, setShowOnlyWithNotes] = useState(false);
+
 
     const [resultsCount, setResultsCount] = useState(0);
 
@@ -40,7 +42,8 @@ export default function ProductionDashboard() {
     useEffect(() => {
         const load = async () => {
             setLoading(true);
-            const ppoh_master_res = await fetch(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${format(dateFrom, 'yyyy-MM-dd')}&to_date=${format(dateTo, 'yyyy-MM-dd')}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}`);
+            const ppoh_master_res = await fetch(`/api/ppohMaster?page=${page}&page_size=${pageSize}&from_date=${format(dateFrom, 'yyyy-MM-dd')}&to_date=${format(dateTo, 'yyyy-MM-dd')}&page=${page}${employee ? `&employee=${employee}` : ''}${department ? `&department=${department}` : ''}${showOnlyWithNotes ? '&only_with_notes=true' : ''}`);
+            setShowOnlyWithNotes(false);
             if (!ppoh_master_res.ok){
                 console.log('Failed to load ppoh_master');
                 setLoading(false);
@@ -96,12 +99,20 @@ export default function ProductionDashboard() {
                                 return 0;
                             };
                             if (dateFrom < new Date("2026-02-11")) {
-                                toast.error("Historical data in the Production Dashboard is available from February 11, 2026. Please select a date range starting from this date.");
-                                return 0;
+                                // toast.error("Historical data in the Production Dashboard is available from February 11, 2026. Please select a date range starting from this date.");
+                                // return 0;
                             }
                             setPage(1);
                             setReload(prev => prev + 1);
                         }}>Filter</div>
+                        <div className="button-w-bl"
+                            onClick={() => {
+                                setShowOnlyWithNotes(true);
+                                setDateFrom(new Date(2024, 0, 1));
+                                setDateTo(yesterday);
+                                setReload(prev => prev + 1);
+                            }}
+                        >Show All Notes</div>
                     </div>
                     <div className="table-wrapper">
                             <div className="table-header">

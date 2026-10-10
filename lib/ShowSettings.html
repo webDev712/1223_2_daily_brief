@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <div>Logged as <span id="user_email" style="font-style: italic;
+                                                margin: 0 0 0 auto;
+                                                display: block;
+                                                font-size: 16px;
+                                                border-radius: 14px;
+                                                padding: 2px 12px;"
+    >Loading...</span></div>
+    <label>
+      <div style="margin-top: 7px;">SMRT API Key:</div>
+      <input type="text" placeholder="Input SMRT API Key here..." id="smrt_api_key" 
+        style="width: calc(100% - 14px);
+              border-radius: 20px;
+              padding: 7px;
+              margin: 14px 0;"/>
+    </label>
+    <input type="button" value="Save" id="save_btn" style="margin: 0 0 0 auto;
+                                                          display: block;
+                                                          font-size: 16px;
+                                                          border-radius: 14px;
+                                                          padding: 2px 12px;
+                                                          cursor: pointer;" />
+    <script>
+      google.script.run
+      .withSuccessHandler((result) => {
+        document.getElementById('user_email').innerText = result;
+      })
+      .withFailureHandler((e) => {console.log(e)})
+      .getSettings();
+
+      google.script.run
+      .withSuccessHandler((result) => {
+        document.getElementById('smrt_api_key').value = result;
+      })
+      .withFailureHandler((e) => {console.log(e)})
+      .getAPIKeyProperty();
+
+      document.getElementById("save_btn").onclick = () => {
+        google.script.run
+        .withSuccessHandler((result) => {
+          alert('Saved!')
+        })
+        .withFailureHandler((e) => {console.log(e)})
+        .setAPIKeyProperty(document.getElementById("smrt_api_key").value);
+      }
+
+      
+    </script>
+  </body>
+</html>

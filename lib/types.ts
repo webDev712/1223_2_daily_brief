@@ -17,6 +17,7 @@ export interface SavedBrief {
   reports: Report[];
   tasks: Task[];
   covered: Covered[];
+  created_at?: string;
 }
 
 type Assignment = {
@@ -103,7 +104,9 @@ export interface UserForChat extends User {
 
 export interface Shift {
   id: string,
-  name: string
+  name: string,
+  archived: boolean,
+  company_id: string,
 }
 
 export interface Covered {
@@ -119,6 +122,7 @@ export interface Department {
   id: string,
   name: string,
   is_main: boolean,
+  users?: User[],
 }
 
 export interface Permission {

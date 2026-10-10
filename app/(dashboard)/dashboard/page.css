@@ -126,8 +126,11 @@
     padding: 0px 10px;
 }
 
-.dashboard .briefs .brief .header-sm + div > div:nth-child(2){
+.dashboard .briefs .brief .header-sm + div > div:nth-child(2),
+.dashboard .briefs .brief .header-sm + div > div:nth-child(3){
     border-left: 1px solid #E8EAED;
+    color: #6b7280;
+    font-size: 16px;
 }
 
 

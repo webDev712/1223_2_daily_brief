@@ -205,10 +205,16 @@
     background-size: 18px;
     cursor: pointer;
 }
+
+.production-dashboard > div:first-child > :nth-child(5),
 .production-dashboard > div:first-child > :last-child{
     height: max-content;
     padding: 4px 20px;
     margin-top: auto !important;
+    border-radius: 10px;
+}
+
+.production-dashboard > div:first-child > :nth-child(5){
     margin-left: auto;
 }
 

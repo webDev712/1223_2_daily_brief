@@ -83,7 +83,7 @@ body > .sidebar + div > div:last-child{
   color: #4361EE;
   font-weight: 600;
   font-size: 14px;
-  cursor: pointer;
+  cursor: pointer !important;
   max-width: max-content;
   transition: all 0.3s ease !important;
   user-select: none !important;
@@ -211,6 +211,7 @@ div .progress-bar{
   background-repeat: no-repeat;
   background-position: left 25px top 30px;
   position: relative;
+  cursor: pointer !important;
 }
 
 .four-block > div:hover{
@@ -353,7 +354,7 @@ div .progress-bar{
     top: 0;
     width: 100%;
     height: 100%;
-    z-index: 1000;
+    z-index: 100000;
 }
 
 

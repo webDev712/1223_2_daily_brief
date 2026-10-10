@@ -41,6 +41,7 @@ export async function GET(request: Request) {
         sb.findings,
         sb.covered,
         sb.company_id,
+        sb.created_at,
 
         COALESCE(
             (

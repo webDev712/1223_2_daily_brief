@@ -5,33 +5,33 @@
 .chat{
     transition: all 0.1s;
     overflow: hidden;
+    width: 50px;
+    height: 50px;
 }
 
 .chat:has(> div){
-    position: fixed;
-    background-color: white;
-    width: 450px;
-    height: 80vh;
     right: 0;
     bottom: 0;
-    border: 1px solid #B1B1B1;
-    z-index: 1000000;
-    border-radius: 16px 16px 0 16px;
+    position: relative;
+    left: 0;
 }
 
-.chat:not(:has(> div)){
-    position: fixed;
-    background-color: #ffffffc4;
-    width: 40px;
+.chat:not(:has(> div)) > div:nth-child(2){
+    z-index: 1000000;
+    width: 50px;
     height: 40px;
-    right: 20px;
-    bottom: 20px;
-    border: 1px solid #B1B1B1;
-    z-index: 1000000;
-    border-radius: 20px;
+    position: relative;
 }
 
-.chat > div:first-child > div:first-child{
+
+.chat:has(> div) span{
+    background-color: #4361ee;
+    background-image: url('../../../../public/chat_1.png');
+}
+
+
+
+.chat > div:nth-child(2) > div:first-child{
     padding: 10px 19px;
     border-bottom: 1px solid #B1B1B1;
     color: #7A7A7A;
@@ -41,36 +41,36 @@
     gap: 5px;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child{
+.chat > div:nth-child(2) > div:first-child > div:first-child > div:first-child{
     display: flex;
     gap: 6px;
     flex-wrap: nowrap;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child > div {
+.chat > div:nth-child(2) > div:first-child > div:first-child > div:first-child > div {
     gap: 7px;
     color: #101828;
-
+    font-size: 16px;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child > div > div{
+.chat > div:nth-child(2) > div:first-child > div:first-child > div:first-child > div > div{
     width: max-content;
     display: block;
     flex-wrap: nowrap;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child > div > div:last-child{
+.chat > div:nth-child(2) > div:first-child > div:first-child > div:first-child > div > div:last-child{
     cursor: pointer;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child > div:nth-child(2){
+.chat > div:nth-child(2) > div:first-child > div:first-child > div:first-child > div:nth-child(2){
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     gap: 7px;
 }
 
-.chat > div:first-child > div:first-child > div:first-child > div:first-child > div:nth-child(3){
+.chat > div:nth-child(2) > div:first-child > div:first-child > div:first-child > div:nth-child(3){
     max-width: 120px;
     /* border: 1px solid; */
     white-space: nowrap;
@@ -81,7 +81,7 @@
 
 .chat .chats{
     overflow-y: scroll;
-    height: calc(80vh - 92px);
+    height: calc(100vh - 92px);
 }
 
 .chat .chats::-webkit-scrollbar,
@@ -210,9 +210,9 @@
 }
 
 .chat .chats > div > div.chats-list-hover-message{
-    width: calc(50% - 8px - 8px - 30px);
-    min-width: calc(50% - 8px - 8px - 30px);
-    min-width: calc(50% - 8px - 8px - 30px);
+    width: calc(88% - 46px);
+    min-width: calc(88% - 46px);
+    min-width: calc(88% - 46px);
     margin: auto 0;
     flex: 1;
     padding: 9px 0;
@@ -224,6 +224,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: rgb(33, 37, 41);
 }
 
 .chat .chats > div > div.chats-list-hover-message > div:nth-child(2){
@@ -251,37 +252,61 @@
     padding: 3px 10px;
     border-radius: 10px;
     width: 100%;
+    background-color: #fff;
+    border: 1px solid #e8eaed;
+    border-radius: 10px;
+    width: 100%;
+    padding: 3px 10px;
+    color: rgb(33, 37, 41);
+    font-size: 16px;
 }
 
 .chat > span{
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 50px;
+    height: 50px;
     overflow: hidden;
     cursor: pointer;
-    background-image: url('../../../../public/bell-grey.svg');
-    background-size: 19px;
+    background-image: url('../../../../public/chat_0.png');
+    background-size: 24px;
     background-position: center;
     transition: all 0.1s ease;
     background-color: transparent;
+    border-radius: 14px;
 }
 
 .chat > span:hover{
-    background-size: 23px;
+    background-color: #4362ee76;
 }
 
 .chat div:has(+ .messages){
     padding: 7px 10px;
     cursor: pointer;
     border-bottom: 1px solid #b1b1b12b;
+    color: rgb(33, 37, 41);
+    font-size: 16px;
 }
 
 .chat div:has(+ .messages):hover{
     text-decoration: underline;
 }
 
+.chat > div:nth-child(2){
+    z-index: 0;
+    background-color: #fff;
+    border: 1px solid #b1b1b1;
+    width: calc(100vw - 78px);
+    height: 100vh;
+    position: fixed;
+    bottom: 0;
+    left: 78px;
+    right: 0;
+    overflow: hidden;
+    border: none;
+}
+
 .chat .messages{
-    height: calc(80vh - 148px);
+    height: calc(100vh - 148px);
     margin-bottom: 10px;
     overflow-y: scroll;
     padding: 10px 10px 10px 10px;
@@ -289,7 +314,7 @@
 
 .chat .messages > div{
     max-width: 80%;
-    min-width: 50%;
+    /* min-width: 50%; */
     width:fit-content;
     font-weight: 600;
     font-size: 14px;
@@ -328,11 +353,13 @@
     border-radius: 8px;
     width: 100%;
     padding: 3px 10px;
+    color: rgb(33, 37, 41);
+    font-size: 16px;
 }
 
 .chat .messages > p {
     width: 100%;
-    margin-top: 32%;
+    margin-top: 17%;
     text-align: center;
     font-style: italic;
     color: #7A7A7A;
@@ -378,6 +405,19 @@
     display: block;
 }
 
+.chat .confirm{
+    z-index: 1000000000;
+    color: #101828;
+    font-size: 16px;
+}
+
+.chat div:has(> .spinner-border){
+    color: rgb(195 195 195 / 51%) !important;
+    background-color: white;
+    font-size: 14px !important;
+}
+
+
 .chat .confirm.send-message-to-all textarea{
     width: 100%;
     border: 1px solid #E8EAED;
@@ -398,6 +438,7 @@
     color: #9b9b9b;
     cursor: pointer;
     font-weight: 600;
+    font-size: 14px;
 }
 
 .chat .confirm.send-message-to-all > div > label:nth-child(3) input{
@@ -416,6 +457,7 @@
     display: grid;
     gap: 5px;
     grid-template-columns: repeat(2, 1fr);
+    font-size: 14px;
 }
 
 .chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked) + div > span {
@@ -425,6 +467,8 @@
     cursor: pointer;
     user-select: none;
     grid-column: 1 / -1;
+    display: block;
+    font-size: 14px;
 }
 
 .chat .confirm.send-message-to-all > div > div:nth-child(4) > label{
@@ -436,6 +480,10 @@
 
 .chat .confirm.send-message-to-all > div > div:nth-child(4) > label input{
     cursor: pointer;
+}
+
+.mobile_chat.chat{
+    display: none;
 }
 
 @keyframes pulse {
@@ -453,22 +501,64 @@
 }
 
 @media (max-width: 500px) {
-    .chat:has(> div){
+    .chat {
+        display: none !important;
+    }
+
+    .mobile_chat.chat{
+        display: block !important;
+        position: fixed;
+        right: 10px;
+        bottom: 10px;
+        z-index: 1000000000000000000000000;
+    }
+
+    .mobile_chat.chat > span{
+        position: fixed;
+        display: block;
+        right: 10px;
+        bottom: 10px;
+        border-radius: 50px;
+    }
+
+    .mobile_chat.chat:has(> div){
         width: 100vw;
         height: 100vh;
         border-radius: 0;
     }
 
-    .chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked) + div{
+
+    .mobile_chat.chat .confirm.send-message-to-all > div > label:nth-child(3):has(input[type="checkbox"]:checked) + div{
         grid-template-columns: repeat(1, 1fr);
         font-size: 18px;
     }
 
-    .chat .messages{
+    .mobile_chat.chat .messages{
         height: calc(100vh - 148px);
     }
     
-    .chat .chats{
+    .mobile_chat.chat .chats{
         height: calc(100vh - 92px);
     }
+
+    .mobile_chat.chat > div:nth-child(2){
+        z-index: 100000000000000000000000;
+        width: 100vw;
+        left: 0;
+    }
+
+    .mobile_chat.chat .confirm{
+        z-index: 100000000000;
+    }
+
+    .mobile_chat.chat .chats > div > div.chats-list-hover-message{
+        width: calc(56% - 46px);
+        min-width: calc(56% - 46px);
+    }
+
+    .mobile_chat.chat > span:hover{
+        background-image: url('../../../../public/chat_1.png');
+        background-color: rgb(67, 97, 238);
+    }
+
 }

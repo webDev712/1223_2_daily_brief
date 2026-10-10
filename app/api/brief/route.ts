@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     try {
         // await requireRole("lead");
         const body = await request.json();
-        const { lead_id, lead_letter, lead_name, date } = body;
+        const { lead_id, lead_letter, lead_name, date, created_at } = body;
         
         const session = await auth();
 
@@ -105,8 +105,8 @@ export async function POST(request: Request) {
         `
 
         const rows = await sql`
-            INSERT INTO saved_brief (lead_id, letter, lead_name, freezed, original_lead_id, date, company_id)
-            VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date}, ${company_id})
+            INSERT INTO saved_brief (lead_id, letter, lead_name, freezed, original_lead_id, date, company_id, created_at)
+            VALUES (${lead_id}, ${lead_letter}, ${lead_name}, false, ${lead_id}, ${date}, ${company_id}, ${created_at})
             RETURNING id;
         `
 

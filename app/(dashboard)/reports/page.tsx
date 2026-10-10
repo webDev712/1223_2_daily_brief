@@ -616,7 +616,7 @@ return (
       {loading ? (<Loader></Loader>) :
         (<div>
 
-          <div className="four-block three-block">
+          {/* <div className="four-block three-block">
             <div img-id="document-yellow">
               <h1>{total_reports}</h1>
               <div>Total Reports</div>
@@ -632,8 +632,8 @@ return (
               <div>Departments</div>
               <span>With no reports</span>
             </div>
-          </div>
-          <h2 style={{position: 'relative', lineHeight: '50px'}}>Departments:
+          </div> */}
+          <h2 style={{position: 'relative', paddingBottom: '20px'}}>Departments:
             <label className="how-to-use">
               <input type="checkbox" />
               <strong>About Reports</strong>

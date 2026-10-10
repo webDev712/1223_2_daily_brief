@@ -66,6 +66,7 @@
     margin-left: -4px;
     display: flex;
     gap: 5px;
+    z-index: 1000;
 }
 
 .teams-and-roles .employee > div:first-child > div:nth-child(2) > :nth-child(2) > :first-child{
@@ -86,6 +87,8 @@
     margin-left: -5px;
     display: flex;
     gap: 5px;
+    z-index: 1000;
+
 }
 
 .teams-and-roles .employee > div:first-child > div:nth-child(2) > :nth-child(3) > :nth-child(2){
@@ -421,6 +424,9 @@
     margin-top: 15px;
 }
 
+.teams-and-roles .employee.highlighted {
+  animation: userHighlight 1s ease-out;
+}
 
 @media (max-width: 500px) {
     .teams-and-roles .employees-container {
@@ -435,4 +441,14 @@
     .teams-and-roles .confirm.add-user-form > div > form > div{
         grid-template-columns: repeat(1, 1fr);
     }
+}
+
+
+@keyframes userHighlight {
+  0%, 100% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: rgba(80, 83, 255, 0.10);
+  }
 }

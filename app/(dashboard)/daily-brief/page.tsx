@@ -85,12 +85,17 @@ export default function DailyBrief() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd")}),
+      body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd"), created_at: new Date()}),
     });
     if (res.status === 200) setReload(prev => prev + 1);
+    toast.info(`Don't forget to select you shift.`);
   }
 
   const submitBrief = async (b: any) => {
+    if (!b.shift || b.shift === ''){
+      toast.error('Select shift to submit your brief.');
+      return;
+    }
     setLoading(true)
     const updatedBrief = {
       ...b,
@@ -406,11 +411,11 @@ export default function DailyBrief() {
           }
           let shifts = await shifts_res.json()
   
-          if (!shifts.find((s: Shift) => s.name == briefs_data[0].shift) && briefs_data[0].shift !== '' && briefs_data[0].shift !== ' ' && briefs_data[0].shift) {
-            shifts.push({name: briefs_data[0].shift})
-            setShifts(shifts)
-          }
-          else{ setShifts(shifts); }
+          setShifts(shifts)
+          // if (!shifts.find((s: Shift) => s.name == briefs_data[0].shift) && briefs_data[0].shift !== '' && briefs_data[0].shift !== ' ' && briefs_data[0].shift) {
+          //   shifts.push({name: briefs_data[0].shift})
+          // }
+          // else{ setShifts(shifts); }
         }
         setLoading(false)
       }
@@ -473,7 +478,7 @@ export default function DailyBrief() {
                   <div className='brief' id={`b-${b.id}`} key={`b-${b.id}`}>
                     <div className='shift-info'>
                       <div>
-                        <h1>Shift information</h1>
+                        <h1>Shift information    - {b.shift} </h1>
                         <div className='button-w-bl' style={{marginLeft: "auto"}} onClick={() => {generateEmailHTML(b)}} >Copy for Email</div>
                         <div className='button-w-bl' onClick={() => {downloadPDF(b)}}>Save as PDF</div>
                         <div className={noAccessEdit(b) ? 'button-d-bl d tg' : 'button-d-bl tg'} onClick={() => {if (!noAccessEdit(b)) setShowSubmit(true)}}>Submit Brief</div>
@@ -515,6 +520,7 @@ export default function DailyBrief() {
                         <div>
                           <span>Shift</span>
                           <select className={noAccessEdit(b) ? 'shift-select d' : ''} disabled={noAccessEdit(b)} onChange={(e) => {changeShift(b, e.target.value)}} defaultValue={b.shift || ''}>
+                            <option value={""}>-</option>
                             {shifts.map((s: Shift) => {
                               return (<option key={s.name} value={s.name}>{s.name}</option>)
                             })}
@@ -525,7 +531,7 @@ export default function DailyBrief() {
                           <div>{format(
                               parse(b.date, "yyyy-MM-dd", new Date()),
                               "MMMM d, yyyy"
-                          )}</div>
+                          )} {b?.created_at && format(b.created_at, 'hh:mm a')}</div>
                         </div>
                         <div>
                             <span>Work Assignment</span>
@@ -700,7 +706,9 @@ export default function DailyBrief() {
                                 )}
                             </div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div className={r.checked || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!r.checked && user.id === b.lead_id && !noAccessEdit(b) ) updateReports(b, {...r, holder_id: null}, r.checked)}}>Resign</div>
+                              <div className={r.checked || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
+                                onClick={() => {if (!r.checked && user.id === b.lead_id && !noAccessEdit(b) ) updateReports(b, {...r, holder_id: null}, r.checked)}}
+                              >Resign</div>
                             </div>)
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id).map(
@@ -714,7 +722,13 @@ export default function DailyBrief() {
                               <div>Assignee: <div className='' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name}</div></div>
                               <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric}</div><div>{r.text}</div></div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div></div>
+                              {
+                                user.permissions.reasign_reports === true ? (
+                                  <div className={r.checked || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
+                                    onClick={() => {if (!r.checked || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date) updateReports(b, {...r, holder_id: null}, r.checked)}}
+                                  >Call-out</div>
+                                ) : (<div></div>)
+                              }
                             </div>)
                         )}
                         </div>

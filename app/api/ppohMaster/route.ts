@@ -25,6 +25,7 @@ export async function GET(request: Request) {
         const employee = searchParams.get('employee');
         const department = searchParams.get('department');
         const page = searchParams.get('page') || 1;
+        const only_with_notes = Boolean(searchParams.get('only_with_notes')) || false;
 
 
         const rows_count = await sql`
@@ -39,6 +40,9 @@ export async function GET(request: Request) {
                 AND external_id = ${employee}` : sql``}
             ${department ? sql`
                 AND department = ${department}` : sql``}
+            ${only_with_notes === true ? sql`
+                AND notes IS NOT NULL
+                AND notes <> ''` : sql``}
             ;
         `;
 
@@ -54,6 +58,9 @@ export async function GET(request: Request) {
                 AND external_id = ${employee}` : sql``}
             ${department ? sql`
                 AND department = ${department}` : sql``}
+            ${only_with_notes === true ? sql`
+                AND notes IS NOT NULL
+                AND notes <> ''` : sql``}
             ORDER BY date DESC, department ASC, employee_name ASC
             LIMIT ${page_size}
             OFFSET ${(Number(page) - 1) * Number(page_size)}

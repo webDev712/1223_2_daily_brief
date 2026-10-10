@@ -5,10 +5,13 @@ import './css/Sidebar.css'
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { User } from '@/lib/types';
+import Chat from './Chat';
 
 
 export default function Sidebar({ user }: { user: User}) {
-  const [companyName, setCompanyName] = useState('')
+  const [companyName, setCompanyName] = useState('');
+
+  const [openChat, setOpenChat] = useState(false);
   useEffect(() => {
     const load = async () => {
       const company_res = await fetch('/api/company');
@@ -59,11 +62,12 @@ export default function Sidebar({ user }: { user: User}) {
             {pages.map((page) => {
               if (page.permission_name === '' || user.permissions[page.permission_name] === true) {
                 return (<div key={`page_${page.href}`}>
-                  <Link onClick={() => {setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}></Link>
+                  <Link onClick={() => {setTimeout(() => {setOpenChat(false)}, 400); setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}></Link>
                   <h1>{page.text}</h1>
                 </div>)
                 }
             })}
+          <Chat openChat={openChat} setOpenChat={setOpenChat}></Chat>
           </div>
         )}
     </div>
