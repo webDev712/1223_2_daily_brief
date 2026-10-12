@@ -446,13 +446,28 @@ export default function ActionTracker () {
                                     <div before-text=''>
                                         <div className='button-w-bl' onClick={() => { setRowShowActions(row) }}>Show List {row.actions && `(${row.actions.length})`}</div>
                                     </div>
-                                    <div before-text='Days Open'>{row.date_resolved ? (
-                                        <div className={differenceInCalendarDays(row.date_resolved, row.date) < 3 ? 'green b' : (differenceInCalendarDays(row.date_resolved, row.date) < 10 ? 'orange b' : 'red b')}>
-                                            {differenceInCalendarDays(row.date_resolved, row.date)}
-                                        </div>
-                                    ) : (
-                                        <div className={differenceInCalendarDays(new Date(), row.date) < 3 ? 'green b' : (differenceInCalendarDays(new Date(), row.date) < 10 ? 'orange b' : 'red b')}>{differenceInCalendarDays(new Date(), row.date)}</div>
-                                    )}</div>
+                                     {(() => {
+        const startDate = new Date(row.date);
+        const endDate = row.date_resolved
+            ? new Date(row.date_resolved)
+            : new Date();
+
+        const daysOpen = differenceInCalendarDays(endDate, startDate);
+
+        return (
+            <div
+                className={
+                    daysOpen < 3
+                        ? 'green b'
+                        : daysOpen < 10
+                            ? 'orange b'
+                            : 'red b'
+                }
+            >
+                {daysOpen}
+            </div>
+        );
+    })()}
                                     <div before-text='Status'>
                                         <div className={row.status === 'Resolved' ? 'green b' : (row.status === 'In progress' ? 'orange b resolve-button' : 'red b resolve-button')}>
                                             {row.status.toLowerCase() === 'resolved' ? (
@@ -467,7 +482,7 @@ export default function ActionTracker () {
                                     </div>
                                     </div>
                                     {user.permissions.edit_action_tracker === true && (<div>
-                                        <div className="button-w-bl" onClick={() => { setAuditLogRowToAdd({...row, date: format(row.date, 'MM-dd-yyyy')}); setShowAdd(true); }}>Edit</div>
+                                        <div className="button-w-bl" onClick={() => { setAuditLogRowToAdd({...row, date: format(new Date(row.date), 'MM-dd-yyyy')}); setShowAdd(true); }}>Edit</div>
                                     </div>)}
                                 </div>)
                             })}
