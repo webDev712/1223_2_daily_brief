@@ -206,7 +206,7 @@
     cursor: pointer;
 }
 
-.production-dashboard > div:first-child > :nth-child(5),
+.production-dashboard > div:first-child > :nth-child(4),
 .production-dashboard > div:first-child > :last-child{
     height: max-content;
     padding: 4px 20px;
@@ -214,7 +214,7 @@
     border-radius: 10px;
 }
 
-.production-dashboard > div:first-child > :nth-child(5){
+.production-dashboard > div:first-child > :nth-child(4){
     margin-left: auto;
 }
 

@@ -345,11 +345,11 @@ export default function TeamsAndRoles() {
                   <div>
                     <label>
                       <div>Name</div>
-                      <input type="text" id='name' required />
+                      <input style={{textTransform: 'none'}} type="text" id='name' required />
                     </label>
                     <label>
                       <div>Email</div>
-                      <input type="email" id='email' required />
+                      <input style={{textTransform: 'none'}} type="email" id='email' required />
                     </label>
                     <label>
                       <div>Phone</div>

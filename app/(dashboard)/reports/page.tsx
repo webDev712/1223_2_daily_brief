@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import './page.css'
 import capitalize from "@/lib/text";
 import { useDate } from "@/app/src/components/DateContext";
+import { cp } from "fs";
 
 export default function Reports() {
   const [loading, setLoading] = useState(true)
@@ -112,7 +113,8 @@ export default function Reports() {
       },
       body: JSON.stringify({...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'}),
     })
-    
+    console.log(`{...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'}`)
+    console.log({...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'})
     if (res.status === 200) {
       toast.success('Added new Report!');
       const json = await res.json();
@@ -158,6 +160,8 @@ export default function Reports() {
         return;
       }
       let reports_data = await reports_res.json();
+      console.log(`reports_data.filter((report: any) => report.name === 'TEST')`)
+      console.log(reports_data.filter((report: any) => report.name === 'TEST'))
       setReports(reports_data)
 
       reports_data.forEach((report: Report) => {
@@ -195,6 +199,7 @@ export default function Reports() {
         return;
       }  
       let leads_data = await users_res.json();
+      setAllUsers(leads_data);
       leads_data = leads_data.filter((a: User) => a.user_role !== 'manager' && a.archived !== true);
       console.log('leads_data')
       console.log(leads_data)
@@ -661,14 +666,14 @@ return (
             return (
               <div key={`reports_department_${dep.id}`}>
                 <div className="flex">
-                  <h3>{dep.name}</h3>
+                  <h3>{dep.name} {user?.department === dep.name && ('(Your Department)')}</h3>
                   {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).filter((report: Report) => {
-  return report.name
-    .toLowerCase()
-    .includes(reportSearch.toLowerCase()) || report.source
-    .toLowerCase()
-    .includes(reportSearch.toLowerCase());
-}).length === 0 ? (
+                        return report.name
+                          .toLowerCase()
+                          .includes(reportSearch.toLowerCase()) || report.source
+                          .toLowerCase()
+                          .includes(reportSearch.toLowerCase());
+                      }).length === 0 ? (
                     <div className="flex j-s-b">
                       <span>- no reports</span>
                       <div className="button-d-bl-sm add-report" onClick={() => {
@@ -698,25 +703,26 @@ return (
                     <div>
                       <div>EDIT</div>
                       {/* <div>SAVE</div> */}
-                      <div>REPORTS</div>
+                      <div>REPORT</div>
                       <div>SOURCE</div>
                       <div>PERIOD</div>
-                      <div>DAY TIME</div>
+                      <div style={{textAlign: 'left'}}>DAY TIME</div>
                       <div>METRIC</div>
                       <div>DEFAULT HOLDER</div>
                       {/* <div>ASSIGNED TO</div> */}
                       <div>DELETE</div>
                     </div>
                     {reports.map((r: Report) => {
-if (
-  !r.archived &&
-  reportMatchesSearch(r) &&
-  (
-    (r.assigned_to.department.assigned === true &&
-      r.assigned_to.department.list.indexOf(dep.id) !== -1) ||
-    r.assigned_to.all.assigned === true
-  )
-) {                        return (
+                      if (
+                        !r.archived &&
+                        reportMatchesSearch(r) &&
+                        (
+                          (r.assigned_to.department.assigned === true &&
+                            r.assigned_to.department.list.indexOf(dep.id) !== -1) ||
+                          r.assigned_to.all.assigned === true
+                        )
+                      ) {                        
+                        return (
                           <div className="report" key={`report_${r.id}`} id={`report_${r.id}`} >
                             <div>
                               {r.edit}
@@ -787,19 +793,40 @@ if (
                               </div>
                             </div>
                             <div>
-                              <div>
-                                <div className="show" style={{gap: '8px', display: 'flex'}}>
-                                  <div>{r.once_per}</div>
+                                <div className="show" style={{gap: '3px', display: 'flex', flexWrap: 'wrap', margin: 'auto 0', textAlign: "left", lineHeight: 1.2}}>
+                                  {r.once_per === 'day' && (<div style={{flexBasis: '100%', width: 'max-content'}}>Every {capitalize(r.once_per ?? "")}</div>)}
                                   {r.once_per !== 'day' && 
-                                    (<div style={{display: 'flex', gap: "6px"}}><div>at</div> {r.once_per === 'week' ? weekDays
-          .filter((_, i) => Number(r.start_at_day || 0) & (1 << i))
-          .map(day => day.small)
-          .join(', ') : r.start_at_day}
-                                      {r.once_per === 'month' && ''}
+                                    (<div style={{display: 'flex', gap: "6px", flexBasis: '100%'}}>
+                                        Every
+                                        {" "}
+                                        {capitalize(r.once_per ?? "")}
+                                        {" "}
+                                        {r.default_holder_id && `by ${allUsers.find((user_local: User) => user_local.id === r.default_holder_id)?.name ?? "-"}`}
+                                        {``}
+                                        {" "}
+                                        at
+                                        {" "}
+                                        {r.once_per === 'week' ? weekDays
+                                        .filter((_, i) => Number(r.start_at_day || 0) & (1 << i))
+                                        .map(day => day.small)
+                                        .join(', ') : r.start_at_day}
+                                        {r.once_per === 'month' && ''}
                                     </div>)}
+                                  {r.once_per === 'week' && r.backup_holder_id && (r.backup_start_at_day ?? 0) !== 0 && (
+                                    (<div style={{display: 'flex', gap: "6px", flexBasis: '100%', width: '100%', textAlign: "left", fontWeight: 600}}>
+                                      Backup by
+                                      {" "}
+                                      {allUsers.find((user_local: User) => user_local.id === r.backup_holder_id)?.name ?? "-"}
+                                      {" "}at{" "}
+                                      {weekDays
+                                        .filter((_, i) => Number(r.backup_start_at_day || 0) & (1 << i))
+                                        .map(day => day.small)
+                                        .join(', ')}
+                                    </div>)
+                                  )}
                                   {r.once_per === 'month' && 'day'}
                                 </div>
-                                <div className="edit" style={{gap: '8px', display: 'flex'}}>
+                                <div className="edit" style={{gap: '3px', display: 'flex', flexDirection: r.once_per === "week" ? 'column' : 'row'}} >
                                   <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
                                     if (e.target.value === 'week') {
                                       changeReports({...r, once_per: e.target.value, start_at_day: '1'})
@@ -812,40 +839,137 @@ if (
                                     <option value="week">Week</option>
                                     <option value="month">Month</option>
                                   </select>
-                                  {r.once_per !== 'day' && (<div style={{height: 'min-content'}}>At</div>)}
                                   {r.once_per === 'week' && (
-                                    <div>
-                                      {weekDays.map((day: { full: string; small: string }, i: number) => {
-                                        const dayNumber = i + 1;
-                                        const dayBit = 1 << (dayNumber - 1);
-
-                                        return (
-                                          <label
-                                            key={`select_weekDay_${i}`}
-                                            className="week_day_select"
-                                          >
-                                            <span>{day.small}</span>
-
-                                            <input
-                                              type="checkbox"
-                                              name="select_weekDay"
-                                              checked={(Number(r.start_at_day || 0) & dayBit) !== 0}
+                                    <div style={{flexDirection: 'column'}}>
+                                      <div style={{display: 'flex', flexDirection: 'column', marginTop: '5px'}} className="flex input">
+                                        <div style={{display: 'flex', gap: '5px'}}>
+                                          <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>Main Holder</span>
+                                          <select
+                                            style={{width: '100%', margin: '5px 0'}}
+                                              value={r.default_holder_id ?? ''}
                                               onChange={(e) => {
-                                                const currentMask = Number(r.start_at_day || 0);
-
-                                                const newMask = e.target.checked
-                                                  ? currentMask | dayBit
-                                                  : currentMask & ~dayBit;
-
                                                 changeReports({
                                                   ...r,
-                                                  start_at_day: newMask.toString(),
+                                                  default_holder_id: e.target.value,
                                                 });
                                               }}
-                                            />
-                                          </label>
-                                        );
-                                      })}
+                                            >
+                                              <option value="">-</option>
+
+                                              {leads
+                                                .filter((lead: User) => lead.department === dep.name)
+                                                .map((lead: User) => (
+                                                  <option key={lead.id} value={lead.id}>
+                                                    {lead.name}
+                                                  </option>
+                                                ))}
+                                          </select>
+                                        </div>
+                                        <div>
+                                          {weekDays.map((day: { full: string; small: string }, i: number) => {
+                                          const dayNumber = i + 1;
+                                          const dayBit = 1 << (dayNumber - 1);
+
+                                          return (
+                                            <label
+                                              key={`select_weekDay_${i}`}
+                                              className="week_day_select"
+                                            >
+                                              <span>{day.small}</span>
+
+                                              <input
+                                                type="checkbox"
+                                                name="select_weekDay"
+                                                checked={(Number(r.start_at_day || 0) & dayBit) !== 0}
+                                                onChange={(e) => {
+                                                  const currentMask = Number(r.start_at_day || 0);
+                                                    const backupMask = Number(r.backup_start_at_day || 0);
+
+                                                    const newMask = e.target.checked
+                                                      ? currentMask | dayBit
+                                                      : currentMask & ~dayBit;
+
+                                                    const newBackupMask = e.target.checked
+                                                      ? backupMask & ~dayBit
+                                                      : backupMask;
+
+                                                    changeReports({
+                                                      ...r,
+                                                      start_at_day: newMask.toString(),
+                                                      backup_start_at_day: newBackupMask.toString(),
+                                                    });
+                                                }}
+                                              />
+                                            </label>
+                                          );
+                                        })}
+                                        </div>
+                                      </div>
+                                      <div style={{display: 'flex', flexDirection: 'column', flexWrap: 'wrap', textAlign: 'left', marginTop: '3px'}} className="input">
+                                        <label style={{display: 'flex', flexDirection: "column"}}>
+                                          <div style={{display: 'flex', gap: '5px'}}>
+                                            <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>Backup Holder</span>
+                                            <select
+                                              style={{margin: '5px 0', flex: 1}}
+                                              value={r.backup_holder_id ?? ''}
+                                              onChange={(e) => {
+                                                changeReports({
+                                                  ...r,
+                                                  backup_holder_id: e.target.value,
+                                                });
+                                              }}
+                                            >
+                                              <option value="">-</option>
+
+                                              {leads
+                                                .filter((lead: User) => lead.department === dep.name && lead.id !== r.default_holder_id)
+                                                .map((lead: User) => (
+                                                  <option key={lead.id} value={lead.id}>
+                                                    {lead.name}
+                                                  </option>
+                                                ))}
+                                            </select>
+                                          </div>
+                                        </label>
+                                        <div>
+                                          {weekDays.map((day: { full: string; small: string }, i: number) => {
+                                          const dayNumber = i + 1;
+                                          const dayBit = 1 << (dayNumber - 1);
+
+                                          return (
+                                            <label
+                                              key={`select_weekDay_${i}`}
+                                              className="week_day_select"
+                                            >
+                                              <span>{day.small}</span>
+
+                                              <input
+                                                type="checkbox"
+                                                name="select_weekDay"
+                                                checked={(Number(r.backup_start_at_day || 0) & dayBit) !== 0}
+                                                onChange={(e) => {
+                                                  const currentMask = Number(r.backup_start_at_day || 0);
+                                                  const mainMask = Number(r.start_at_day || 0);
+
+                                                  const newMask = e.target.checked
+                                                    ? currentMask | dayBit
+                                                    : currentMask & ~dayBit;
+                                                  const newMainMask = e.target.checked
+                                                    ? mainMask & ~dayBit
+                                                    : mainMask;
+
+                                                  changeReports({
+                                                    ...r,
+                                                    backup_start_at_day: newMask.toString(),
+                                                    start_at_day: newMainMask.toString(),
+                                                  });
+                                                }}
+                                              />
+                                            </label>
+                                          );
+                                        })}
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                   {r.once_per === 'month' && (
@@ -854,7 +978,6 @@ if (
                                     </select>
                                   )}
                                   {r.once_per === 'month' && 'day'}
-                                </div>
                               </div>
                             </div>
                             <div>
@@ -893,14 +1016,15 @@ if (
                               
                             </div>
                             <div>
-                              <div className="show">
+                              <div className="show" style={{width: '100%'}}>
                                 {leads.find(
                                   (lead: User) => lead.id === r.default_holder_id
                                 )?.name || '-'}
                               </div>
 
-                              <div className="edit">
+                              <div className="edit" style={{width: '100%'}}>
                                 <select
+                                style={{width: '100%'}}
                                   value={r.default_holder_id ?? ''}
                                   onChange={(e) => {
                                     changeReports({
@@ -932,7 +1056,7 @@ if (
                               }}>Set</div>
                             </div> */}
                             <div>
-                              <div style={{margin: '0 auto'}} className="button-r-sm" onClick={() => {
+                              <div style={{margin: 'auto auto auto 0', height: 'min-content'}} className="button-r-sm" onClick={() => {
                                 if (!user?.permissions.edit_reports){
                                   toast.error("You don't have permissions for this action.")
                                   return;

@@ -6,8 +6,26 @@ import { Department, ProductionRow } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { format, toDate } from "date-fns";
 import './page.css'
-import DatePicker from "react-datepicker";
-import { getTestEmployees } from "@/lib/config";
+import {
+    DateRangePicker,
+    createStaticRanges,
+    type Range,
+    type RangeKeyDict,
+} from "react-date-range";
+import {
+    startOfDay,
+    endOfDay,
+    subDays,
+    subWeeks,
+    subMonths,
+    startOfWeek,
+    endOfWeek,
+    startOfMonth,
+    endOfMonth,
+} from "date-fns";
+
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";import { getTestEmployees } from "@/lib/config";
 import getColorsFromName from "@/lib/color";
 import { toast } from "sonner";
 
@@ -26,6 +44,62 @@ export default function ProductionDashboard() {
     seven_days_ago.setDate(yesterday.getDate() - 7)
     const [dateFrom, setDateFrom] = useState(seven_days_ago)
     const [dateTo, setDateTo] = useState(yesterday)
+    const [showDateRange, setShowDateRange] = useState(false);
+
+const [draftRange, setDraftRange] = useState<Range>({
+    startDate: dateFrom,
+    endDate: dateTo,
+    key: "selection",
+});
+
+const datePresets = createStaticRanges([
+    {
+        label: "Today",
+        range: () => ({
+            startDate: startOfDay(new Date()),
+            endDate: endOfDay(new Date()),
+        }),
+    },
+    {
+        label: "Yesterday",
+        range: () => ({
+            startDate: startOfDay(subDays(new Date(), 1)),
+            endDate: endOfDay(subDays(new Date(), 1)),
+        }),
+    },
+    {
+        label: "Last 7 Days",
+        range: () => ({
+            startDate: startOfDay(subDays(new Date(), 6)),
+            endDate: endOfDay(new Date()),
+        }),
+    },
+    {
+        label: "Last Week",
+        range: () => ({
+            startDate: startOfWeek(subWeeks(new Date(), 1), {
+                weekStartsOn: 1,
+            }),
+            endDate: endOfWeek(subWeeks(new Date(), 1), {
+                weekStartsOn: 1,
+            }),
+        }),
+    },
+    {
+        label: "Last 30 Days",
+        range: () => ({
+            startDate: startOfDay(subDays(new Date(), 29)),
+            endDate: endOfDay(new Date()),
+        }),
+    },
+    {
+        label: "Last Month",
+        range: () => ({
+            startDate: startOfMonth(subMonths(new Date(), 1)),
+            endDate: endOfMonth(subMonths(new Date(), 1)),
+        }),
+    },
+]);
     const [employee, setEmployee] = useState('')
     const [department, setDeparment] = useState('')
     const [showOnlyWithNotes, setShowOnlyWithNotes] = useState(false);
@@ -66,14 +140,89 @@ export default function ProductionDashboard() {
             {loading ? (<Loader></Loader>) : 
                 (<div className="production-dashboard">
                     <div>
-                        <label>
-                            <span>From Date</span>
-                            <DatePicker className="picker" selected={dateFrom} onChange={(d: Date | null) => d && setDateFrom(d)} dateFormat={'MM-dd-yyyy'}></DatePicker>
-                        </label>
-                        <label>
-                            <span>To Date</span>
-                            <DatePicker className="picker" selected={dateTo} onChange={(d: Date | null) => d && setDateTo(d)} dateFormat={'MM-dd-yyyy'}></DatePicker>
-                        </label>
+                        <div className="production-date-range">
+    <label>
+        <span>Timeframe</span>
+
+        <button
+            type="button"
+            className="production-date-range-trigger input"
+            onClick={() => {
+                setDraftRange({
+                    startDate: dateFrom,
+                    endDate: dateTo,
+                    key: "selection",
+                });
+                setShowDateRange(prev => !prev);
+            }}
+        >
+            📅 {format(dateFrom, "MMMM d, yyyy")}
+            {" - "}
+            {format(dateTo, "MMMM d, yyyy")}
+        </button>
+    </label>
+
+    {showDateRange && (
+        <>
+            <div
+                className="production-date-range-backdrop"
+                onClick={() => setShowDateRange(false)}
+            />
+
+            <div className="production-date-range-popup">
+                <DateRangePicker
+                    ranges={[draftRange]}
+                    onChange={(ranges: RangeKeyDict) => {
+                        setDraftRange(ranges.selection);
+                    }}
+                    months={2}
+                    direction="horizontal"
+                    moveRangeOnFirstSelection={false}
+                    dragSelectionEnabled={true}
+                    showDateDisplay={false}
+                    showMonthAndYearPickers={true}
+                    rangeColors={["#204d70"]}
+                    staticRanges={datePresets}
+                    inputRanges={[]}
+                    weekdayDisplayFormat="EEE"
+                    monthDisplayFormat="MMMM yyyy"
+                />
+
+                <div className="production-date-range-footer">
+                    <button
+                        type="button"
+                        onClick={() => setShowDateRange(false)}
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const from = draftRange.startDate;
+                            const to = draftRange.endDate;
+
+                            if (!from || !to) return;
+
+                            if (from > to) {
+                                toast.error(
+                                    "Please select a start date before the end date"
+                                );
+                                return;
+                            }
+
+                            setDateFrom(from);
+                            setDateTo(to);
+                            setShowDateRange(false);
+                        }}
+                    >
+                        Select
+                    </button>
+                </div>
+            </div>
+        </>
+    )}
+</div>
                         <label>
                             <span>Employee</span>
                             <select defaultValue={employee} onChange={(e) => setEmployee(e.target.value)}>

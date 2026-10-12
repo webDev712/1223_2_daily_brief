@@ -89,10 +89,11 @@
 .reports .table-reports > div > * {
     flex: 5;
     padding: 0 5px;
+    display: flex;
 }
 
 .reports .table-reports > div > :nth-child(4){
-        flex: 3;
+    flex: 5;
     text-align: center;
     padding: 0 10;
 }
@@ -160,10 +161,23 @@
 
 .reports .table-reports > .report > div:nth-child(5) .show{
     text-transform: capitalize;
+    padding-left: 0;
+    text-align: left;
+    width: 100%;
 }
 
 .reports .table-reports > .report .show{
     padding-left: 11px;
+    margin: auto 0;
+}
+
+.reports .table-reports > .report > div:nth-child(6) .show,
+.reports .table-reports > .report > div:nth-child(3) .show{
+    text-align: left;
+}
+
+.reports .table-reports > .report .edit{
+    margin: auto 0;
 }
 
 .reports .table-reports > .report .edit input,
@@ -318,8 +332,8 @@
 .reports .week_day_select{
     background-image: url('../../../public/checkbox_0.svg');
     background-size: 10px;
-    background-position: left center;
-    padding-left: 15px;
+    background-position: top center;
+    padding-top: 7px;
     width: max-content;
     cursor: pointer;
 }
@@ -349,8 +363,9 @@
 
 .reports div:has( > .week_day_select){
     display: flex;
-    flex-direction: column;
+    flex-direction: row !important;
     width: max-content;
+    gap: 5px;
 }
 
 .reports .metric_range input{

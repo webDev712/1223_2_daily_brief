@@ -14,14 +14,32 @@ import UserCircle from '@/app/src/components/UserCircle';
 import formatDateWithoutTimezone from '@/lib/date';
 import { toast } from 'sonner';
 import { sendMessageGlobal } from '@/app/src/components/Chat';
-
+import {
+    DateRangePicker,
+    createStaticRanges,
+    type Range,
+    type RangeKeyDict,
+} from "react-date-range";
+import {
+    startOfDay,
+    endOfDay,
+    subDays,
+    subWeeks,
+    subMonths,
+    startOfWeek,
+    endOfWeek,
+    startOfMonth,
+    endOfMonth,
+} from "date-fns";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 export default function ActionTracker () {
     const [reload, setReload] = useState(0);
     const [loading, setLoading] = useState(true);
     const user = useUser();
     
-    const [filters, setFilters] = useState({
+    const defaultFilters = {
         fromDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         toDate: new Date(),
         status: '',
@@ -29,7 +47,8 @@ export default function ActionTracker () {
         department: '',
         severity: '',
         category: '',
-    });
+    }
+    const [filters, setFilters] = useState(defaultFilters);
     const [filtersData, setFiltersData] = useState<FiltersData>();
     const [page, setPage] = useState(1);
     const pageSize = 20;
@@ -44,6 +63,60 @@ export default function ActionTracker () {
     const [showResolve, setShowResolve] = useState(false);
     const [rowToResolve, setRowToResolve] = useState<DailyLogRow | null>(null);
 
+    const datePresets = createStaticRanges([
+    {
+        label: "Today",
+        range: () => ({
+            startDate: startOfDay(new Date()),
+            endDate: endOfDay(new Date()),
+        }),
+    },
+    {
+        label: "Yesterday",
+        range: () => ({
+            startDate: startOfDay(subDays(new Date(), 1)),
+            endDate: endOfDay(subDays(new Date(), 1)),
+        }),
+    },
+    {
+        label: "Last 7 Days",
+        range: () => ({
+            startDate: startOfDay(subDays(new Date(), 6)),
+            endDate: endOfDay(new Date()),
+        }),
+    },
+    {
+        label: "Last Week",
+        range: () => ({
+            startDate: startOfWeek(subWeeks(new Date(), 1), {
+                weekStartsOn: 1,
+            }),
+            endDate: endOfWeek(subWeeks(new Date(), 1), {
+                weekStartsOn: 1,
+            }),
+        }),
+    },
+    {
+        label: "Last 30 Days",
+        range: () => ({
+            startDate: startOfDay(subDays(new Date(), 29)),
+            endDate: endOfDay(new Date()),
+        }),
+    },
+    {
+        label: "Last Month",
+        range: () => ({
+            startDate: startOfMonth(subMonths(new Date(), 1)),
+            endDate: endOfMonth(subMonths(new Date(), 1)),
+        }),
+    },
+]);
+    const [draftRange, setDraftRange] = useState<Range>({
+        startDate: filters.fromDate,
+        endDate: filters.toDate,
+        key: "selection",
+    });
+    
     const defaultNewAuditLogRow = {
         date: new Date().toISOString(),
         user_id: user.id,
@@ -121,6 +194,7 @@ export default function ActionTracker () {
         setReload(reload + 1);
         toast.success('Deleted Action Tracker row.')
     }
+    const [showDateRange, setShowDateRange] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -158,6 +232,10 @@ export default function ActionTracker () {
                 return;
             }  
             let users_data = await users_res.json();
+            if (users_data.length > 0) {
+                setAuditLogRowToAdd({...auditLogRowToAdd, user_id: users_data[0].id})
+            }
+
             setUsers(users_data);
 
             setLoading(false);
@@ -169,22 +247,34 @@ export default function ActionTracker () {
             {loading ? (<Loader></Loader>) : (
                 <div className="action-tracker">
                     <div className='four-block'>
-                        <div img-id="tasks-red">
+                        <div img-id="tasks-red" onClick={() => {
+                            setFilters(prev => {return {...defaultFilters, status: 'Unset'}});
+                            setReload(reload + 1);
+                            }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "Unset").length}</h1>
                             <div>Issues/Observations</div>
                             <span>With "Unset" status</span>
                         </div>
-                        <div img-id="document-yellow">
+                        <div img-id="document-yellow" onClick={() => {
+                            setFilters(prev => {return {...defaultFilters, status: 'In progress'}});
+                            setReload(reload + 1);
+                            }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "In progress").length}</h1>
                             <div>Issues/Observations</div>
                             <span>With "In Progress" status</span>
                         </div>
-                        <div img-id="document-green">
+                        <div img-id="document-green" onClick={() => {
+                            setFilters(prev => {return {...defaultFilters, status: 'Resolved'}});
+                            setReload(reload + 1);
+                            }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "Resolved").length}</h1>
                             <div>Issues/Observations</div>
                             <span>With "Resolved" status</span>
                         </div>
-                        <div img-id="error-yellow">
+                        <div img-id="error-yellow" onClick={() => {
+                            setFilters(prev => {return {...defaultFilters, severity: 'High'}});
+                            setReload(reload + 1);
+                            }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.severity === "High").length}</h1>
                             <div>Issues/Observations</div>
                             <span>With "High" severity</span>
@@ -193,21 +283,93 @@ export default function ActionTracker () {
                     <div>
                         <div>
                             <label>
-                                <span>From Date</span>
-                                <DatePicker className="picker" selected={filters.fromDate} onChange={(d: Date | null) => d && setFilters({...filters, fromDate: d})} dateFormat={'MM-dd-yyyy'}></DatePicker>
-                            </label>
-                            <label>
-                                <span>To Date</span>
-                                <DatePicker className="picker" selected={filters.toDate} onChange={(d: Date | null) => d && setFilters({...filters, toDate: d})} dateFormat={'MM-dd-yyyy'}></DatePicker>
+                                <span>Timeframe</span>
 
+                                <button
+                                    type="button"
+                                    className="production-date-range-trigger input"
+                                    onClick={() => {
+                                        setDraftRange({
+                                            startDate: filters.fromDate,
+                                            endDate: filters.toDate,
+                                            key: "selection",
+                                        });
+                                        setShowDateRange(prev => !prev);
+                                    }}
+                                >
+                                    📅 {format(filters.fromDate, "MMMM d, yyyy")}
+                                    {" - "}
+                                    {format(filters.toDate, "MMMM d, yyyy")}
+                                </button>
                             </label>
+
+                            {showDateRange && (
+                                <>
+                                    <div
+                                        className="production-date-range-backdrop"
+                                        onClick={() => setShowDateRange(false)}
+                                    />
+
+                                    <div className="production-date-range-popup">
+                                        <DateRangePicker
+                                            ranges={[draftRange]}
+                                            onChange={(ranges: RangeKeyDict) => {
+                                                setDraftRange(ranges.selection);
+                                            }}
+                                            months={2}
+                                            direction="horizontal"
+                                            moveRangeOnFirstSelection={false}
+                                            dragSelectionEnabled={true}
+                                            showDateDisplay={false}
+                                            showMonthAndYearPickers={true}
+                                            rangeColors={["#204d70"]}
+                                            staticRanges={datePresets}
+                                            inputRanges={[]}
+                                            weekdayDisplayFormat="EEE"
+                                            monthDisplayFormat="MMMM yyyy"
+                                        />
+
+                                        <div className="production-date-range-footer">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDateRange(false)}
+                                            >
+                                                Cancel
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const from = draftRange.startDate;
+                                                    const to = draftRange.endDate;
+
+                                                    if (!from || !to) return;
+
+                                                    if (from > to) {
+                                                        toast.error(
+                                                            "Please select a start date before the end date"
+                                                        );
+                                                        return;
+                                                    }
+
+                                                    setFilters(prev => {return {...prev, fromDate: from}});
+                                                    setFilters(prev => {return {...prev, toDate: to}});
+                                                    setShowDateRange(false);
+                                                }}
+                                            >
+                                                Select
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                             <label>
                                 <span>Status</span>
                                 <select value={filters.status} onChange={(e) => {setFilters({...filters, status: e.target.value})}}>
                                     <option value=''>All</option>
-                                    {filtersData?.statuses.map((status: string) => (
-                                        <option value={status} key={`status_${status}`}>{capitalize(status)}</option>
-                                    ))}
+                                    <option value="Unset" key="status_Unset">Unset</option>
+                                    <option value="In Progress" key="status_In_Progress">In Progress</option>
+                                    <option value="Resolved" key="status_Resolved">Resolved</option>
                                 </select>
                             </label>
                             <label>
@@ -333,6 +495,14 @@ export default function ActionTracker () {
                                         sendActionTrackerRow(auditLogRowToAdd);
                                     }}>
                                         <label>
+                                            <div>Employee</div>
+                                            <select value={auditLogRowToAdd.user_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, user_id: e.target.value})}}>
+                                                {users.map((user: User) => (
+                                                    <option value={user.id} key={`add_io_user_${user.id}`}>{user.name}</option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <label>
                                             <div>Department</div>
                                             <select value={auditLogRowToAdd.department_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, department_id: e.target.value})}}>
                                                 {departments.map((department: Department) => (
@@ -373,7 +543,7 @@ export default function ActionTracker () {
                                             <div>Severity</div>
                                             <select value={auditLogRowToAdd.severity} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, severity: e.target.value})}}>
                                                 <option value="Low">Low</option>
-                                                <option value="Mid">Mid</option>
+                                                <option value="Med">Med</option>
                                                 <option value="High">High</option>
                                             </select>
                                         </label>

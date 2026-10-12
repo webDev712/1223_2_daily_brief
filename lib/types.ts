@@ -55,6 +55,8 @@ export interface Report {
   department_id?: number;
   holder_id?: string;
   default_holder_id?: string;
+  backup_start_at_day?: string;
+  backup_holder_id?: string;
 }
 
 export interface Finding {

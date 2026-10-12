@@ -54,6 +54,10 @@
     cursor: pointer;
 }
 
+.action-tracker > div:nth-child(2) > div:first-child > label:first-child > :nth-child(2){
+    padding-right: 30px;
+}
+
 .action-tracker > div:nth-child(2) > div:first-child > label > :nth-child(2) input{
     padding: 4px 10px;
     width: 100% !important;
@@ -533,6 +537,35 @@
     padding-left: 20px;
 }
 
+
+.action-tracker .confirm.add-issue-or-observation > div > div:nth-child(2) > form > label:first-child {
+    grid-column: 1 / -1;
+}
+
+.action-tracker .production-date-range-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}
+
+.action-tracker .production-date-range-popup {
+  position: absolute;
+  top: 380px;
+  left: 10px;
+  z-index: 9999;
+  transform: translateX(100px);
+
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
 /* .action-tracker .a-table .resolve-button::before{
     content: 'Click here to resolve!';
     position: absolute;

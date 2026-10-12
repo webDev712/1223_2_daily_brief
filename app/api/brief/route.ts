@@ -140,54 +140,56 @@ export async function POST(request: Request) {
             `
         }
 
-       const reports_rows = await sql`
-    SELECT r.*
-    FROM report r
-    JOIN website_user u
-        ON u.id = ${lead_id}::uuid
-        AND u.company_id = ${company_id}
-    WHERE r.company_id = ${company_id}
-      AND r.archived = FALSE
+const reports_rows = await sql`
+    WITH params AS (
+        SELECT
+            EXTRACT(DOW FROM ${date}::date)::integer AS dow,   -- вс=0 ... сб=6
+            EXTRACT(DAY FROM ${date}::date)::integer AS dom
+    ),
+    candidates AS (
+        SELECT
+            r.*,
+            CASE
+                WHEN r.once_per = 'day'
+                    THEN r.default_holder_id
 
-      -- Report is scheduled for this date
-      AND (
-          r.once_per = 'day'
+                WHEN r.once_per = 'week'
+                    AND (COALESCE(r.start_at_day, 0) & (1 << p.dow)) <> 0
+                    THEN r.default_holder_id
+                WHEN r.once_per = 'week'
+                    AND (COALESCE(r.backup_start_at_day, 0) & (1 << p.dow)) <> 0
+                    THEN r.backup_holder_id
 
-          OR (
-              r.once_per = 'week'
-              AND (
-                  r.start_at_day
-                  & (
-                      1 << (
-                          EXTRACT(ISODOW FROM ${date}::date)::integer - 1
-                      )
-                  )
-              ) <> 0
-          )
-
-          OR (
-              r.once_per = 'month'
-              AND EXTRACT(DAY FROM ${date}::date) = r.start_at_day::integer
-          )
-      )
-
-      -- Report is assigned to this department / all
-      AND (
-          r.assigned_to->'all'->>'assigned' = 'true'
-
-          OR (
-              r.assigned_to->'department'->>'assigned' = 'true'
-              AND r.assigned_to->'department'->'list'
-                  @> jsonb_build_array(u.department_id::text)
-          )
-      );
+                WHEN r.once_per = 'month'
+                    AND r.start_at_day::integer = p.dom
+                    THEN r.default_holder_id
+            END AS assigned_holder_id
+        FROM report r
+        CROSS JOIN params p
+        JOIN website_user u
+            ON u.id = ${lead_id}::uuid
+            AND u.company_id = ${company_id}
+        WHERE r.company_id = ${company_id}
+            AND r.archived = FALSE
+            AND (
+                r.assigned_to->'all'->>'assigned' = 'true'
+                OR (
+                    r.assigned_to->'department'->>'assigned' = 'true'
+                    AND r.assigned_to->'department'->'list'
+                        @> jsonb_build_array(u.department_id::text)
+                )
+            )
+    )
+    SELECT *
+    FROM candidates
+    WHERE assigned_holder_id IS NOT NULL;
 `;
         console.log('REPORTS TO CREATE:', reports_rows);
         await Promise.all(
             reports_rows.map((r) =>
                 sql`
                 INSERT INTO saved_report (text, name, source, checked, day_time, company_id, metric, metric_range_from, metric_range_to, department_id, holder_id, date, report_id)
-                VALUES ('', ${r.name}, ${r.source}, FALSE, ${r.day_time}, ${r.company_id}, ${r.metric}, ${r.metric_range_from}, ${r.metric_range_to}, ${r.department_id}, ${r.holder_id ?? r.default_holder_id}, ${date}, ${r.id} )
+                VALUES ('', ${r.name}, ${r.source}, FALSE, ${r.day_time}, ${r.company_id}, ${r.metric}, ${r.metric_range_from}, ${r.metric_range_to}, ${r.department_id}, ${r.assigned_holder_id}, ${date}, ${r.id} )
                 ON CONFLICT (report_id, date)
                 DO NOTHING;
                 `

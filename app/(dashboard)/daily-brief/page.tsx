@@ -88,7 +88,7 @@ export default function DailyBrief() {
       body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd"), created_at: new Date()}),
     });
     if (res.status === 200) setReload(prev => prev + 1);
-    toast.info(`Don't forget to select you shift.`);
+    toast.info(`Don't forget to select your shift.`);
   }
 
   const submitBrief = async (b: any) => {
@@ -644,7 +644,18 @@ export default function DailyBrief() {
                         {reports_sorted.filter((r: Report) => r.holder_id === user.id).map(
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report border-top reports-you-took' : 'report'} key={r.id}>
-                              <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} />
+                              <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {
+                                if (r.metric?.toLowerCase() === 'metric' && r.text === ''){
+                                  toast.error('Please, input report value first.');
+                                  return;
+                                }
+                                if (r.metric?.toLowerCase() === 'count' && r.text === ''){
+                                  toast.error('Please, input report value first.');
+                                  return;
+                                }
+
+                                updateReports(b, r, !r.checked);
+                              }} />
                               <div>{r.name}</div>
                               <div>{capitalize(r.day_time)}</div>
                               <div>{r.source}</div>
@@ -677,18 +688,20 @@ export default function DailyBrief() {
                                             let value = e.target.value;
                                             let start_value = e.target.value;
 
-                                            if (
-                                                r.metric_range_from != null &&
-                                                Number(value) < Number(r.metric_range_from)
-                                            ) {
-                                                value = String(r.metric_range_from);
-                                            }
-
-                                            if (
-                                                r.metric_range_to != null &&
-                                                Number(value) > Number(r.metric_range_to)
-                                            ) {
-                                                value = String(r.metric_range_to);
+                                            if (value !== ''){
+                                              if (
+                                                  r.metric_range_from != null &&
+                                                  Number(value) < Number(r.metric_range_from)
+                                              ) {
+                                                  value = String(r.metric_range_from);
+                                              }
+  
+                                              if (
+                                                  r.metric_range_to != null &&
+                                                  Number(value) > Number(r.metric_range_to)
+                                              ) {
+                                                  value = String(r.metric_range_to);
+                                              }
                                             }
 
                                             updateReports(
