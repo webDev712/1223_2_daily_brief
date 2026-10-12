@@ -148,6 +148,8 @@ export default function Reports() {
 
         return a.name.localeCompare(b.name);
       });
+      console.log('departments_data')
+      console.log(departments_data)
 
       setDeparments(departments_data)
 
@@ -160,8 +162,8 @@ export default function Reports() {
         return;
       }
       let reports_data = await reports_res.json();
-      console.log(`reports_data.filter((report: any) => report.name === 'TEST')`)
-      console.log(reports_data.filter((report: any) => report.name === 'TEST'))
+      console.log(`reports_data`)
+      console.log(reports_data)
       setReports(reports_data)
 
       reports_data.forEach((report: Report) => {

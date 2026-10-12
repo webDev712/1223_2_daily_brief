@@ -85,6 +85,7 @@ export default function DailyBrief() {
       headers: {
         "Content-Type": "application/json",
       },
+      // body: JSON.stringify({lead_id: '70f17f42-a21d-427b-9020-846177458e85', lead_letter: 'S', lead_name: "Serafin", date: format(date, "yyyy-MM-dd"), created_at: new Date()}),
       body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd"), created_at: new Date()}),
     });
     if (res.status === 200) setReload(prev => prev + 1);

@@ -149,21 +149,13 @@ const reports_rows = await sql`
     candidates AS (
         SELECT
             r.*,
-            CASE
-                WHEN r.once_per = 'day'
-                    THEN r.default_holder_id
-
-                WHEN r.once_per = 'week'
-                    AND (COALESCE(r.start_at_day, 0) & (1 << p.dow)) <> 0
-                    THEN r.default_holder_id
-                WHEN r.once_per = 'week'
-                    AND (COALESCE(r.backup_start_at_day, 0) & (1 << p.dow)) <> 0
-                    THEN r.backup_holder_id
-
-                WHEN r.once_per = 'month'
-                    AND r.start_at_day::integer = p.dom
-                    THEN r.default_holder_id
-            END AS assigned_holder_id
+            (r.once_per = 'week'
+                AND (COALESCE(r.start_at_day, 0) & (1 << p.dow)) <> 0) AS is_default_day,
+            (r.once_per = 'week'
+                AND r.backup_holder_id IS NOT NULL
+                AND (COALESCE(r.backup_start_at_day, 0) & (1 << p.dow)) <> 0) AS is_backup_day,
+            (r.once_per = 'month'
+                AND r.start_at_day::integer = p.dom) AS is_month_day
         FROM report r
         CROSS JOIN params p
         JOIN website_user u
@@ -180,9 +172,18 @@ const reports_rows = await sql`
                 )
             )
     )
-    SELECT *
-    FROM candidates
-    WHERE assigned_holder_id IS NOT NULL;
+    SELECT
+        c.*,
+        CASE
+            WHEN c.is_default_day THEN c.default_holder_id
+            WHEN c.is_backup_day  THEN c.backup_holder_id
+            ELSE c.default_holder_id            -- day / month
+        END AS assigned_holder_id
+    FROM candidates c
+    WHERE c.once_per = 'day'
+       OR c.is_default_day
+       OR c.is_backup_day
+       OR c.is_month_day;
 `;
         console.log('REPORTS TO CREATE:', reports_rows);
         await Promise.all(
