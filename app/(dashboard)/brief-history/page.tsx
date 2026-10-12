@@ -157,7 +157,7 @@ export default function BriefHistory() {
                     return (
                       <label key={b.id}>
                         <div>
-                          <div>{isToday ? 'Today' : format(briefDate, 'MMM d')} {b?.created_at && format(b.created_at, 'hh:mm a')}</div>
+                          <div>{isToday ? 'Today' : format(briefDate, 'MMM d')} {b?.created_at && format(new Date(b.created_at), 'hh:mm a')}</div>
                           <span>{format(briefDate, 'MMMM d, yyyy')}</span>
                         </div>
                         <div>
@@ -192,7 +192,7 @@ export default function BriefHistory() {
                             <div key={`finding_show_${finding.id}`}>
                               <div className={finding.type}></div>
                               <div>{finding.description}</div>
-                              <div>{format(finding.created_at, 'hh:mm aa')}</div>
+                              <div>{format(new Date(finding.created_at), 'hh:mm aa')}</div>
                             </div>
                           )) : (
                             <h1>No Findings in this brief</h1>

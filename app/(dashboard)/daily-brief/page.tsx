@@ -531,7 +531,7 @@ export default function DailyBrief() {
                           <div>{format(
                               parse(b.date, "yyyy-MM-dd", new Date()),
                               "MMMM d, yyyy"
-                          )} {b?.created_at && format(b.created_at, 'hh:mm a')}</div>
+                          )} {b?.created_at && format(new Date(b.created_at), 'hh:mm a')}</div>
                         </div>
                         <div>
                             <span>Work Assignment</span>

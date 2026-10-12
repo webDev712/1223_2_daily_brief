@@ -186,7 +186,7 @@ export default function Dashboard() {
                   <div>
                     <div className="shift">{b.shift || "No shift selected"}</div>
                     <div>{b.driving ? (<div className="driving">Driving</div>) : (<div className="on-site">Floor</div>)}</div>
-                    {b?.created_at && (<div>Started At {format(b.created_at, 'hh:mm a')}</div>)}
+                    {b?.created_at && (<div>Started At {format(new Date(b.created_at), 'hh:mm a')}</div>)}
                   </div>
                   <div>
                     <div>
@@ -291,7 +291,7 @@ export default function Dashboard() {
                         <UserCircle user_name={b.lead_name} size={20}></UserCircle>
                         <div>{b.lead_name}</div>
                       </div>
-                      <div>{format(finding.created_at, 'h:m a')}</div>
+                      <div>{format(new Date(finding.created_at), 'h:m a')}</div>
                     </div>
                   </div>
                 )
@@ -399,7 +399,7 @@ export default function Dashboard() {
                         <UserCircle user_name={b.lead_name} size={20}></UserCircle>
                         <div>{b.lead_name}</div>
                       </div>
-                      <div>{format(finding.created_at, 'h:m a')}</div>
+                      <div>{format(new Date(finding.created_at), 'h:m a')}</div>
                     </div>
                   </div>
                 )
