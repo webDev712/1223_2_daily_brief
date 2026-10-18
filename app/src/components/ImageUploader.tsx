@@ -11,23 +11,75 @@ type ImageUploaderProps = {
 
 
 export default function ImageUploader({send_url_to, disabled=false}: ImageUploaderProps) {
-  async function upload(file: File) {
-    const compressed = await imageCompression(file, {
-      maxWidthOrHeight: 1600,
-      maxSizeMB: 0.5,
-      initialQuality: 0.9,
-      useWebWorker: false,
-      fileType: "image/webp",
+async function convertToWebP(file: File): Promise<Blob> {
+  const image = new Image();
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    image.src = objectUrl;
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Failed to load image"));
     });
 
-    console.log("Original:", file.type, file.size);
-    console.log("Compressed:", compressed.type, compressed.size);
+    const maxDimension = 1600;
+    const scale = Math.min(
+      1,
+      maxDimension / Math.max(image.naturalWidth, image.naturalHeight)
+    );
 
-    if (compressed.type !== "image/webp") {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(image.naturalWidth * scale);
+    canvas.height = Math.round(image.naturalHeight * scale);
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas is not supported");
+
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (!result) {
+            reject(new Error("Image conversion failed"));
+            return;
+          }
+
+          resolve(result);
+        },
+        "image/webp",
+        0.85
+      );
+    });
+
+    if (blob.type !== "image/webp") {
       throw new Error(
-        `WebP conversion failed: ${compressed.type}`
+        `Browser does not support WebP conversion: ${blob.type}`
       );
     }
+
+    return blob;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+  async function upload(file: File) {
+    const webp = await convertToWebP(file);
+
+    const compressed = await imageCompression(
+      new File([webp], "image.webp", { type: "image/webp" }),
+      {
+        maxWidthOrHeight: 1600,
+        maxSizeMB: 0.5,
+        initialQuality: 0.85,
+        useWebWorker: false,
+        fileType: "image/webp",
+      }
+    );
+
+    console.log("Final image:", compressed.type, compressed.size);
 
     const formData = new FormData();
     formData.append("file", compressed, "image.webp");
@@ -38,20 +90,16 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText);
+      throw new Error(await response.text());
     }
 
     const { url } = await response.json();
 
-    if (!url) {
-      throw new Error("Server did not return an image URL");
-    }
+    if (!url) throw new Error("Server did not return an image URL");
 
     send_url_to(url);
     return url;
   }
-
   return (
     <label className="image-uploader-wrapper">
       <span className="image-uploader-label">Add image</span>
