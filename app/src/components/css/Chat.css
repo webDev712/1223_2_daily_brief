@@ -313,6 +313,7 @@
     padding: 10px 10px 10px 10px;
 }
 
+.mobile_chat.chat .messages:not(:has(+ div .image-uploader)),
 .chat .messages:not(:has(+ div .image-uploader)){
     height: calc(100vh - 85px);
 }

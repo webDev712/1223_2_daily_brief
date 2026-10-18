@@ -50,7 +50,19 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
         className={disabled ? 'image-uploader d' : 'image-uploader'}
         disabled={disabled ?? false}
         onChange={async (e) => {
-          const file = await e.currentTarget.files?.[0];
+        let file = e.currentTarget.files?.[0];
+        alert(
+          file
+            ? `1 File selected: ${file.name}\nType: ${file.type}\nSize: ${(file.size / 1024 / 1024).toFixed(2)} MB`
+            : "1 File was not selected"
+        );
+
+          if (!file) file = e.target.files?.[0];
+          alert(
+            file
+              ? `2 File selected: ${file.name}\nType: ${file.type}\nSize: ${(file.size / 1024 / 1024).toFixed(2)} MB`
+              : "2 File was not selected"
+          );
           if (!file) return;
           try {
             const url = await upload(file);
