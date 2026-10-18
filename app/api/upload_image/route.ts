@@ -13,9 +13,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (file.type !== "image/webp") {
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
       return NextResponse.json(
-        { error: `Invalid image type: ${file.type}` },
+        { error: `Usupported image type: ${file.type}` },
         { status: 400 }
       );
     }
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       file,
       {
         access: "private",
-        contentType: "image/webp",
+        contentType: file.type,
         addRandomSuffix: true,
         storeId: process.env.BLOB_STORE_ID,
         token: process.env.BLOB_READ_WRITE_TOKEN,
