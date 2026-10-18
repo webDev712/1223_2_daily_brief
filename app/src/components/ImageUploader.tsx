@@ -36,7 +36,7 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
         error: errorText,
       });
 
-      throw new Error(errorText);
+      alert(errorText);
     }
 
 
@@ -77,9 +77,9 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
           if (!file) return;
           try {
             const url = await upload(file);
-            toast.success('Added image!');
+            alert('Added image!');
           } catch {
-            toast.error("Error while uploading an image.");
+            alert("Error while uploading an image.");
           }
         }}
       />
