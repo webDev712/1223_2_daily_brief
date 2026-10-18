@@ -20,7 +20,6 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
       fileType: "image/webp",
     });
 
-    // Проверяем реальный тип после сжатия
     console.log("Original:", file.type, file.size);
     console.log("Compressed:", compressed.type, compressed.size);
 
@@ -81,8 +80,8 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
           try {
             const url = await upload(file);
             alert('Added image!');
-          } catch {
-            alert("Error while uploading an image.");
+          } catch (error) {
+            alert(`Error while uploading an image: ${error}`);
           }
         }}
       />
