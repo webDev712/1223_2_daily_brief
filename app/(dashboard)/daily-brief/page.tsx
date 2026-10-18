@@ -860,7 +860,7 @@ export default function DailyBrief() {
                                 
                                 )}
                                 
-                                {r.metric === 'Image' && r.text && isBlobLink(r.text) === true ? 
+                                {r.metric === 'Image' && r.text && isBlobLink(r.text) === true && 
                                   (<div style={{ position: 'relative' }}>
                                     {r.checked !== true && (
                                       <div className="x" style={{ position: 'absolute', right: 5, top: 5 }} onClick={() => {
@@ -896,7 +896,7 @@ export default function DailyBrief() {
 
                                       </label>
                                     )}
-                                  </div>) : (<div>{r.text}</div>) }
+                                  </div>) }
                                 
                             </div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
