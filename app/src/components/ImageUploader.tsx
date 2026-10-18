@@ -16,12 +16,22 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
       maxWidthOrHeight: 1600,
       maxSizeMB: 0.5,
       initialQuality: 0.9,
-      useWebWorker: true,
+      useWebWorker: false,
       fileType: "image/webp",
     });
 
+    // Проверяем реальный тип после сжатия
+    console.log("Original:", file.type, file.size);
+    console.log("Compressed:", compressed.type, compressed.size);
+
+    if (compressed.type !== "image/webp") {
+      throw new Error(
+        `WebP conversion failed: ${compressed.type}`
+      );
+    }
+
     const formData = new FormData();
-    formData.append("file", compressed);
+    formData.append("file", compressed, "image.webp");
 
     const response = await fetch("/api/upload_image", {
       method: "POST",
@@ -30,22 +40,15 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
 
     if (!response.ok) {
       const errorText = await response.text();
-
-      console.error("Upload failed:", {
-        status: response.status,
-        error: errorText,
-      });
-
-      alert(errorText);
+      throw new Error(errorText);
     }
-
 
     const { url } = await response.json();
+
     if (!url) {
-      toast.error("Server did not return an image URL");
-      return;
+      throw new Error("Server did not return an image URL");
     }
-    console.log("Photo URL:", url);
+
     send_url_to(url);
     return url;
   }
