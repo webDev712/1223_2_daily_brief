@@ -560,6 +560,34 @@ textarea {
   gap: 8px;
   margin-top: 12px;
 }
+
+.b-t{
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+div:has(> .img-fullscreen){
+  height: max-content !important;
+  position: fixed !important;
+  z-index: 100000000 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background-color: white !important;
+  width: auto !important;
+  display: none;
+  padding: 5px;
+}
+
+label:has(> input:checked) div:has(> .img-fullscreen){
+  display: block !important;
+}
+
+img {
+  border-radius: 5px !important;
+  cursor: pointer !important;
+}
+
 @media (max-width: 1000px) {
     .four-block{
         grid-template-columns: repeat(2, 1fr);

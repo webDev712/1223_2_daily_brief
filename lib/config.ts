@@ -43,28 +43,29 @@ export const getRoles = (role: string) => {
 
 export const getPermissions = () => {
     return [
-        {id: 1, name: "See their brief", js_name: "see_brief"},                                         //done
-        {id: 2, name: "Update their brief", js_name: "update_brief"},                                   //done
-        {id: 3, name: "Handoff their brief", js_name: "handoff_brief"},                                 //done
-        {id: 4, name: "See all briefs", js_name: "see_all_briefs"},                                     //done
-        {id: 5, name: "See Dashboard page", js_name: "see_dashboard"},                                  //done
-        {id: 6, name: "See Briefs history page", js_name: "see_briefs_history"},                        //done
-        {id: 7, name: "See Reports page", js_name: "see_reports_page"},                                 //done
-        {id: 8, name: "Edit reports", js_name: "edit_reports"},                                         //done
-        {id: 9, name: "See Team & Roles page", js_name: "see_team_roles"},                              //done
-        {id: 10, name: "Archive and give access back to users", js_name: "archive_give_access_users"},  //done
-        {id: 11, name: "Add users", js_name: "add_users"},                                              //done
-        {id: 12, name: "Add roles", js_name: "add_roles"},                                              //done
-        {id: 13, name: "See Profile settings page", js_name: "see_profile_settings"},                   //done
-        {id: 14, name: "Edit Profile settings", js_name: "edit_profile_settings"},                      //done
-        {id: 15, name: "See Application settings page", js_name: "see_app_settings"},                   //done
-        {id: 16, name: "Edit Application settings", js_name: "edit_app_settings"},                      //TODO-TODO-TODO
-        {id: 17, name: "See Production Dashboard", js_name: "see_production_dashboard"},                //done
-        {id: 18, name: "Send messages to all employees at once", js_name: "send_messages_to_all"},      //done
-        {id: 19, name: "See other employees` messages", js_name: "see_other_employees_messages"},       //done
-        {id: 21, name: "Edit Action Tracker data", js_name: "edit_action_tracker"},                     //done
-        {id: 22, name: "Add Actions to Issues / Observations", js_name: "add_actions_to_io"},           //done
-        {id: 23, name: "Reassign other users reports on Daily Brief page", js_name: "reasign_reports"},           //done
+        {id: 1, name: "Daily Brief: See their brief", js_name: "see_brief"},                                         //done
+        {id: 2, name: "Daily Brief: Update their brief", js_name: "update_brief"},                                   //done
+        {id: 3, name: "Daily Brief: Handoff their brief", js_name: "handoff_brief"},                                 //done
+        {id: 4, name: "Daily Brief: See all briefs", js_name: "see_all_briefs"},                                     //done
+        {id: 23, name: "Daily Brief: Reassign other users reports on Daily Brief page", js_name: "reasign_reports"}, //done
+        {id: 5, name: "Dashboard: See Dashboard page", js_name: "see_dashboard"},                                  //done
+        {id: 6, name: "Brief History: See Briefs history page", js_name: "see_briefs_history"},                        //done
+        {id: 7, name: "Reports: See Reports page", js_name: "see_reports_page"},                                 //done
+        {id: 8, name: "Reports: Edit reports", js_name: "edit_reports"},                                         //done
+        {id: 9, name: "Team & Roles: See Team & Roles page", js_name: "see_team_roles"},                              //done
+        {id: 10, name: "Team & Roles: Archive and give access back to users", js_name: "archive_give_access_users"},  //done
+        {id: 11, name: "Team & Roles: Add users", js_name: "add_users"},                                              //done
+        {id: 12, name: "Team & Roles: Add roles", js_name: "add_roles"},                                              //done
+        {id: 17, name: "Produtction Dashboard: See Production Dashboard", js_name: "see_production_dashboard"},                //done
+        {id: 18, name: "Chat: Send messages to all employees at once", js_name: "send_messages_to_all"},      //done
+        {id: 19, name: "Chat: See other employees` messages", js_name: "see_other_employees_messages"},       //done
+        {id: 21, name: "Action Tracker: Edit Action Tracker data", js_name: "edit_action_tracker"},                     //done
+        {id: 22, name: "Action Tracker: Add Actions to Issues / Observations", js_name: "add_actions_to_io"},           //done
+        {id: 13, name: "Settings: See Profile settings page", js_name: "see_profile_settings"},                   //done
+        {id: 14, name: "Settings: Edit Profile settings", js_name: "edit_profile_settings"},                      //done
+        {id: 15, name: "Settings: See Application settings page", js_name: "see_app_settings"},                   //done
+        {id: 16, name: "Settings: Edit Application settings", js_name: "edit_app_settings"},                      //TODO-TODO-TODO
+        {id: 24, name: "Settings: Manage Company Configuration", js_name: "manage_configuration"},                //done
     ]
 }
 

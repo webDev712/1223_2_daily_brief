@@ -1,0 +1,47 @@
+label:has(> .image-uploader){
+    width: 35px !important;
+    height: 35px !important;
+    border: none !important;
+    background-image: url('../../../../public/attach_image.png') !important;
+    background-position: center;
+    background-size: 50%;
+    color: transparent !important;
+    cursor: pointer !important;
+    z-index: 1000;
+    position: relative;
+}
+
+.image-uploader{
+    color: transparent !important;
+    border: 1px solid #E8EAED;
+    width: 35px !important;
+    height: 35px !important;
+    border-radius: 8px !important;
+
+}
+
+label:has(> .image-uploader:hover){
+    background-size: 55%;
+}
+
+.image-uploader::file-selector-button {
+    cursor: pointer;
+}
+
+span:has(+ .image-uploader){
+    position: absolute;
+    right: 50%;
+    transform: translateX(50%);
+    top: -20px;
+    font-size: 10px;
+    color: rgb(180, 178, 178);
+    width: max-content;
+    background-color: rgb(245, 245, 245) !important;
+    display: none;
+    padding: 2px 5px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+span:has(+ .image-uploader:hover){
+    display: block !important;
+}

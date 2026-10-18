@@ -62,8 +62,10 @@ export default function Sidebar({ user }: { user: User}) {
             {pages.map((page) => {
               if (page.permission_name === '' || user.permissions[page.permission_name] === true) {
                 return (<div key={`page_${page.href}`}>
-                  <Link onClick={() => {setTimeout(() => {setOpenChat(false)}, 400); setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}></Link>
-                  <h1>{page.text}</h1>
+                  <Link onClick={() => {setTimeout(() => {setOpenChat(false)}, 400); setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}>
+                    <h1>{page.text}</h1>
+                  </Link>
+                  
                 </div>)
                 }
             })}

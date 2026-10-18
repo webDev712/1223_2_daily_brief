@@ -14,6 +14,8 @@ import { useSearchParams } from 'next/navigation';
 import { randomInt } from 'crypto';
 import capitalize from '@/lib/text';
 import UserCircle from '@/app/src/components/UserCircle';
+import ImageUploader from '@/app/src/components/ImageUploader';
+import isBlobLink from '@/lib/img';
 
 
 
@@ -34,6 +36,8 @@ export default function DailyBrief() {
   const savingRef = useRef(false);
   const [savingCover, setSavingCover] = useState(false)
   const [showAddCover, setShowAddCover] = useState(false)
+  const [showCallout, setShowCallout] = useState(false)
+  const [reportToCallout, setReportToCallout] = useState<Report>()
 
   const addCover = async (b: SavedBrief, covered: Covered[]) => {
     setSavingCover(true)
@@ -509,6 +513,36 @@ export default function DailyBrief() {
                             </div>
                           </div>
                         )}
+                        {showCallout && (
+                          <div className='confirm callout'>
+                            <div>
+                              <h1>Call-out report "{reportToCallout?.name}"?</h1>
+                              <p>If you want, you can assign it to another user right now:</p>
+                              <select className='input' style={{width: '50%', margin: '0 auto'}} id='new_holder_id'>
+                                <option value="NULL">DON'T ASSIGN</option>
+                                {leads.map((u: User) => 
+                                  !u.archived &&
+                                  b.lead_id !== user.id &&
+                                  reportToCallout?.holder_id !== u.id &&
+                                  leads.find((u_local: User) => u_local.id === reportToCallout?.holder_id)?.department_id === u.department_id && 
+                                  (
+                                    <option value={u.id} key={u.id}>{u.name}</option>
+                                  ))}
+                              </select>
+                              <div>
+                                <div className='button-w-bl' onClick={() => {setShowCallout(false)}}>Cancel</div>
+                                <div className='button-d-bl' onClick={() => {
+                                  if (`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` === b.date) 
+                                    {
+                                      const new_holder_id = (document.getElementById('new_holder_id') as HTMLSelectElement).value ?? null;
+                                      updateReports(b, {...reportToCallout, holder_id: new_holder_id === "NULL" ? null : new_holder_id}, false);
+                                      setShowCallout(false);
+                                    }
+                                }}>Confirm</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <div style={{flex: 1}}>
@@ -631,12 +665,12 @@ export default function DailyBrief() {
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report reports-to-assign' : 'report'} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
+                              <div></div>
                               <div>{r.name}</div>
                               <div>{capitalize(r.day_time)}</div>
                               <div>{r.source}</div>
-                              <div></div>
                               <div>Assignee: <div className=''>{leads.find((lead: User) => lead.id === r.holder_id)?.name ?? '-'}</div></div>
-                              <div style={{color: '#000000'}}>{r.metric}</div>
+                              <div style={{color: '#000000'}}>{r.metric ?? 'No Metric'}</div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               <div className={noAccessEdit(b) || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!noAccessEdit(b) && b.lead_id === user.id) updateReports(b, {...r, holder_id: user.id}, r.checked)}}>Take</div>
 
@@ -646,15 +680,16 @@ export default function DailyBrief() {
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report border-top reports-you-took' : 'report'} key={r.id}>
                               <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {
-                                if (r.metric?.toLowerCase() === 'metric' && r.text === ''){
+                                const metric_lowercase = r.metric?.toLowerCase();
+                                if ((metric_lowercase === 'metric' || 
+                                     metric_lowercase === 'count' ||
+                                     metric_lowercase === 'free-text' ||
+                                     metric_lowercase === 'yes/no' ||
+                                     metric_lowercase === 'image'
+                                ) && r.text === ''){
                                   toast.error('Please, input report value first.');
                                   return;
                                 }
-                                if (r.metric?.toLowerCase() === 'count' && r.text === ''){
-                                  toast.error('Please, input report value first.');
-                                  return;
-                                }
-
                                 updateReports(b, r, !r.checked);
                               }} />
                               <div>{r.name}</div>
@@ -662,9 +697,26 @@ export default function DailyBrief() {
                               <div>{r.source}</div>
                               <div>Assignee: <div className='green' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name} (You)</div></div>
                               <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}>
-                                {r.metric}
+                                <div className="flex" style={{ gap: 5, marginBottom: 5 }}>
+                                  {r.metric ? (<div style={{ margin: 'auto 0' }}>{r.metric}</div>) : 'No Metric'}
+                                  {(r.metric === 'Image') && r.checked !== true && (
+                                    <ImageUploader disabled={r.checked ?? false} send_url_to={(url) => {
+                                      if (!r.checked) {
+                                          updateReports(
+                                              b,
+                                              {
+                                                  ...r,
+                                                  text: url
+                                              },
+                                              r.checked,
+                                              true,
+                                          );
+                                      }
+                                    }} ></ImageUploader>
+                                  )}
+                                </div>
 
-                                {r.metric !== 'No Metric' && (
+                                {(r.metric === 'Metric' || r.metric === 'Count') && (
                                     <input
                                         className={r.checked ? 'input d' : 'input'}
                                         value={r.text ?? ''}
@@ -718,6 +770,134 @@ export default function DailyBrief() {
                                         placeholder={r.metric === 'Metric' ? `From ${r.metric_range_from} to ${r.metric_range_to}` : 'Value'}
                                     />
                                 )}
+                                {(r.metric === 'Free-text') && (
+                                  <textarea 
+                                        className={r.checked ? 'input d' : 'input'}
+                                        style={{ transition: 'none' }}
+                                        defaultValue={r.text ?? ''}
+                                        disabled={!!r.checked}
+                                        onBlur={(e) => {
+                                          const text = e.currentTarget.value;
+                                          if (text !== (r.text ?? '')) {
+                                              updateReports(
+                                                  b,
+                                                  {
+                                                      ...r,
+                                                      text,
+                                                  },
+                                                  r.checked,
+                                                  true
+                                              );
+                                          }
+
+                                        }} 
+                                        // onBlur={(e) => { updateReports( b, {...r, text: e.target.value}, r.checked, true ); }}
+                                        ></textarea>
+                                  // <input
+                                  //       className={r.checked ? 'input d' : 'input'}
+                                  //       value={r.text ?? ''}
+                                  //       disabled={r.checked ?? false}
+                                  //       type="text"
+
+                                  //       onChange={(e) => {
+                                  //           if (!r.checked) {
+                                  //               updateReports(
+                                  //                   b,
+                                  //                   {
+                                  //                       ...r,
+                                  //                       text: e.target.value
+                                  //                   },
+                                  //                   r.checked,
+                                  //                   false
+                                  //               );
+                                  //           }
+                                  //       }} 
+                                  //       onBlur={() => { updateReports( b, {...r,}, r.checked, true ); }}
+                                  //       />
+                                )}
+                                {(r.metric === 'Yes/No') && (
+                                  <div className='flex' style={{ gap: 5, padding: '0 0 0 2px' }}>
+                                    <input
+                                          className={r.checked ? 'input d' : 'input'}
+                                          checked={r.text === "Yes"}
+                                          disabled={!!r.checked}
+                                          type="checkbox"
+  
+                                          onChange={(e) => {
+                                              if (!r.checked) {
+                                                  updateReports(
+                                                      b,
+                                                      {
+                                                          ...r,
+                                                          text: e.target.checked ? 'Yes' : ''
+                                                      },
+                                                      r.checked,
+                                                      true,
+                                                  );
+                                              }
+                                          }} />
+                                    <div style={{padding: '0 3px'}}>/</div>
+                                    <input
+                                          className={r.checked ? 'input d' : 'input'}
+                                          checked={r.text === "No"}
+                                          disabled={!!r.checked}
+                                          type="checkbox"
+  
+                                          onChange={(e) => {
+                                              if (!r.checked) {
+                                                  updateReports(
+                                                      b,
+                                                      {
+                                                          ...r,
+                                                          text: e.target.checked ? 'No' : ''
+                                                      },
+                                                      r.checked,
+                                                      true,
+                                                  );
+                                              }
+                                          }} />
+                                  </div>
+                                
+                                )}
+                                
+                                {r.metric === 'Image' && r.text && isBlobLink(r.text) === true ? 
+                                  (<div style={{ position: 'relative' }}>
+                                    {r.checked !== true && (
+                                      <div className="x" style={{ position: 'absolute', right: 5, top: 5 }} onClick={() => {
+                                        updateReports(
+                                              b,
+                                              {
+                                                  ...r,
+                                                  text: ''
+                                              },
+                                              r.checked,
+                                              true,
+                                          );
+                                      }}>x</div>
+                                    )}
+                                    {r.text && (
+                                      <label>
+                                        <input type="checkbox" style={{ display: 'none' }} />
+
+                                        <img src={`/api/blob_image?pathname=${r.text.slice(57)}`}  alt='Image' />
+                                        <div style={{position: 'relative'}}>
+                                          <div className="x" style={{ position: 'absolute', right: 5, top: 5 }}   onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+
+                                              const checkbox = e.currentTarget
+                                                .closest('label')
+                                                ?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+
+                                              if (checkbox) checkbox.checked = false;
+                                            }}>x</div>
+                                          <img className='img-fullscreen input ' src={`/api/blob_image?pathname=${r.text.slice(57)}`} alt='Image' />
+                                        </div>
+
+                                      </label>
+                                    )}
+                                  </div>) : (<div>{r.text}</div>) }
+                                
                             </div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               <div className={r.checked || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
@@ -734,12 +914,36 @@ export default function DailyBrief() {
                               <div>{capitalize(r.day_time)}</div>
                               <div>{r.source}</div>
                               <div>Assignee: <div className='' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name}</div></div>
-                              <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric}</div><div>{r.text}</div></div>
+                              <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric ?? 'No Metric'}</div>{r.checked && r.metric === 'Image' && r.text && isBlobLink(r.text) === true ? 
+                                  (<div style={{ position: 'relative' }}>
+                                    {r.text && (
+                                      <label>
+                                        <input type="checkbox" style={{ display: 'none' }} />
+
+                                        <img src={`/api/blob_image?pathname=${r.text.slice(57)}`}  alt='Image' />
+                                        <div style={{position: 'relative'}}>
+                                          <div className="x" style={{ position: 'absolute', right: 5, top: 5 }}   onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+
+                                              const checkbox = e.currentTarget
+                                                .closest('label')
+                                                ?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+
+                                              if (checkbox) checkbox.checked = false;
+                                            }}>x</div>
+                                          <img className='img-fullscreen input ' src={`/api/blob_image?pathname=${r.text.slice(57)}`} alt='Image' />
+                                        </div>
+
+                                      </label>
+                                    )}
+                                  </div>) : (<strong>{r.text}</strong>) }
+</div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               {
-                                user.permissions.reasign_reports === true ? (
-                                  <div className={r.checked || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
-                                    onClick={() => {if (!r.checked || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date) updateReports(b, {...r, holder_id: null}, r.checked)}}
+                                user.permissions.reasign_reports === true && `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` === b.date ? (
+                                  <div className={`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
+                                    onClick={() => {console.log(r); setReportToCallout({...r}); setShowCallout(true); }}
                                   >Call-out</div>
                                 ) : (<div></div>)
                               }

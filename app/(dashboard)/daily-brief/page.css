@@ -146,6 +146,8 @@
 .daily-brief .report > :nth-child(3),
 .daily-brief .report > :nth-child(4) {
     margin: auto 5px auto 0;
+    width: 70px;
+    text-align: center;
 }
 .daily-brief .report > :nth-child(3){
     margin-left: auto;
@@ -165,6 +167,8 @@
     width: 140px;
     min-width: 140px;
     max-width: 140px;
+    text-wrap-mode: wrap;
+    line-break: anywhere;
 }
 
 .daily-brief .report > :nth-child(7) {
@@ -316,6 +320,14 @@
     font-weight: 600;
     height: max-content;
     margin: auto 0;
+}
+
+.daily-brief .confirm.callout h1{
+    background-image: none;
+    padding-left: 0;
+    text-align: center;
+    width: 100%;
+    font-size: 16px;
 }
 
 .daily-brief .tasks h1 + div,

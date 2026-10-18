@@ -374,7 +374,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
               {user.permissions.see_app_settings && (
                 <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>Data & Security</div>
               )}
-              {company?.main_admin_id === user.id && (<div data-img="lists" className={selectedSettings === 'lists' ? 'selected' : ''} onClick={() => {setSelectedSettings('lists')}}>Lists</div>)}
+              {user.permissions.manage_configuration && (<div data-img="lists" className={selectedSettings === 'lists' ? 'selected' : ''} onClick={() => {setSelectedSettings('lists')}}>Lists</div>)}
             </div>
             {selectedSettings === 'my' && (
               <div className='my'>

@@ -1,7 +1,16 @@
 const scrollToElement = (id: string) => {
-  document.getElementById(id)?.scrollIntoView({
+  const element = document.getElementById(id);
+  if (!element) return;
+
+  const offset = 180;
+  const top =
+    element.getBoundingClientRect().top +
+    window.scrollY -
+    offset;
+
+  window.scrollTo({
+    top,
     behavior: 'smooth',
-    block: 'start',
   });
 };
 

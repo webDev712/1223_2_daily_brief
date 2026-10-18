@@ -91,6 +91,7 @@ export interface User {
   phone: string,
   archived: boolean,
   department: string,
+  department_id?: string,
   permissions: DBPermissions,
   selectedAnotherRole: boolean,
   selectedAnotherDepartment: boolean,

@@ -162,12 +162,16 @@ export default function BriefHistory() {
                         </div>
                         <div>
                           {b.lead_id !== b.original_lead_id && (
-                            <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
+                            <div>
+                              <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
+                              <div>{leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'}</div>
+                            </div>
                           )}
-                          {b.lead_id !== b.original_lead_id && (<div>{'>>'}</div>)}
-                          <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'} size={25} />
-                          {b.lead_id === b.original_lead_id && (<div>{b.lead_name}</div>)}
-                          {}
+                          {b.lead_id !== b.original_lead_id && (<div>{'🢃'}</div>)}
+                          <div>
+                            <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'} size={25} />
+                            <div>{leads.find((el: User) => el.id === b.lead_id)?.['name'] || 's'}</div>
+                          </div>
                         </div>
                         <div>{b.shift || "-"}</div>
                         <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? '🚐 Driving' : '🏢 Floor'}</div>

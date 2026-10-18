@@ -27,6 +27,7 @@ export async function GET() {
                 w.archived,
                 w.phone, 
                 d.name as department,
+                d.id as department_id,
                 r.permissions,
                 r.name AS user_role,
                 r.id AS role_id

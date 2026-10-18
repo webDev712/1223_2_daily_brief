@@ -1000,6 +1000,9 @@ return (
                                   <option value="No Metric">No Metric</option>
                                   <option value="Count">Count</option>
                                   <option value="Metric">Metric</option>
+                                  <option value="Yes/No">Yes/No</option>
+                                  <option value="Free-text">Free-text</option>
+                                  <option value="Image">Image</option>
                                 </select>
                                 {r.metric === 'Metric' && (
                                 <div className="metric_range">

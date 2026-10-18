@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useLayoutEffect } from 'react';
 import './css/Chat.css'
 import { useUser } from './UserProvider';
 import { Message, NewMessage, UserForChat, User } from '@/lib/types';
@@ -9,6 +9,8 @@ import UserCircle from './UserCircle';
 import Loader from './Loader';
 import { toast } from 'sonner';
 import { Dispatch, SetStateAction } from "react";
+import ImageUploader from './ImageUploader';
+import isBlobLink from '@/lib/img';
 
 
 export const sendMessageGlobal = async (message: NewMessage) => {
@@ -25,10 +27,11 @@ export const sendMessageGlobal = async (message: NewMessage) => {
 }
 
 const Chat = ({openChat, setOpenChat, class_name}: {
-  openChat: boolean;
-  setOpenChat: Dispatch<SetStateAction<boolean>>;
-  class_name?: string;
-}) => {
+        openChat: boolean;
+        setOpenChat: Dispatch<SetStateAction<boolean>>;
+        class_name?: string;
+    }) => {
+        
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState('');
 
@@ -110,26 +113,80 @@ const Chat = ({openChat, setOpenChat, class_name}: {
 
     }
 
-    
+    const initialScrollRef = useRef(true);
+    const previousMessageIdsRef = useRef<Set<string>>(new Set());
+
     const openChatById = (id: string) => {
+        initialScrollRef.current = true;
+        shouldAutoScrollRef.current = true;
+        previousMessageIdsRef.current = new Set();
+
+
         setSelectedUserId(id);
         setLoading(true);
-        const message = chats.find(
+
+        const unreadMessages = chats.filter(
             message =>
-                (message.to_user === id && message.from_user === seeUserMessageAs.id) ||
-                (message.from_user === id && message.to_user === seeUserMessageAs.id)
+                message.from_user === id &&
+                message.to_user === seeUserMessageAs.id &&
+                message.read === false
         );
 
-        if (message?.read === false) {
-            updateMessage({
-                ...message,
-                read: true
-            });
+        if (unreadMessages.length > 0) {
+            const unreadIds = new Set(
+                unreadMessages.map(message => message.id)
+            );
+
+            setChats(prev =>
+                prev.map(message =>
+                    unreadIds.has(message.id)
+                        ? { ...message, read: true }
+                        : message
+                )
+            );
+
+            setMessages(prev =>
+                prev.map(message =>
+                    unreadIds.has(message.id)
+                        ? { ...message, read: true }
+                        : message
+                )
+            );
+
+            void Promise.all(
+                unreadMessages.map(message =>
+                    updateMessage({ ...message, read: true })
+                )
+            );
         }
-        setReloadChats(prev => prev + 1)
 
         setScrollMessages(true);
-    }
+    };
+    useLayoutEffect(() => {
+        const container = messagesRef.current;
+
+        if (!container || loading) return;
+
+        const currentIds = new Set(
+            messages.map(message => String(message.id))
+        );
+
+        const hasNewMessage = messages.some(
+            message => !previousMessageIdsRef.current.has(String(message.id))
+        );
+
+        // При первом открытии чата прокручиваем вниз
+        if (initialScrollRef.current) {
+            container.scrollTop = container.scrollHeight;
+            initialScrollRef.current = false;
+            shouldAutoScrollRef.current = true;
+        } else if (hasNewMessage && !shouldAutoScrollRef.current) {
+            // Новое сообщение: скроллим, только если пользователь был внизу
+            container.scrollTop = container.scrollHeight;
+        }
+
+        previousMessageIdsRef.current = currentIds;
+    }, [messages, loading]);
 
     useEffect(() => {
         const load = async () => {
@@ -151,7 +208,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
 
             let users_data = await users_res.json();
             users_data = users_data
-                .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id)
+                .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id && filterUser.archived !== true)
                 .sort((a: UserForChat, b: UserForChat) => {
                     let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === seeUserMessageAs.id) || (message.from_user === a.id && message.to_user === seeUserMessageAs.id));
                     let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === seeUserMessageAs.id) || (message.from_user === b.id && message.to_user === seeUserMessageAs.id));
@@ -169,43 +226,60 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     }, [])
 
     useEffect(() => {
-        const load = async () => {
-            if (selectedUserId !== null) {
-                const chat_res = await fetch(`/api/chat?id_1=${seeUserMessageAs.id}&id_2=${selectedUserId}`);
+        if (!selectedUserId) {
+            // setLoading(false);
+            return;
+        }
 
-                if (!chat_res.ok) {
-                    console.error('Error while fetching chat messages');
+        let cancelled = false;
+
+        const load = async () => {
+            try {
+                const res = await fetch(
+                    `/api/chat?id_1=${encodeURIComponent(seeUserMessageAs.id)}` +
+                    `&id_2=${encodeURIComponent(selectedUserId)}`
+                );
+
+                if (!res.ok) {
+                    console.error('Failed to fetch messages');
                     return;
                 }
 
-                const chat_data = await chat_res.json();
-                if (scrollMessages || messages.length !== chat_data.length) {
-                    setScrollMessages(prev => !prev);
-                    // setScrollMessages(false);
+                const data: Message[] = await res.json();
+
+                if (cancelled) return;
+
+                setMessages(data);
+                setScrollMessages(true);
+            } catch (error) {
+                if (!cancelled) {
+                    console.error('Error loading messages:', error);
                 }
-                setMessages(chat_data);
-                if (chat_data.length > 0 && seeUserMessageAs.id === chat_data[chat_data.length - 1].to_user) {
-                    const lastMessage = chat_data[chat_data.length - 1];
-                    updateMessage({...lastMessage, read: true})
-                    
-                }
-                console.log(`/api/chat?id_1=${seeUserMessageAs.id}&id_2=${selectedUserId}`)
-                setLoading(false);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-        }
+        };
 
         load();
-    }, [reloadMessages]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedUserId, seeUserMessageAs.id, reloadMessages]);
 
     useEffect(() => {
         const load = async () => {
+            console.log(0)
             const selected_user = users.find((user: UserForChat) => user.id === selectedUserId );
                 const chat_res = await fetch(`/api/chats?id=${seeUserMessageAs.id}`);
+            console.log(1)
 
                 if (!chat_res.ok) {
                     console.log('Error while fetching chat');
                     return;
                 }
+            console.log(2)
+
                 const chat_data = await chat_res.json();
                 const users_res = await fetch('/api/users');
 
@@ -215,7 +289,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                 }
                 let users_data = await users_res.json();
                 users_data = users_data
-                    .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id)
+                    .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id && filterUser.archived !== true)
                     .sort((a: UserForChat, b: UserForChat) => {
                         let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === seeUserMessageAs.id) || (message.from_user === a.id && message.to_user === seeUserMessageAs.id));
                         let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === seeUserMessageAs.id) || (message.from_user === b.id && message.to_user === seeUserMessageAs.id));
@@ -228,6 +302,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                         return user.id === selected_user.id ? {...user, open: true} : user
                     })
                 }
+            console.log(3)
                 setUsers(users_data);
                 setChats(chat_data);
                 console.log(`/api/chats?id=${seeUserMessageAs.id}`)
@@ -235,18 +310,43 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                     setLoading(false);
                     setLoadingFalseNextChatReload(false);
                 }
+            console.log(4)
                 // setLoading(false);
             }
         load();
-    }, [reloadChats])
-
+    }, [reloadChats, seeUserMessageAs.id])
+    const shouldAutoScrollRef = useRef(true);
+    const lastMessageIdRef = useRef<string | null>(null);
     useEffect(() => {
+    const container = messagesRef.current;
+    if (!container || loading) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const lastMessageId = lastMessage?.id ?? null;
+
+    if (initialScrollRef.current) {
+        container.scrollTop = container.scrollHeight;
+        initialScrollRef.current = false;
+        lastMessageIdRef.current = lastMessageId;
+        shouldAutoScrollRef.current = true;
+        return;
+    }
+
+    const hasNewMessage =
+        lastMessageId !== null &&
+        lastMessageId !== lastMessageIdRef.current;
+
+    lastMessageIdRef.current = lastMessageId;
+
+    if (hasNewMessage && shouldAutoScrollRef.current) {
         requestAnimationFrame(() => {
-            if (messagesRef.current) {
-                messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-            }
+            const currentContainer = messagesRef.current;
+            if (!currentContainer || !shouldAutoScrollRef.current) return;
+
+            currentContainer.scrollTop = currentContainer.scrollHeight;
         });
-    }, [scrollMessages]);
+    }
+}, [messages, loading]);
 
     useEffect(() => {
         requestAnimationFrame(() => {
@@ -260,13 +360,39 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     useEffect(() => {
         const interval = setInterval(() => {
             if (document.visibilityState !== 'visible') return;
-            setReloadChats(prev => prev + 1);
-            setReloadMessages(prev => prev + 1);
-        }, openChat ? 10000 : 60000);
+
+            if (selectedUserId !== null) {
+                setReloadMessages(prev => prev + 1);
+            } else if (openChat) {
+                setReloadChats(prev => prev + 1);
+            }
+        }, 10000);
 
         return () => clearInterval(interval);
-    }, [openChat]);
+    }, [openChat, selectedUserId]);
 
+    const latestMessageByUser = useMemo(() => {
+        const map = new Map<string, Message>();
+
+        const sorted = [...chats].sort(
+            (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
+        );
+
+        for (const message of sorted) {
+            const otherUserId =
+                message.from_user === seeUserMessageAs.id
+                    ? message.to_user
+                    : message.from_user;
+
+            if (!map.has(otherUserId)) {
+                map.set(otherUserId, message);
+            }
+        }
+
+        return map;
+    }, [chats, seeUserMessageAs.id]);
     return (
         <div className={class_name ? class_name : "chat"}>
             <span onClick={() => setOpenChat(prev => !prev)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
@@ -326,12 +452,30 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                         {`< Back`}
                                     </div>
                                     {loading === true ? (<div className='messages loader'><Loader></Loader></div>) : (
-                                        <div className='messages' ref={messagesRef}>
+                                        <div className='messages' ref={messagesRef} onScroll={() => {
+                                            const container = messagesRef.current;
+                                            if (!container) return;
+
+                                            shouldAutoScrollRef.current =
+                                                container.scrollHeight -
+                                                container.scrollTop -
+                                                container.clientHeight < 100;
+                                        }}>
                                             
                                             {messages.length > 0 
                                                 ? messages.map((message: Message) => (
                                                     <div key={message.id} className={message.from_user === seeUserMessageAs.id ? 'right' : 'left'}>
-                                                        <div>{message.text}</div>
+                                                        {isBlobLink(message.text) ?
+                                                                (<img src={`/api/blob_image?pathname=${message.text.slice(57)}`} alt='Image' onLoad={() => {
+                                                                    requestAnimationFrame(() => {
+                                                                    const container = messagesRef.current;
+
+                                                                    if (!container || !shouldAutoScrollRef.current) return;
+
+                                                                    container.scrollTop = container.scrollHeight;
+                                                                });
+                                                                }} />) : 
+                                                                (<div>{message.text}</div>)}
                                                         <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
                                                 ))
@@ -352,6 +496,17 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         });
                                                     }
                                                 }}/>
+                                            <ImageUploader send_url_to={(url: string) => {
+                                                if (url) {
+                                                    sendMessage({
+                                                        text: url,
+                                                        from_user: seeUserMessageAs.id,
+                                                        to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
+                                                        timestamp: new Date(),
+                                                    })
+                                                }
+                                            }}></ImageUploader>
+
                                             <div className="button-d-bl-sm" onClick={() => {
                                                 sendMessage({
                                                     text: messageText,
@@ -379,11 +534,14 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                     <div className='chats' ref={chatsRef}>
                                         {users
                                             .map((user: UserForChat) => {
-                                            if (filter === '' || user.name.toLowerCase().includes(filter.toLowerCase()))
+                                            if (filter === '' || user.name.toLowerCase().includes(filter.toLowerCase())){
+                                                const lastMessage = latestMessageByUser.get(user.id);
                                             return (
                                                 <div key={user.id} className='flex j-s-b'>
                                                     {seeUserMessageAs.id === me_user.id && me_user.permissions.see_other_employees_messages === true 
-                                                        && (<div className='see-chats' onClick={() => {setLoading(true); setSeeUserMessageAs(user); setLoadingFalseNextChatReload(true); setReloadChats(prev => prev + 1); }}></div>)}
+                                                        && (<div className='see-chats' onClick={() => {setLoading(true); setSeeUserMessageAs(user); setLoadingFalseNextChatReload(true); 
+                                                        // setReloadChats(prev => prev + 1);
+                                                         }}></div>)}
                                                     <div className={chats.find((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user === user.id)?.read === true 
                                                                     || !chats.find((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user === user.id) ? "flex chat-user-name" : "unread flex chat-user-name"}
                                                                     onClick={() => {openChatById(user.id)}}
@@ -392,33 +550,18 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         <div>{user.name}</div>
                                                     </div>
                                                     <div className='chats-list-hover-message' onClick={() => {openChatById(user.id)}}>
+                                                        <div>{isBlobLink(lastMessage?.text ?? '') ? "Image" : (lastMessage?.text ?? '')}</div>
                                                         <div>
-                                                            {chats
-                                                                .sort((a: Message, b: Message) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                                                                .find((message: Message) => message.to_user === user.id || message.from_user === user.id)?.text}
-                                                        </div>
-                                                        <div>
-                                                            {(() => {
-                                                                const lastMessage = chats
-                                                                    .toSorted(
-                                                                        (a, b) =>
-                                                                            new Date(b.timestamp).getTime() -
-                                                                            new Date(a.timestamp).getTime()
-                                                                    )
-                                                                    .find(
-                                                                        message =>
-                                                                            message.to_user === user.id ||
-                                                                            message.from_user === user.id
-                                                                    );
-
-                                                                return lastMessage
-                                                                    ? format(new Date(lastMessage.timestamp), 'hh:mm a, MM-dd-yyyy')
-                                                                    : '';
-                                                            })()}
+                                                            {lastMessage
+                                                                ? format(
+                                                                    new Date(lastMessage.timestamp),
+                                                                    'hh:mm a, MM-dd-yyyy'
+                                                                )
+                                                                : ''}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )
+                                            )}
                                         })}
 
                                     </div>
@@ -458,7 +601,8 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                             sendMessageToGroupSelected: false
                                         } })
                                     )
-                                }}>Clear</span>
+                                }}
+                                className='b-t'>Clear</span>
                             </div>
                             <div>
                                 <textarea id="message-to-all" placeholder='Message to all employees...'></textarea>
