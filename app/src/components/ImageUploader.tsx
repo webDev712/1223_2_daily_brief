@@ -29,11 +29,16 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
     });
 
     if (!response.ok) {
-      toast.error("Upload failed");
+      const errorText = await response.text();
+      toast.error(`Upload failed: ${response.status}, ${errorText}`);
+      return;
     }
 
     const { url } = await response.json();
-
+    if (!url) {
+      toast.error("Server did not return an image URL");
+      return;
+    }
     console.log("Photo URL:", url);
     send_url_to(url);
     return url;
