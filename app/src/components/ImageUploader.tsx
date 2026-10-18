@@ -49,15 +49,16 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
         placeholder=""
         className={disabled ? 'image-uploader d' : 'image-uploader'}
         disabled={disabled ?? false}
-  onChange={(e) => {
-    const file = e.currentTarget.files?.[0];
-
-    alert(
-      file
-        ? `File: ${file.name}\nТип: ${file.type}\nРазмер: ${(file.size / 1024 / 1024).toFixed(2)} MB`
-        : "No file selected"
-    );
-  }}
+        onChange={async (e) => {
+          const file = await e.currentTarget.files?.[0];
+          if (!file) return;
+          try {
+            const url = await upload(file);
+            toast.success('Added image!');
+          } catch {
+            toast.error("Error while uploading an image.");
+          }
+        }}
       />
     </label>
   );
