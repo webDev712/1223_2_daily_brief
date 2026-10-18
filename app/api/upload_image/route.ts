@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
 export async function POST(request: Request) {
-  try{ 
+  try {
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -13,9 +13,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (file.type !== "image/webp" || file.size > 120 * 1024) {
+    if (file.type !== "image/webp") {
       return NextResponse.json(
-        { error: "Invalid image" },
+        { error: `Invalid image type: ${file.type}` },
         { status: 400 }
       );
     }
@@ -27,7 +27,6 @@ export async function POST(request: Request) {
         access: "private",
         contentType: "image/webp",
         addRandomSuffix: true,
-        // oidcToken: process.env.VERCEL_OIDC_TOKEN,
         storeId: process.env.BLOB_STORE_ID,
         token: process.env.BLOB_READ_WRITE_TOKEN,
       }
@@ -35,8 +34,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: blob.url });
   } catch (error) {
-    console.error('Error while adding image')
-    console.error(error)
-    return NextResponse.json({ error: error });
+    console.error("Error while adding image:", error);
+
+    return NextResponse.json(
+      { error: "Failed to upload image" },
+      { status: 500 }
+    );
   }
 }
