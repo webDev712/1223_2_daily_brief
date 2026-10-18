@@ -30,9 +30,15 @@ export default function ImageUploader({send_url_to, disabled=false}: ImageUpload
 
     if (!response.ok) {
       const errorText = await response.text();
-      toast.error(`Upload failed: ${response.status}, ${errorText}`);
-      return;
+
+      console.error("Upload failed:", {
+        status: response.status,
+        error: errorText,
+      });
+
+      throw new Error(errorText);
     }
+
 
     const { url } = await response.json();
     if (!url) {
