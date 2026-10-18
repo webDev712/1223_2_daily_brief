@@ -35,6 +35,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: blob.url });
   } catch (error) {
+    console.error('Error while adding image')
+    console.error(error)
     return NextResponse.json({ error: error });
   }
 }
