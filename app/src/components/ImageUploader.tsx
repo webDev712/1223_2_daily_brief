@@ -50,14 +50,14 @@ async function upload(file: File) {
         disabled={disabled ?? false}
         onChange={async (e) => {
         let file = e.currentTarget.files?.[0];
-        alert(
+        console.log(
           file
             ? `1 File selected: ${file.name}\nType: ${file.type}\nSize: ${(file.size / 1024 / 1024).toFixed(2)} MB`
             : "1 File was not selected"
         );
 
           if (!file) file = e.target.files?.[0];
-          alert(
+          console.log(
             file
               ? `2 File selected: ${file.name}\nType: ${file.type}\nSize: ${(file.size / 1024 / 1024).toFixed(2)} MB`
               : "2 File was not selected"
@@ -65,9 +65,9 @@ async function upload(file: File) {
           if (!file) return;
           try {
             const url = await upload(file);
-            alert('Added image!');
+            toast.success('Added image!');
           } catch (error) {
-            alert(`Error while uploading an image: ${error}`);
+            toast.error(`Error while uploading an image: ${error}`);
           }
         }}
       />

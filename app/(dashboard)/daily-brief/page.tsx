@@ -879,7 +879,7 @@ export default function DailyBrief() {
                                       <label>
                                         <input type="checkbox" style={{ display: 'none' }} />
 
-                                        <img src={`/api/blob_image?pathname=${r.text.slice(57)}`}  alt='Image' />
+                                        <img src={`/api/blob_image?pathname=${r.text.slice(57)}`}  alt='Image' className='input' />
                                         <div style={{position: 'relative'}}>
                                           <div className="x" style={{ position: 'absolute', right: 5, top: 5 }}   onClick={(e) => {
                                               e.preventDefault();
@@ -914,7 +914,7 @@ export default function DailyBrief() {
                               <div>{capitalize(r.day_time)}</div>
                               <div>{r.source}</div>
                               <div>Assignee: <div className='' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name}</div></div>
-                              <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric ?? 'No Metric'}</div>{r.checked && r.metric === 'Image' && r.text && isBlobLink(r.text) === true ? 
+                              <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric ?? 'No Metric'}</div>{r.checked && r.metric === 'Image' && r.text && isBlobLink(r.text) === true && 
                                   (<div style={{ position: 'relative' }}>
                                     {r.text && (
                                       <label>
@@ -937,8 +937,9 @@ export default function DailyBrief() {
 
                                       </label>
                                     )}
-                                  </div>) : (<strong>{r.text}</strong>) }
-</div>
+                                  </div>) }
+                              {r.checked && r.metric !== 'Image' && (<strong>{r.text}</strong>)}
+                              </div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               {
                                 user.permissions.reasign_reports === true && `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` === b.date ? (

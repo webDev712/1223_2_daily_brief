@@ -932,5 +932,70 @@
     .daily-brief .tasks .task > div[data-img="roll-next-brief"]::before{
         width: 250px;
     }
+    .daily-brief .report > :nth-child(3){
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .daily-brief .report{
+        gap: 4px;
+    }
+
+    .daily-brief .report > :nth-child(4){
+        text-align: left;
+    }
+
+    .daily-brief .report > :nth-child(5){
+        flex-wrap: nowrap !important;
+        width: 100%;
+        flex-direction: row;
+        display: flex;
+        gap: 10px;
+    }
+
+    .daily-brief .report > :nth-child(5) > *{
+        margin: auto 0;
+    }
+
+    .daily-brief .report > :nth-child(3), .daily-brief .report > :nth-child(4){
+        width: 100% !important;
+        text-align: left;
+    }
+
+    .daily-brief .report > :nth-child(2){
+        font-weight: 600;
+    }
+
+    .daily-brief .report > :last-child,
+    .daily-brief .report > :nth-last-child(2){
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+    .daily-brief .report > :nth-last-child(2){
+        margin-bottom: 5px;
+    }
+
+    .daily-brief .report.reports-to-assign::before,
+    .daily-brief .report.reports-you-took::before,
+    .daily-brief .report.reports-other-users-took::before{
+        content: "-- Reports assigned to other users --";
+        display: block;
+        position: absolute;
+        left: 0px;
+        top: 10px;
+        opacity: 0.9;
+        font-style: italic;
+        font-weight: 600;
+    }
+
+
+    .daily-brief .report.reports-to-assign::before{
+        content: "-- Not assigned reports --"
+    }
+
+    .daily-brief .report.reports-you-took::before{
+        content: "-- Reports assigned to you --"
+    }
 
 }

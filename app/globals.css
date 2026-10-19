@@ -577,6 +577,7 @@ div:has(> .img-fullscreen){
   width: auto !important;
   display: none;
   padding: 5px;
+  max-height: 80vh;
 }
 
 label:has(> input:checked) div:has(> .img-fullscreen){
@@ -619,5 +620,10 @@ img {
     .no-padding-margin{
       padding: 0 !important;
       margin: 0 !important;
+    }
+
+    div:has(> .img-fullscreen){
+      min-width: 90vw;
+      max-width: 95vw;
     }
 }
