@@ -47,8 +47,9 @@ async function upload(file: File) {
         accept="image/*"
         placeholder=""
         className={disabled ? 'image-uploader d' : 'image-uploader'}
-        disabled={disabled ?? false}
+        disabled={disabled}
         onChange={async (e) => {
+        if (disabled === true) return;
         let file = e.currentTarget.files?.[0];
         console.log(
           file
@@ -65,6 +66,7 @@ async function upload(file: File) {
           if (!file) return;
           try {
             const url = await upload(file);
+            toast.success(JSON.stringify(disabled));
             toast.success('Added image!');
           } catch (error) {
             toast.error(`Error while uploading an image: ${error}`);

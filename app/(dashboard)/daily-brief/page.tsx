@@ -483,7 +483,7 @@ export default function DailyBrief() {
                   <div className='brief' id={`b-${b.id}`} key={`b-${b.id}`}>
                     <div className='shift-info'>
                       <div>
-                        <h1>Shift information    - {b.shift} </h1>
+                        <h1>Shift information ({`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? (b.freezed === true ? 'Freezed - brief day passed' : 'Freezed - brief submitted') : (b.freezed === true ? 'Freezed - brief submitted' : 'Active - Owner can edit')}){b.shift ? ` - shift ${b.shift}` : ``} </h1>
                         <div className='button-w-bl' style={{marginLeft: "auto"}} onClick={() => {generateEmailHTML(b)}} >Copy for Email</div>
                         <div className='button-w-bl' onClick={() => {downloadPDF(b)}}>Save as PDF</div>
                         <div className={noAccessEdit(b) ? 'button-d-bl d tg' : 'button-d-bl tg'} onClick={() => {if (!noAccessEdit(b)) setShowSubmit(true)}}>Submit Brief</div>
@@ -700,8 +700,8 @@ export default function DailyBrief() {
                                 <div className="flex" style={{ gap: 5, marginBottom: 5 }}>
                                   {r.metric ? (<div style={{ margin: 'auto 0' }}>{r.metric}</div>) : 'No Metric'}
                                   {(r.metric === 'Image') && r.checked !== true && (
-                                    <ImageUploader disabled={r.checked ?? false} send_url_to={(url) => {
-                                      if (!r.checked) {
+                                    <ImageUploader disabled={(r.checked ?? false) || noAccessEdit(b)} send_url_to={(url) => {
+                                      if (!r.checked && !noAccessEdit(b)) {
                                           updateReports(
                                               b,
                                               {
@@ -718,13 +718,13 @@ export default function DailyBrief() {
 
                                 {(r.metric === 'Metric' || r.metric === 'Count') && (
                                     <input
-                                        className={r.checked ? 'input d' : 'input'}
+                                        className={r.checked || !noAccessEdit(b) ? 'input d' : 'input'}
                                         value={r.text ?? ''}
-                                        disabled={r.checked ?? false}
+                                        disabled={(r.checked ?? false) || noAccessEdit(b)}
                                         type="number"
 
                                         onChange={(e) => {
-                                            if (!r.checked) {
+                                            if (!r.checked && !noAccessEdit(b)) {
                                                 updateReports(
                                                     b,
                                                     {
@@ -738,6 +738,8 @@ export default function DailyBrief() {
                                         }}
 
                                         onBlur={(e) => {
+                                            if (r.checked || noAccessEdit(b)) return;
+
                                             let value = e.target.value;
                                             let start_value = e.target.value;
 
@@ -772,11 +774,12 @@ export default function DailyBrief() {
                                 )}
                                 {(r.metric === 'Free-text') && (
                                   <textarea 
-                                        className={r.checked ? 'input d' : 'input'}
+                                        className={r.checked || noAccessEdit(b) ? 'input d' : 'input'}
                                         style={{ transition: 'none' }}
                                         defaultValue={r.text ?? ''}
-                                        disabled={!!r.checked}
+                                        disabled={!!r.checked || noAccessEdit(b)}
                                         onBlur={(e) => {
+                                          if (r.checked || noAccessEdit(b)) return;
                                           const text = e.currentTarget.value;
                                           if (text !== (r.text ?? '')) {
                                               updateReports(
@@ -818,13 +821,13 @@ export default function DailyBrief() {
                                 {(r.metric === 'Yes/No') && (
                                   <div className='flex' style={{ gap: 5, padding: '0 0 0 2px' }}>
                                     <input
-                                          className={r.checked ? 'input d' : 'input'}
+                                          className={r.checked || noAccessEdit(b)  ? 'input d' : 'input'}
                                           checked={r.text === "Yes"}
-                                          disabled={!!r.checked}
+                                          disabled={!!r.checked || noAccessEdit(b)}
                                           type="checkbox"
   
                                           onChange={(e) => {
-                                              if (!r.checked) {
+                                              if (!r.checked && !noAccessEdit(b)) {
                                                   updateReports(
                                                       b,
                                                       {
@@ -838,13 +841,13 @@ export default function DailyBrief() {
                                           }} />
                                     <div style={{padding: '0 3px'}}>/</div>
                                     <input
-                                          className={r.checked ? 'input d' : 'input'}
+                                          className={r.checked || noAccessEdit(b) ? 'input d' : 'input'}
                                           checked={r.text === "No"}
-                                          disabled={!!r.checked}
+                                          disabled={!!r.checked || noAccessEdit(b)}
                                           type="checkbox"
   
                                           onChange={(e) => {
-                                              if (!r.checked) {
+                                              if (!r.checked && !noAccessEdit(b)) {
                                                   updateReports(
                                                       b,
                                                       {
@@ -900,7 +903,7 @@ export default function DailyBrief() {
                                 
                             </div>
                               <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div className={r.checked || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
+                              <div className={r.checked || user.id !== b.lead_id || noAccessEdit(b) ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
                                 onClick={() => {if (!r.checked && user.id === b.lead_id && !noAccessEdit(b) ) updateReports(b, {...r, holder_id: null}, r.checked)}}
                               >Resign</div>
                             </div>)
