@@ -513,6 +513,24 @@
   margin: 0 !important;
 }
 
+a.download-file-link{
+    width: 100%;
+    padding: 10px;
+    color: white;
+    background-color: transparent !important;
+    text-decoration: none !important;
+    height: max-content;
+}
+
+a.download-file-link:hover{
+    background-color: transparent !important;
+    text-decoration: underline !important;
+}
+
+a.download-file-link:hover::before{
+    display: none;
+}
+
 @keyframes pulse_background_chat {
     0% {
         background-image: url('../../../../public/chat_0.png');
@@ -520,7 +538,7 @@
     }
 
     50% {
-        background-color: rgb(67, 97, 238);
+        background-color: rgb(240, 46, 46);
         background-image: url('../../../../public/chat_1.png');
     }
 

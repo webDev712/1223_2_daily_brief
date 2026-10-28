@@ -189,8 +189,8 @@ const reports_rows = await sql`
         await Promise.all(
             reports_rows.map((r) =>
                 sql`
-                INSERT INTO saved_report (text, name, source, checked, day_time, company_id, metric, metric_range_from, metric_range_to, department_id, holder_id, date, report_id)
-                VALUES ('', ${r.name}, ${r.source}, FALSE, ${r.day_time}, ${r.company_id}, ${r.metric}, ${r.metric_range_from}, ${r.metric_range_to}, ${r.department_id}, ${r.assigned_holder_id}, ${date}, ${r.id} )
+                INSERT INTO saved_report (text, name, source, checked, day_time, company_id, metric, metric_range_from, metric_range_to, department_id, holder_id, date, report_id, check_before)
+                VALUES ('', ${r.name}, ${r.source}, FALSE, ${r.day_time}, ${r.company_id}, ${r.metric}, ${r.metric_range_from}, ${r.metric_range_to}, ${r.department_id}, ${r.assigned_holder_id}, ${date}, ${r.id}, ${r.check_before} )
                 ON CONFLICT (report_id, date)
                 DO NOTHING;
                 `

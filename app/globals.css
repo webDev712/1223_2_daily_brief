@@ -87,7 +87,9 @@ body > .sidebar + div > div:last-child{
   max-width: max-content;
   transition: all 0.3s ease !important;
   user-select: none !important;
+  text-decoration: none !important;
 }
+
 
 .button-d-bl-sm:hover,
 .button-d-bl:hover,
@@ -187,7 +189,7 @@ div .progress-bar{
   height: 100%;
   background: #4361EE;
   display: block;
-  transition: 0.5s ease all;
+  transition: 0.5s ease all !important;
 }
 
 .four-block {
@@ -277,6 +279,26 @@ div .progress-bar{
 .red{
   color: #F04438;
 }
+
+.red-background{
+  background-color: #F0443805 !important;
+  padding-bottom: 30px !important;
+}
+
+
+.red-background::after{
+    content: "Past Deadline.";
+    opacity: .9;
+    font-style: italic;
+    font-weight: 600;
+    display: block;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+  color: #F04438;
+
+}
+
 
 .orange,
 .orange::after{
@@ -451,6 +473,7 @@ div .progress-bar{
 
 textarea {
   text-transform: none !important;
+  transition: none !important;
 }
 
 

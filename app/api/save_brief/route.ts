@@ -83,7 +83,8 @@ export async function POST(request: Request) {
                             metric_range_from,
                             metric_range_to,
                             department_id,
-                            holder_id
+                            holder_id,
+                            check_before
                         )
                         VALUES (
                             ${r.text},
@@ -97,7 +98,8 @@ export async function POST(request: Request) {
                             ${r.metric_range_from},
                             ${r.metric_range_to},
                             ${r.department_id},
-                            ${r.holder_id}
+                            ${r.holder_id},
+                            ${r.check_before}
                             
                         )
                     `;

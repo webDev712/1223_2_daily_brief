@@ -57,6 +57,7 @@ export interface Report {
   default_holder_id?: string;
   backup_start_at_day?: string;
   backup_holder_id?: string;
+  check_before?: string;
 }
 
 export interface Finding {

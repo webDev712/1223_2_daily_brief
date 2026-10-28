@@ -3,12 +3,19 @@
 import Loader from "@/app/src/components/Loader";
 import { useEffect, useState } from "react";
 import { format, parse } from "date-fns";
+import { es, enUS } from "date-fns/locale";
 import './page.css'
 import UserCircle from "@/app/src/components/UserCircle";
 import { Finding, SavedBrief, Task, User } from "@/lib/types";
+import { useLocale, useTranslations } from "next-intl";
 
 
 export default function BriefHistory() {
+  const t = useTranslations('BriefHistory');
+  const locale = useLocale();
+  // В date-fns нет отдельной es-MX локали, для испанского используем `es`
+  const dfLocale = locale.startsWith('es') ? es : enUS;
+
   const today = new Date();
   const daysAgo = new Date();
   const [loading, setLoading] = useState(true)
@@ -75,7 +82,7 @@ export default function BriefHistory() {
           return;
         }  
         let leads_data = await users_res.json();
-        leads_data = leads_data.filter((a: User) => a.user_role !== 'manager');
+        // leads_data = leads_data.filter((a: User) => a.user_role !== 'manager');
         setLeads(leads_data);
       }
       load();
@@ -94,40 +101,40 @@ export default function BriefHistory() {
                 <div className="four-block">
                   <div img-id="document" onClick={() => setStatus('')}>
                     <h1>{briefs.length}</h1>
-                    <div>Total Briefs</div>
-                    <span>Last {days} days, {leadsCount} leads</span>
+                    <div>{t("total_briefs")}</div>
+                    <span>{t("last_days_leads", { days, leads: leadsCount })}</span>
                   </div>
                   <div img-id="done" onClick={() => setStatus('submitted')}>
                     <h1>{briefs_submitted}</h1>
-                    <div>Submitted</div>
-                    <span>{(briefs_submitted / allBriefs.length * 100).toFixed(0)}% completion rate</span>
+                    <div>{t("card_submitted")}</div>
+                    <span>{t("completion_rate", { percent: (briefs_submitted / allBriefs.length * 100).toFixed(0) })}</span>
                   </div>
                   <div img-id="clock" onClick={() => setStatus('progress')}>
                     <h1>{briefs.length - briefs_submitted - briefs_incomplete}</h1>
-                    <div>In Progress</div>
-                    <span>Awaiting submission today</span>
+                    <div>{t("card_in_progress")}</div>
+                    <span>{t("awaiting_submission")}</span>
                   </div>
                   <div img-id="error" onClick={() => setStatus('incomplete')}>
                     <h1>{briefs_incomplete}</h1>
-                    <div>Incomplete</div>
-                    <span>{(briefs_incomplete / allBriefs.length * 100).toFixed(0)}% of all briefs</span>
+                    <div>{t("card_incomplete")}</div>
+                    <span>{t("percent_of_all", { percent: (briefs_incomplete / allBriefs.length * 100).toFixed(0) })}</span>
                   </div>
                 </div>
                 <div className="filters">
                   <select defaultValue={selectedLead} name="leads" id="leads" onChange={(e) => setSelectedLead(e.target.value)}>
-                    <option value="">All Leads</option>
+                    <option value="">{t("all_leads")}</option>
                     {leads.map((l: User) => (<option key={l.id} value={l.id}>{l.name}</option>))}
                   </select>
                   <select name="status" id="status" defaultValue={status} onChange={(e) => setStatus(e.target.value)}>
-                    <option value="">All Statuses</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="progress">In progress</option>
-                    <option value="incomplete">Incomplete</option>
+                    <option value="">{t("all_statuses")}</option>
+                    <option value="submitted">{t("status_submitted")}</option>
+                    <option value="progress">{t("status_in_progress")}</option>
+                    <option value="incomplete">{t("status_incomplete")}</option>
                   </select>
                   <select name="days" id="days" defaultValue={days} onChange={(e) => setDays(e.target.value)}>
-                    <option value="7">Last 7 days</option>
-                    <option value="30">Last 30 days</option>
-                    <option value="90">Last 90 days</option>
+                    <option value="7">{t("last_days", { days: 7 })}</option>
+                    <option value="30">{t("last_days", { days: 30 })}</option>
+                    <option value="90">{t("last_days", { days: 90 })}</option>
                   </select>
                 </div>
               </div>
@@ -136,15 +143,15 @@ export default function BriefHistory() {
               <div className="table-wrapper">
                 <div className="table">
                   <label>
-                    <div>DATE</div>
-                    <div>EMPLOYEE</div>
-                    <div>SHIFT</div>
-                    <div>WORK STATUS</div>
-                    <div>REPORTS</div>
-                    <div>FINDINGS</div>
-                    <div>TASKS</div>
+                    <div>{t("col_date")}</div>
+                    <div>{t("col_employee")}</div>
+                    <div>{t("col_shift")}</div>
+                    <div>{t("col_work_status")}</div>
+                    <div>{t("col_reports")}</div>
+                    <div>{t("col_findings")}</div>
+                    <div>{t("col_tasks")}</div>
                     {/* <div>HANDOFF</div> */}
-                    <div>STATUS</div>
+                    <div>{t("col_status")}</div>
                     {/* <div>VIEW</div> */}
                   </label>
                   {briefs.map((b: SavedBrief) => {
@@ -157,8 +164,8 @@ export default function BriefHistory() {
                     return (
                       <label key={b.id}>
                         <div>
-                          <div>{isToday ? 'Today' : format(briefDate, 'MMM d')} {b?.created_at && format(new Date(b.created_at), 'hh:mm a')}</div>
-                          <span>{format(briefDate, 'MMMM d, yyyy')}</span>
+                          <div>{isToday ? t("today") : format(briefDate, t.raw("date_short"), { locale: dfLocale })} {b?.created_at && format(new Date(b.created_at), 'hh:mm a')}</div>
+                          <span>{format(briefDate, t.raw("date_long"), { locale: dfLocale })}</span>
                         </div>
                         <div>
                           {b.lead_id !== b.original_lead_id && (
@@ -174,24 +181,24 @@ export default function BriefHistory() {
                           </div>
                         </div>
                         <div>{b.shift || "-"}</div>
-                        <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? '🚐 Driving' : '🏢 Floor'}</div>
+                        <div style={{color: (b.driving === true ? '#4361EE' : '')}}>{b.driving === true ? t("work_driving") : t("work_floor")}</div>
                         <div>
                           <div style={{color: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '')}}>{b.reports.filter(r => r.checked === true).length}/{b.reports.length}</div>
                           <div className="progress-bar">
                             <span style={{ width: reportsPercentage + "%", backgroundColor: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '') }}></span>
                           </div>
                         </div>
-                        <div className={b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : ''}>{b.findings ? b.findings.length : "None"}</div>
+                        <div className={b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : ''}>{b.findings ? b.findings.length : t("none")}</div>
                         <div>{b.tasks.length}</div>
                         {/* <div>HANDOFF</div> */}
                         <div style={{color: (b.freezed ? '#12B76A' : 
                                                 (isToday ? '#F79009' : '#f70909'))}}>
-                          ● {b.freezed ? 'Submitted' : 
-                                                (isToday ? 'In progress' : 'Incomplete')}
+                          ● {b.freezed ? t("status_submitted") : 
+                                                (isToday ? t("status_in_progress") : t("status_incomplete"))}
                         </div>
                         <input type="checkbox" />
                         <b>
-                          <div>Findings:</div>
+                          <div>{t("findings_label")}</div>
                           <div>{b.findings && b.findings?.length > 0 ? b.findings.map((finding: Finding) => (
                             <div key={`finding_show_${finding.id}`}>
                               <div className={finding.type}></div>
@@ -199,9 +206,9 @@ export default function BriefHistory() {
                               <div>{format(new Date(finding.created_at), 'hh:mm aa')}</div>
                             </div>
                           )) : (
-                            <h1>No Findings in this brief</h1>
+                            <h1>{t("no_findings")}</h1>
                           )}</div>
-                          <div>Tasks:</div>
+                          <div>{t("tasks_label")}</div>
                           <div>{b.tasks && b.tasks?.length > 0 ? b.tasks.map((task: Task) => (
                             <div key={`task_show_${task.id}`} className={task.checked ? 'checked' : ''}>
                               <div className={task.roll_to_next_brief === true ? 'roll-next-brief' : 'do-not-roll-next-brief'}></div>
@@ -209,7 +216,7 @@ export default function BriefHistory() {
                               <div>{task.task_type}</div>
                             </div>
                           )) : (
-                            <h1>No Tasks in this brief</h1>
+                            <h1>{t("no_tasks")}</h1>
                           )}</div>
                         </b>
                         {/* <div>VIEW</div> */}

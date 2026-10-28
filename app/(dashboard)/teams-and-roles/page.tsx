@@ -11,11 +11,13 @@ import generatePhoneNumber from '@/lib/phone';
 import { getPermissions } from '@/lib/config';
 import capitalize, { randomEmployeeID } from '@/lib/text';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 
 
 
 export default function TeamsAndRoles() {
+  const t = useTranslations('TeamsAndRoles');
   const [loading, setLoading] = useState(true);
   const [me_user, setUser] = useState<User>();
   const [users, setUsers] = useState<User[]>([]);
@@ -47,12 +49,12 @@ export default function TeamsAndRoles() {
       body: JSON.stringify({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id, archived: true}),
     }).then(res => {
       if (res.status === 200) {
-        toast.success(`Archived user "${user.name}"`)
+        toast.success(t('toasts.archivedUser', { name: user.name }))
         setReload(prev => prev + 1);
         setShowConfirmDelete(false);
       }
       else{
-        toast.error('Error while editing user.')
+        toast.error(t('toasts.errorEditingUser'))
       }
     });
 
@@ -63,15 +65,15 @@ export default function TeamsAndRoles() {
     fetch("/api/role", {method: "DELETE", headers: {"Content-Type": "application/json"}, body: JSON.stringify(role)})
     .then(res => {
       if (res.status === 200) {
-        toast.success(`Deleted Role ${role.name}`);
+        toast.success(t('toasts.deletedRole', { name: role.name }));
         setReload(prev => prev + 1);
         setShowConfirmDeleteRole(false);
       }
       else if (res.status === 409) {
-        toast.info('Before deleting, change roles for users who has this role.')
+        toast.info(t('toasts.changeRolesBeforeDelete'))
       }
       else{
-        toast.error('Error while editing role.')
+        toast.error(t('toasts.errorEditingRole'))
       }
     })
   }
@@ -93,7 +95,7 @@ export default function TeamsAndRoles() {
       body: JSON.stringify(user),
     }).then(res => {
       if (res.status === 200) {
-        toast.success(`Added user "${user.name}"`)
+        toast.success(t('toasts.addedUser', { name: user.name }))
         setReload(prev => prev + 1);
         setShowAddUser(false);
       }
@@ -124,10 +126,10 @@ export default function TeamsAndRoles() {
     fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user})}).then(res => {
       if (res.status === 200) {
         setReload(prev => prev + 1)
-        toast.success('User data saved successfully!')
+        toast.success(t('toasts.userSaved'))
       }
       else{
-        toast.error('Error while saving user data. Try again later.')
+        toast.error(t('toasts.errorSavingUser'))
       }
       setReload(prev => prev + 1)
     })
@@ -136,7 +138,7 @@ export default function TeamsAndRoles() {
 
   const addRole = () => {
     if (selectedPermissionsNewRole?.filter((permission: SelectedPermission) => permission.selected === true).length === 0) {
-      toast.error('Select at least one permission.')
+      toast.error(t('toasts.selectPermission'))
       return;
     }
     const role = {
@@ -151,7 +153,10 @@ export default function TeamsAndRoles() {
       body: JSON.stringify(role),
     }).then(res => {
       if (res.status === 200) {
-        toast.success(`Added role "${role.name}" with ${role.permissions?.filter((permission: SelectedPermission) => permission.selected === true).length} permission`)
+        toast.success(t('toasts.addedRole', {
+          name: role.name,
+          count: role.permissions?.filter((permission: SelectedPermission) => permission.selected === true).length ?? 0,
+        }))
         setReload(prev => prev + 1);
         setShowAddRoleForm(false);
       }
@@ -172,7 +177,10 @@ export default function TeamsAndRoles() {
       body: JSON.stringify(role),
     }).then(res => {
       if (res.status === 200) {
-        toast.success(`Success! Now, role "${role.name}" has ${role.permissions?.filter((permission: SelectedPermission) => permission.selected === true).length} permissions`)
+        toast.success(t('toasts.editedRole', {
+          name: role.name ?? '',
+          count: role.permissions?.filter((permission: SelectedPermission) => permission.selected === true).length ?? 0,
+        }))
         setReload(prev => prev + 1);
         setShowEditRoleForm(false);
       }
@@ -197,7 +205,7 @@ export default function TeamsAndRoles() {
       body: JSON.stringify({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id, archived: false}),
     }).then(res => {
       if (res.status === 200) {
-        toast.success(`Now User "${user.name}" has access!`)
+        toast.success(t('toasts.userHasAccess', { name: user.name }))
         setReload(prev => prev + 1);
         setShowConfirmGiveAccess(false);
       }
@@ -302,11 +310,11 @@ export default function TeamsAndRoles() {
           {showConfirmDelete && (
             <div className='confirm'>
               <div>
-                <h1>Confirm Archiving this User?</h1>
-                <p>You can give access this user back later.</p>
+                <h1>{t('confirm.archiveTitle')}</h1>
+                <p>{t('confirm.archiveText')}</p>
                 <div>
-                  <div className='button-w-bl' onClick={() => {setShowConfirmDelete(false)}}>Cancel</div>
-                  <div className='button-d-bl' onClick={() => {archiveUser(userToDelete)}}>Archive User</div>
+                  <div className='button-w-bl' onClick={() => {setShowConfirmDelete(false)}}>{t('common.cancel')}</div>
+                  <div className='button-d-bl' onClick={() => {archiveUser(userToDelete)}}>{t('confirm.archiveButton')}</div>
                 </div>
               </div>
             </div>
@@ -314,11 +322,11 @@ export default function TeamsAndRoles() {
           {showConfirmDeleteRole && (
             <div className='confirm'>
               <div>
-                <h1>Confirm Deleting this Role?</h1>
-                <p>Before deleting, change roles for users who has this role.</p>
+                <h1>{t('confirm.deleteRoleTitle')}</h1>
+                <p>{t('toasts.changeRolesBeforeDelete')}</p>
                 <div>
-                  <div className='button-w-bl' onClick={() => {setShowConfirmDeleteRole(false)}}>Cancel</div>
-                  <div className='button-d-bl' onClick={() => { deleteRole(roleToDelete) }}>Delete Role</div>
+                  <div className='button-w-bl' onClick={() => {setShowConfirmDeleteRole(false)}}>{t('common.cancel')}</div>
+                  <div className='button-d-bl' onClick={() => { deleteRole(roleToDelete) }}>{t('confirm.deleteRoleButton')}</div>
                 </div>
               </div>
             </div>
@@ -326,10 +334,10 @@ export default function TeamsAndRoles() {
           {showConfirmGiveAccess && (
             <div className='confirm'>
               <div>
-                <h1>Confirm Giving back Access to this User?</h1>
+                <h1>{t('confirm.giveAccessTitle')}</h1>
                 <div>
-                  <div className='button-w-bl' onClick={() => {setShowConfirmGiveAccess(false)}}>Cancel</div>
-                  <div className='button-d-bl' onClick={() => {giveUserAccess(userToDelete)}}>Give Access</div>
+                  <div className='button-w-bl' onClick={() => {setShowConfirmGiveAccess(false)}}>{t('common.cancel')}</div>
+                  <div className='button-d-bl' onClick={() => {giveUserAccess(userToDelete)}}>{t('confirm.giveAccessButton')}</div>
                 </div>
               </div>
             </div>
@@ -341,32 +349,32 @@ export default function TeamsAndRoles() {
                     e.preventDefault();
                     addUser();
                   }}>
-                  <h1>Enter new User data:</h1>
+                  <h1>{t('addUser.title')}</h1>
                   <div>
                     <label>
-                      <div>Name</div>
+                      <div>{t('addUser.name')}</div>
                       <input style={{textTransform: 'none'}} type="text" id='name' required />
                     </label>
                     <label>
-                      <div>Email</div>
+                      <div>{t('addUser.email')}</div>
                       <input style={{textTransform: 'none'}} type="email" id='email' required />
                     </label>
                     <label>
-                      <div>Phone</div>
+                      <div>{t('addUser.phone')}</div>
                       <input onChange={(e) => e.target.value = generatePhoneNumber(e.target.value)} type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" required />
                     </label>
                     <label>
-                      <div>Role</div>
+                      <div>{t('addUser.role')}</div>
                       <select id='role' required >
                         {roles?.map(role => (<option key={`new_user_role_${role.id}`} value={role.id}>{capitalize(role.name)}</option>))}
                       </select>
                     </label>
                     <label>
-                      <div>Employee ID (2 symbols XX)</div>
+                      <div>{t('addUser.employeeId')}</div>
                       <input type="text" id='letter' pattern="[A-Za-z][A-Za-z]" required defaultValue={randomEmployeeID()} />
                     </label>
                     <label>
-                      <div>Department</div>
+                      <div>{t('addUser.department')}</div>
                       <select id='department'>
                         {departments.map((dep: Department) => (
                           <option key={`department_${dep.id}`} value={dep.id}>{dep.name}</option>
@@ -377,8 +385,8 @@ export default function TeamsAndRoles() {
 
 
                   <div>
-                    <div className='button-w-bl' onClick={() => {setShowAddUser(false)}}>Cancel</div>
-                    <button className='button-d-bl' type='submit' form="add-user-form">Add new User</button>
+                    <div className='button-w-bl' onClick={() => {setShowAddUser(false)}}>{t('common.cancel')}</div>
+                    <button className='button-d-bl' type='submit' form="add-user-form">{t('addUser.submit')}</button>
                   </div>
                 </form>
               </div>
@@ -391,14 +399,14 @@ export default function TeamsAndRoles() {
                     e.preventDefault();
                     addRole();
                   }}>
-                  <h1>Create new Role:</h1>
+                  <h1>{t('roleForm.createTitle')}</h1>
                   <div>
                     <label>
-                      <div>Name</div>
+                      <div>{t('roleForm.name')}</div>
                       <input type="text" name='role' id='new_role' required />
                     </label>
                   </div>
-                  <h3>User with this role are able to:</h3>
+                  <h3>{t('roleForm.permissionsIntro')}</h3>
                   <div style={{flexDirection: 'column'}}>
                     {selectedPermissionsNewRole && selectedPermissionsNewRole.map((permission: SelectedPermission) => (
                       <label key={`select_permission_role_${permission.id}`}>
@@ -411,8 +419,8 @@ export default function TeamsAndRoles() {
                   </div>
 
                   <div>
-                    <div className='button-w-bl' onClick={() => {setShowAddRoleForm(false)}}>Cancel</div>
-                    <button className='button-d-bl' type='submit' form="add-role-form">Add new Role</button>
+                    <div className='button-w-bl' onClick={() => {setShowAddRoleForm(false)}}>{t('common.cancel')}</div>
+                    <button className='button-d-bl' type='submit' form="add-role-form">{t('roleForm.addSubmit')}</button>
                   </div>
                 </form>
               </div>
@@ -425,10 +433,10 @@ export default function TeamsAndRoles() {
                     e.preventDefault();
                     editRole();
                   }}>
-                  <h1>Edit Role:</h1>
+                  <h1>{t('roleForm.editTitle')}</h1>
                   <div>
                     <label>
-                      <div>Name</div>
+                      <div>{t('roleForm.name')}</div>
                       <input type="text" name='role' id='new_role' value={roleToEdit?.name} required onChange={(e) => {
                         if (roleToEdit){
                           setRoleToEdit({...roleToEdit, name: e.target.value})
@@ -436,7 +444,7 @@ export default function TeamsAndRoles() {
                       }}/>
                     </label>
                   </div>
-                  <h3>User with this role are able to:</h3>
+                  <h3>{t('roleForm.permissionsIntro')}</h3>
                   <div style={{flexDirection: 'column'}}>
                     {selectedPermissionsNewRole && selectedPermissionsNewRole.map((permission: SelectedPermission) => (
                       <label key={`select_permission_role_${permission.id}`}>
@@ -449,14 +457,14 @@ export default function TeamsAndRoles() {
                   </div>
 
                   <div>
-                    <div className='button-w-bl' onClick={() => {setShowEditRoleForm(false)}}>Cancel</div>
-                    <button className='button-d-bl' type='submit' form="add-role-form">Submit Role Changes</button>
+                    <div className='button-w-bl' onClick={() => {setShowEditRoleForm(false)}}>{t('common.cancel')}</div>
+                    <button className='button-d-bl' type='submit' form="add-role-form">{t('roleForm.editSubmit')}</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
-          {me_user?.permissions.add_users && (<div className='button-d-bl-sm add-user' onClick={() => {setShowAddUser(true)}}>Add User</div>)}
+          {me_user?.permissions.add_users && (<div className='button-d-bl-sm add-user' onClick={() => {setShowAddUser(true)}}>{t('addUser.button')}</div>)}
           <div className='employees-container'>
             {users.map(user => {
               return (
@@ -475,7 +483,7 @@ export default function TeamsAndRoles() {
                             <option key={`update_role_${user.id}_${role.id}`} value={role.id}>{role.name}</option>
                           ))}
                         </select>
-                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id || ""})}}>Save</div>)}
+                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id || ""})}}>{t('common.save')}</div>)}
                       </div>
                       <div>
                         <select onChange={(e) => {updateUser({...user, newDepartment: e.target.value})}} defaultValue={departments.find((dep: Department) => dep.name === user.department)?.id} disabled={me_user?.id === user.id ? true : false} className={me_user?.id === user.id ? 'd' : ''} >
@@ -485,7 +493,7 @@ export default function TeamsAndRoles() {
                             )
                           })}
                         </select>
-                        {user.selectedAnotherDepartment === true && (<div className='button-d-bl-sm' onClick={() => {saveUser(user)}}>Save</div>)}
+                        {user.selectedAnotherDepartment === true && (<div className='button-d-bl-sm' onClick={() => {saveUser(user)}}>{t('common.save')}</div>)}
                       </div>
                     </div>
                     <div>
@@ -503,15 +511,15 @@ export default function TeamsAndRoles() {
                     <div>
                       <div>
                         <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).length}</div>
-                        <span>Briefs</span>
+                        <span>{t('employee.briefs')}</span>
                       </div>
                       <div>
                         <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).reduce((a: number, brief: SavedBrief) => brief.findings ? brief.findings?.length + a : a, 0)}</div>
-                        <span>Findings</span>
+                        <span>{t('employee.findings')}</span>
                       </div>
                       <div>
                         <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).reduce((a: number, brief: SavedBrief) => brief.tasks ? brief.tasks?.length + a : a, 0)}</div>
-                        <span>Tasks</span>
+                        <span>{t('employee.tasks')}</span>
                       </div>
                     </div>
                   ) : (<div></div>)}
@@ -519,13 +527,13 @@ export default function TeamsAndRoles() {
                     <div className='button-r-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
                       setUserToDelete(user);
                       setShowConfirmDelete(true)
-                    }}>Archive User</div>
+                    }}>{t('confirm.archiveButton')}</div>
                   )}
                   {me_user && me_user.permissions.archive_give_access_users && user.archived === true && (
                     <div className='button-d-bl-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
                       setUserToDelete(user);
                       setShowConfirmGiveAccess(true)
-                    }}>Give Access</div>
+                    }}>{t('confirm.giveAccessButton')}</div>
                   )}
                   {(!me_user || !me_user.permissions.archive_give_access_users) && (<div></div>)}
                 </div>
@@ -535,10 +543,10 @@ export default function TeamsAndRoles() {
           <div className="role-permissions">
             <div>
               <div>
-                <h3>Role Permissions</h3>
-                <p>What each role can see and do in the system</p>
+                <h3>{t('rolePermissions.title')}</h3>
+                <p>{t('rolePermissions.description')}</p>
               </div>
-              {me_user?.permissions.add_roles && (<div className="button-d-bl-sm" onClick={() => setShowAddRoleForm(true)}>Add Role</div>)}
+              {me_user?.permissions.add_roles && (<div className="button-d-bl-sm" onClick={() => setShowAddRoleForm(true)}>{t('rolePermissions.addRole')}</div>)}
             </div>
             <div>
               {roles && roles.map((role: Role) => (
@@ -546,18 +554,18 @@ export default function TeamsAndRoles() {
                   <div>
                     <div>
                       <h6>{role.name}</h6>
-                      <span>{users.filter((user: User) => user.user_role === role.name).length} member{users.filter((user: User) => user.user_role === role.name).length !== 1 ? 's' : ''}</span>
+                      <span>{t('rolePermissions.members', { count: users.filter((user: User) => user.user_role === role.name).length })}</span>
                     </div>
                     <div className='button-d-bl-sm' onClick={() => {setShowEditRoleForm(true); setRoleToEdit(role);
                     setSelectedPermissionsNewRole(permissions.map((permission: Permission) => { return {...permission, selected: role.permissions[permission.js_name]} }))
-                    }}>Edit</div>
+                    }}>{t('common.edit')}</div>
                   </div>
                   {permissions && permissions.map((permission: Permission) => {
                     if (role.permissions[permission.js_name] === true) {
                       return (<p key={`role_${role.id}_permission_${permission.id}`}>{permission.name}</p>)
                     }
                   })}
-                  {me_user?.permissions.add_roles && (<div className='button-r-sm' onClick={() => {setRoleToDelete(role); setShowConfirmDeleteRole(true)}}>Delete</div>)}
+                  {me_user?.permissions.add_roles && (<div className='button-r-sm' onClick={() => {setRoleToDelete(role); setShowConfirmDeleteRole(true)}}>{t('common.delete')}</div>)}
                 </div>))}
             </div>
           </div>

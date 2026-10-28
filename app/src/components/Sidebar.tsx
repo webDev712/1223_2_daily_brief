@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import Chat from './Chat';
+import LanguageSwitcher from './LanguageSwitch';
+import { useTranslations } from 'next-intl';
 
 
 export default function Sidebar({ user }: { user: User}) {
@@ -27,14 +29,14 @@ export default function Sidebar({ user }: { user: User}) {
     load();
   }, [])
   const pages = [
-    {href: 'dashboard', text: 'Dashboard', permission_name: 'see_dashboard'},
-    {href: 'daily-brief', text: 'Daily Brief', permission_name: 'see_brief'},
-    {href: 'brief-history', text: 'Brief History', permission_name: 'see_briefs_history'},
-    {href: 'reports', text: 'Reports', permission_name: 'see_reports_page'},
-    {href: 'teams-and-roles', text: 'Teams & Roles', permission_name: 'see_team_roles'},
-    {href: 'production-dashboard', text: 'Production Dashboard', permission_name: 'see_production_dashboard'},
-    {href: 'action-tracker', text: 'Action Tracker', permission_name: ''},
-    {href: 'settings', text: 'Settings', permission_name: 'see_profile_settings'},
+    {href: 'dashboard', text: 'dashboard', permission_name: 'see_dashboard'},
+    {href: 'daily-brief', text: 'daily_brief', permission_name: 'see_brief'},
+    {href: 'brief-history', text: 'brief_history', permission_name: 'see_briefs_history'},
+    {href: 'reports', text: 'reports', permission_name: 'see_reports_page'},
+    {href: 'teams-and-roles', text: 'teams_and_roles', permission_name: 'see_team_roles'},
+    {href: 'production-dashboard', text: 'production_dashboard', permission_name: 'see_production_dashboard'},
+    {href: 'action-tracker', text: 'action_tracker', permission_name: ''},
+    {href: 'settings', text: 'settings', permission_name: 'see_profile_settings'},
   ]
 
   const pathname = usePathname();
@@ -50,6 +52,7 @@ export default function Sidebar({ user }: { user: User}) {
     setLoading(false)
     return () => window.removeEventListener("resize", update);
   }, []);
+  const translation = useTranslations('Sidebar');
   return (
     <div className={selected !== "login" ? "sidebar" : "display-none"}>
       <div>
@@ -62,14 +65,15 @@ export default function Sidebar({ user }: { user: User}) {
             {pages.map((page) => {
               if (page.permission_name === '' || user.permissions[page.permission_name] === true) {
                 return (<div key={`page_${page.href}`}>
-                  <Link onClick={() => {setTimeout(() => {setOpenChat(false)}, 400); setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={page.text}>
-                    <h1>{page.text}</h1>
+                  <Link onClick={() => {setTimeout(() => {setOpenChat(false)}, 400); setMobileShow(prev => !prev)}} href={`/${page.href}`} className={selected === page.href ? 'selected' : ''} data-img={page.href} data-hover={translation(page.text)}>
+                    <h1>{translation(page.text)}</h1>
                   </Link>
                   
                 </div>)
                 }
             })}
           <Chat openChat={openChat} setOpenChat={setOpenChat}></Chat>
+          <LanguageSwitcher></LanguageSwitcher>
           </div>
         )}
     </div>

@@ -9,20 +9,22 @@ import { format, parse } from "date-fns";
 import './page.css'
 import UserCircle from "@/app/src/components/UserCircle";
 import scrollToElement from "@/lib/html_document";
+import { useTranslations } from "next-intl";
 
 
-export function getGreeting() {
-  const hour = new Date().getHours();
-
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 18) return "Good afternoon";
-  if (hour >= 18 && hour < 22) return "Good evening";
-  return "Good night";
-}
 
 export default function Dashboard() {
   const today = new Date();
 
+  const t = useTranslations('Dashboard');
+  function getGreeting() {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) return t("good_morning")
+    if (hour >= 12 && hour < 18) return t("good_afternoon")
+    if (hour >= 18 && hour < 22) return t("good_evening")
+    return t("good_night")
+  }
   const { date } = useDate();
   const [leads, setLeads] = useState<User[]>([])
   const user = useUser();
@@ -54,7 +56,9 @@ export default function Dashboard() {
         return;
       }  
       let leads_data = await users_res.json();
-      leads_data = leads_data.filter((a: User) => a.user_role !== 'manager').filter((a: User) => a.archived !== true)
+      leads_data = leads_data
+        // .filter((a: User) => a.user_role !== 'manager')
+        .filter((a: User) => a.archived !== true)
       setLeads(leads_data)
       
       setBriefsLoading(false);
@@ -106,50 +110,50 @@ export default function Dashboard() {
               (<Loader></Loader>) : (
         <div>
           <h1>{getGreeting()}, {user.name.split(' ')[0]} 👋</h1>
-          <p>Stay on top of your data. Here's what needs your attention today.</p>
+          <p>{t("subtitle")}</p>
           <div className="four-block">
             <div img-id="document-yellow" onClick={() => {scrollToElement('briefs')}}>
               <h1>{briefs.length - in_progress_count}/{briefs.length}</h1>
-              <div>Daily Briefs</div>
+              <div>{t("daily_briefs")}</div>
               {in_progress_count === 0 ? 
-                (<span>All briefs submitted</span>) : 
-                (<span>{in_progress_count} brief not submitted</span>)}
+                (<span>{t("all_briefs_submitted")}</span>) : 
+                (<span>{t("briefs_not_submitted", { count: in_progress_count })}</span>)}
               {in_progress_count > 0 && 
-                (<h2>{in_progress_count} not submitted</h2>)}
+                (<h2>{t("not_submitted_badge", { count: in_progress_count })}</h2>)}
             </div>
             <div img-id="book-blue" onClick={() => {scrollToElement('duties-done')}}>
               <h1>{reports_done_count}/{reports_all_count}
               </h1>
               {" "}
-              <div>Reports Reviewed</div>
-              <span>{reports_all_count - reports_done_count} reports still need review</span>
+              <div>{t("reports_reviewed")}</div>
+              <span>{t("reports_need_review", { count: reports_all_count - reports_done_count })}</span>
               {reports_all_count > 0 && (
-                <h2>{(reports_done_count / reports_all_count * 100).toFixed()}% done</h2>
+                <h2>{t("percent_done", { percent: (reports_done_count / reports_all_count * 100).toFixed() })}</h2>
               )}
             </div>
             <div img-id="error-yellow" onClick={() => {scrollToElement('requires-attention')}}>
               <h1>{findning_count}</h1>
-              <div>Open Findings</div>
-              <span>{h_p_finding_count} high-priority finding</span>
+              <div>{t("open_findings")}</div>
+              <span>{t("high_priority_findings", { count: h_p_finding_count })}</span>
               {h_p_finding_count > 0 && (
-                <h2>{h_p_finding_count} high</h2>
+                <h2>{t("high_badge", { count: h_p_finding_count })}</h2>
               )}
             </div>
             <div img-id="tasks-red" onClick={() => {scrollToElement('requires-attention')}}>
               <h1>{tasks_count}</h1>
-              <div>Tasks this day</div>
-              <span>{tasks_done_count} tasks done</span>
+              <div>{t("tasks_this_day")}</div>
+              <span>{t("tasks_done", { count: tasks_done_count })}</span>
               {tasks_count > 0 && (
-                <h2>{(tasks_done_count / tasks_count * 100).toFixed()}% done</h2>
+                <h2>{t("percent_done", { percent: (tasks_done_count / tasks_count * 100).toFixed() })}</h2>
               )}
             </div>
           </div>
           <div className="flex j-s-b" id="briefs">
             <div>
-              <h3>Daily Briefs</h3>
-              <p>Click a card to open the Daily Brief</p>
+              <h3>{t("daily_briefs")}</h3>
+              <p>{t("click_card_hint")}</p>
             </div>
-            <div>{active_leads_today.length} brief{active_leads_today.length > 1 && 's'} active this day</div>
+            <div>{t("briefs_active", { count: active_leads_today.length })}</div>
           </div>
           {briefs.length > 0 ? (
             <div className="briefs">
@@ -178,19 +182,19 @@ export default function Dashboard() {
                         <UserCircle user_name={leads.find(el => el.id == b.lead_id)?.name || ''} size={45}></UserCircle>
                         <div>{` ${leads.find(el => el.id == b.lead_id)?.name}`}</div>
                       </div>) : ''}
-                    {b.freezed && (<div><div className="submitted">● Submitted</div></div>)}
-                    {!b.freezed && !isToday && (<div><div className="incomplete">● Incomplete</div></div>)}
-                    {!b.freezed && isToday && (<div><div>● In Progress</div></div>)}
+                    {b.freezed && (<div><div className="submitted">● {t("status_submitted")}</div></div>)}
+                    {!b.freezed && !isToday && (<div><div className="incomplete">● {t("status_incomplete")}</div></div>)}
+                    {!b.freezed && isToday && (<div><div>● {t("status_in_progress")}</div></div>)}
                     
                   </div>
                   <div>
-                    <div className="shift">{b.shift || "No shift selected"}</div>
-                    <div>{b.driving ? (<div className="driving">Driving</div>) : (<div className="on-site">Floor</div>)}</div>
-                    {b?.created_at && (<div>Started At {format(new Date(b.created_at), 'hh:mm a')}</div>)}
+                    <div className="shift">{b.shift || t("no_shift")}</div>
+                    <div>{b.driving ? (<div className="driving">{t("driving")}</div>) : (<div className="on-site">{t("floor")}</div>)}</div>
+                    {b?.created_at && (<div>{t("started_at", { time: format(new Date(b.created_at), 'hh:mm a') })}</div>)}
                   </div>
                   <div>
                     <div>
-                      <div>Reports Reviewed</div>
+                      <div>{t("reports_reviewed")}</div>
                       <div style={{color: (b_reports_done_perc === '100' || b.reports.length === 0  
                         ? '#12B76A' : '')}}>{b.reports?.reduce((a_r, r: Report) => a_r + (r.checked ? 1 : 0), 0)}/{b.reports.length}</div>
                     </div>
@@ -203,11 +207,11 @@ export default function Dashboard() {
                   <div>
                     <div>
                       <span>{b.findings?.length || 0}</span>
-                      <div>findings</div>
+                      <div>{t("findings")}</div>
                     </div>
                     <div>
                       <span>{b.tasks?.length || 0}</span>
-                      <div>tasks</div>
+                      <div>{t("tasks")}</div>
                     </div>
                   </div>
                   {/* TODO: MAKE IT OPEN RIGHT BRIEF (DATE + LEAD) */}
@@ -217,23 +221,23 @@ export default function Dashboard() {
                       "d-M-yyyy"
                     )}&lead_id=${b.lead_id}`}
                     className="button-d-bl"
-                  >View This Daily Brief   ➯</a>
+                  >{t("view_brief")}   ➯</a>
                 </div>
                 )
               }
             )}
-          </div>) : (<h4>No briefs in progress for this day</h4>)}
+          </div>) : (<h4>{t("no_briefs")}</h4>)}
           <div style={{marginTop: 20}}>
-            <h3>Today's Coverage</h3>
+            <h3>{t("todays_coverage")}</h3>
             <div className="table-wrapper">
 
               <div className="covered-container">
                 <div>
-                  <span>EMPLOYEE</span>
-                  <span>COVERING FOR</span>
-                  <span>DEPARTMENT</span>
-                  <span>WINDOW</span>
-                  <span>STATUS</span>
+                  <span>{t("col_employee")}</span>
+                  <span>{t("col_covering_for")}</span>
+                  <span>{t("col_department")}</span>
+                  <span>{t("col_window")}</span>
+                  <span>{t("col_status")}</span>
                 </div>
 
               {briefs.map((b: SavedBrief) => {
@@ -253,10 +257,9 @@ export default function Dashboard() {
                     <div>
                       <div className={b.freezed ? "submitted" :
                                         !b.freezed && !isToday ? "incomplete" : ""}>
-                        {b.freezed && (<div><div>Submitted</div></div>)}
-                        {!b.freezed && !isToday && (<div><div>Incomplete</div></div>)}
-                        {!b.freezed && isToday && (<div><div>In Progress</div></div>)}
-                      {/* {b.freezed || !isToday ? "Submitted" : "In Progress"} */}
+                        {b.freezed && (<div><div>{t("status_submitted")}</div></div>)}
+                        {!b.freezed && !isToday && (<div><div>{t("status_incomplete")}</div></div>)}
+                        {!b.freezed && isToday && (<div><div>{t("status_in_progress")}</div></div>)}
                       </div>
                     </div>
                   </div>
@@ -268,12 +271,12 @@ export default function Dashboard() {
           <div style={{marginTop: 20}}>
             <div className="flex j-s-b">
               <div id="requires-attention">
-                <h3>Requires attention</h3>
-                <p>Ordered by urgency</p>
+                <h3>{t("requires_attention")}</h3>
+                <p>{t("ordered_by_urgency")}</p>
               </div>
-              <div>{attentionCount} item{attentionCount === 1 ? '' : 's'}</div>
+              <div>{t("items_count", { count: attentionCount })}</div>
             </div>
-            {attentionCount === 0 && (<h3>No tasks requires attention today</h3>)}
+            {attentionCount === 0 && (<h3>{t("no_attention")}</h3>)}
             <div className="attention-container">
              {briefs.map((b: SavedBrief) => {
               return b.findings?.map((finding: Finding, finding_i: number) => {
@@ -281,8 +284,8 @@ export default function Dashboard() {
                   <div className="attention attention_finding" key={`${b.id}_attention_finding_${finding_i}`}>
                     <div>
                       <div>
-                        <p>High priority finding</p>
-                        <span className="high">High</span>
+                        <p>{t("high_priority_finding")}</p>
+                        <span className="high">{t("badge_high")}</span>
                       </div>
                       <div>{finding.description}</div>
                     </div>
@@ -307,8 +310,8 @@ export default function Dashboard() {
                   >
                     <div>
                       <div>
-                        <p>Pending task</p>
-                        <span className="moderate">Attention</span>
+                        <p>{t("pending_task")}</p>
+                        <span className="moderate">{t("badge_attention")}</span>
                       </div>
 
                       <div>{task.text}</div>
@@ -330,17 +333,17 @@ export default function Dashboard() {
                   <div className="attention attention_report" key={`${b.id}_attention_reports`}>
                     <div>
                       <div>
-                        <p>Incomplete report review</p>
-                        <span className="moderate">Attention</span>
+                        <p>{t("incomplete_report_review")}</p>
+                        <span className="moderate">{t("badge_attention")}</span>
                       </div>
-                      <div>{reports_pending_length} reports have not been reviewed</div>
+                      <div>{t("reports_not_reviewed", { count: reports_pending_length })}</div>
                     </div>
                     <div>
                       <div>
                         <UserCircle user_name={b.lead_name} size={20}></UserCircle>
                         <div>{b.lead_name}</div>
                       </div>
-                      <div>{reports_pending_length} left</div>
+                      <div>{t("left_count", { count: reports_pending_length })}</div>
                     </div>
                   </div>
               )
@@ -350,14 +353,14 @@ export default function Dashboard() {
                   <div className="attention attention_handoff" key={`${b.id}_attention_handoff`}>
                     <div>
                       <div>
-                        <p>Handed Off Brief</p>
-                        <span className="moderate">Attention</span>
+                        <p>{t("handed_off_brief")}</p>
+                        <span className="moderate">{t("badge_attention")}</span>
                       </div>
                       <div>
-                        <div>Handed Off from</div>
+                        <div>{t("handed_off_from")}</div>
                         <UserCircle user_name={leads.find(el => el.id === b.original_lead_id)?.name || ""} size={20}></UserCircle>
                         <div>{leads.find(el => el.id === b.original_lead_id)?.name}</div>
-                        <div>to</div>
+                        <div>{t("to")}</div>
                         <UserCircle user_name={leads.find(el => el.id === b.lead_id)?.name || ""} size={20}></UserCircle>
                         <div>{leads.find(el => el.id === b.lead_id)?.name}</div>
                       </div>
@@ -376,12 +379,12 @@ export default function Dashboard() {
           <div style={{marginTop: 20}}>
             <div className="flex j-s-b">
               <div id="duties-done">
-                <h3>Duties Done</h3>
-                <p>All activities users done today</p>
+                <h3>{t("duties_done")}</h3>
+                <p>{t("duties_subtitle")}</p>
               </div>
-              <div>{dutiesCount} item{dutiesCount === 1 ? '' : 's'}</div>
+              <div>{t("items_count", { count: dutiesCount })}</div>
             </div>
-            {dutiesCount === 0 && (<h3>No tasks requires attention today</h3>)}
+            {dutiesCount === 0 && (<h3>{t("no_duties")}</h3>)}
             <div className="attention-container duties-container">
              {briefs.map((b: SavedBrief) => {
               return b.findings?.map((finding: Finding, finding_i: number) => {
@@ -389,8 +392,8 @@ export default function Dashboard() {
                   <div className="attention attention_finding" key={`${b.id}_attention_finding_${finding_i}`}>
                     <div>
                       <div>
-                        <p>Information finding</p>
-                        <span className="info">Info</span>
+                        <p>{t("information_finding")}</p>
+                        <span className="info">{t("badge_info")}</span>
                       </div>
                       <div>{finding.description}</div>
                     </div>
@@ -412,8 +415,8 @@ export default function Dashboard() {
                   <div className="attention attention_task" key={`${b.id}_attention_task_${task.id}`}>
                     <div>
                       <div>
-                        <p>Completed task</p>
-                        <span className="good">Tasks</span>
+                        <p>{t("completed_task")}</p>
+                        <span className="good">{t("badge_tasks")}</span>
                       </div>
                       <div>{task.text}</div>
                     </div>
@@ -433,17 +436,19 @@ export default function Dashboard() {
                   <div className="attention attention_report" key={`${b.id}_attention_reports`}>
                     <div>
                       <div>
-                        <p>Progress in reports reviewing</p>
-                        <span className="good">Reports</span>
+                        <p>{t("reports_progress")}</p>
+                        <span className="good">{t("badge_reports")}</span>
                       </div>
-                      <div>{reports_done_length === b.reports.length ? `All reports reviewed (${reports_done_length} reports)` : `${reports_done_length} reports reviewed`}</div>
+                      <div>{reports_done_length === b.reports.length
+                        ? t("all_reports_reviewed", { count: reports_done_length })
+                        : t("reports_reviewed_count", { count: reports_done_length })}</div>
                     </div>
                     <div>
                       <div>
                         <UserCircle user_name={b.lead_name} size={20}></UserCircle>
                         <div>{b.lead_name}</div>
                       </div>
-                      <div>{reports_done_length} done</div>
+                      <div>{t("done_count", { count: reports_done_length })}</div>
                     </div>
                   </div>
               )
@@ -453,14 +458,14 @@ export default function Dashboard() {
                   <div className="attention attention_handoff" key={`${b.id}_attention_handoff`}>
                     <div>
                       <div>
-                        <p>Handed Off Brief</p>
-                        <span className="good">Attention</span>
+                        <p>{t("handed_off_brief")}</p>
+                        <span className="good">{t("badge_attention")}</span>
                       </div>
                       <div>
-                        <div>Handed Off from</div>
+                        <div>{t("handed_off_from")}</div>
                         <UserCircle user_name={leads.find(el => el.id === b.original_lead_id)?.name || ""} size={20}></UserCircle>
                         <div>{leads.find(el => el.id === b.original_lead_id)?.name}</div>
-                        <div>to</div>
+                        <div>{t("to")}</div>
                         <UserCircle user_name={leads.find(el => el.id === b.lead_id)?.name || ""} size={20}></UserCircle>
                         <div>{leads.find(el => el.id === b.lead_id)?.name}</div>
                       </div>
@@ -477,7 +482,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>)}
-        
     </div>
   );
 }

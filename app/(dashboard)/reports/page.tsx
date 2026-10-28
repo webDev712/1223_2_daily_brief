@@ -8,11 +8,16 @@ import getReportsTypes, { getWeekDays } from "@/lib/config";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import './page.css'
-import capitalize from "@/lib/text";
 import { useDate } from "@/app/src/components/DateContext";
-import { cp } from "fs";
+import { useTranslations } from "next-intl";
+
+// 12 AM, 1 AM, ... 11 PM (значения сохраняются в БД как раньше)
+const CHECK_BEFORE_HOURS = Array.from({ length: 24 }, (_, h) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`);
 
 export default function Reports() {
+  const t = useTranslations('Reports');
+  const tr = (key: string) => t(key as any);
+
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsObject, setReportsObject] = useState<Record<string, Report[]>>({});
@@ -26,7 +31,20 @@ export default function Reports() {
   const [showAssignedReport, setShowAssignedReport] = useState<Report | null>(null);
   const [showAddReport, setShowAddReport] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
-  const weekDays = getWeekDays()
+
+  // Названия дней недели берём из lib/config, но переводим, если есть ключ в JSON
+  const weekDays = getWeekDays().map((d: { full: string; small: string }) => ({
+    full: t.has(`weekday_full_${d.full}` as any) ? tr(`weekday_full_${d.full}`) : d.full,
+    small: t.has(`weekday_small_${d.small}` as any) ? tr(`weekday_small_${d.small}`) : d.small,
+  }))
+  const metricLabels: Record<string, string> = {
+    "No Metric": t("metric_none"),
+    "Count": t("metric_count"),
+    "Metric": t("metric_metric"),
+    "Yes/No": t("metric_yes_no"),
+    "Free-text": t("metric_free_text"),
+    "Image": t("metric_image"),
+  }
   const [reload, setReload] = useState(0);
   const [deparmentsWithNoReports, setDeparmentsWithNoReports] = useState<Department[]>([]);
   
@@ -78,7 +96,7 @@ export default function Reports() {
     changeReports(reportToDelete);
     saveReport(reportToDelete);
     setShowConfirmDelete(false);
-    toast.success("The report is deleted.");
+    toast.success(t("toast_deleted"));
   }
 
   const saveReport = (r: Report) => {
@@ -97,10 +115,10 @@ export default function Reports() {
               : report
           )
         )
-        if (r.archived !== true) toast.success('Report Updated!');
+        if (r.archived !== true) toast.success(t("toast_updated"));
       }
       else{
-        toast.error("Error while saving report")
+        toast.error(t("toast_save_error"))
       }
     });
   }
@@ -113,16 +131,14 @@ export default function Reports() {
       },
       body: JSON.stringify({...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'}),
     })
-    console.log(`{...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'}`)
-    console.log({...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'})
     if (res.status === 200) {
-      toast.success('Added new Report!');
+      toast.success(t("toast_added"));
       const json = await res.json();
       const id = json.id;
       setScrollToIdAfterReload(`report_${id}`);
       setReload(prev => prev + 1);
     }
-    else toast.error('Error while adding new Report.')
+    else toast.error(t("toast_add_error"))
     setShowAddReport(false)
   }
   useEffect(() => {
@@ -148,8 +164,6 @@ export default function Reports() {
 
         return a.name.localeCompare(b.name);
       });
-      console.log('departments_data')
-      console.log(departments_data)
 
       setDeparments(departments_data)
 
@@ -162,8 +176,6 @@ export default function Reports() {
         return;
       }
       let reports_data = await reports_res.json();
-      console.log(`reports_data`)
-      console.log(reports_data)
       setReports(reports_data)
 
       reports_data.forEach((report: Report) => {
@@ -202,9 +214,9 @@ export default function Reports() {
       }  
       let leads_data = await users_res.json();
       setAllUsers(leads_data);
-      leads_data = leads_data.filter((a: User) => a.user_role !== 'manager' && a.archived !== true);
-      console.log('leads_data')
-      console.log(leads_data)
+      leads_data = leads_data.filter((a: User) => 
+        // a.user_role !== 'manager' && 
+        a.archived !== true);
       setLeads(leads_data);
 
       const departments_with_no_reports = departments_data.filter((department: Department) => {
@@ -312,11 +324,6 @@ const getAssignedLeadIds = (report: Report): string[] => {
   return Array.from(assignedLeadIds);
 };
 
-// const total_reports = activeReports.reduce((total, report) => {
-//   const assignedLeadIds = getAssignedLeadIds(report);
-
-//   return total + assignedLeadIds.length;
-// }, 0);
 const getAssignedDepartmentIds = (report: Report): string[] => {
   const assigned = report.assigned_to;
 
@@ -472,12 +479,12 @@ return (
       {showConfirmDelete && (
         <div className='confirm'>
           <div>
-            <h1>Confirm Deleting this Brief?</h1>
-            <p>After deleting <strong>you will not be able to restore it.</strong></p>
-            <p>It won't display in leads' Daily Briefs.</p>
+            <h1>{t("confirm_delete_title")}</h1>
+            <p>{t.rich("delete_warning", { strong: (chunks) => <strong>{chunks}</strong> })}</p>
+            <p>{t("delete_hidden")}</p>
             <div>
-              <div className='button-w-bl' onClick={() => {setShowConfirmDelete(false)}}>Cancel</div>
-              <div className='button-d-bl' onClick={() => {deleteReport(reportToDelete)}}>Delete Report</div>
+              <div className='button-w-bl' onClick={() => {setShowConfirmDelete(false)}}>{t("cancel")}</div>
+              <div className='button-d-bl' onClick={() => {deleteReport(reportToDelete)}}>{t("delete_report")}</div>
             </div>
           </div>
         </div>
@@ -485,16 +492,16 @@ return (
       {showAddReport && (
         <div className='confirm add-report'>
           <div>
-            <h1>Enter new report data:</h1>
+            <h1>{t("add_title")}</h1>
             <div>
               <div>
-                <div>Name</div>
+                <div>{t("field_name")}</div>
                 <div>
-                  <input type="text" id="new_report_name" placeholder="Report Name"/>
+                  <input type="text" id="new_report_name" placeholder={t("placeholder_report_name")}/>
                 </div>
               </div>
               <div>
-                <div>Source</div>
+                <div>{t("field_source")}</div>
                 <div>
                   <select id="new_report_source" className="input">
                       {getReportsTypes().map((report_type: string) => (
@@ -504,14 +511,14 @@ return (
                 </div>
               </div>
               <div>
-                <div>Period</div>
+                <div>{t("field_period")}</div>
                 <div style={{paddingLeft: 0}}>
                   <select value={reportToAdd.once_per ?? 'day'} onChange={(e) => {setReportToAdd({...reportToAdd, once_per: e.target.value})}} className="input" >
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
+                    <option value="day">{t("period_day")}</option>
+                    <option value="week">{t("period_week")}</option>
+                    <option value="month">{t("period_month")}</option>
                   </select>
-                  {reportToAdd.once_per === 'week' && "at"}
+                  {reportToAdd.once_per === 'week' && t("at_connector")}
                   {reportToAdd.once_per === 'week' && (
                     <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} defaultValue={parseInt(reportToAdd.start_at_day || '1')} className="input">
                       {weekDays.map((day: {full: string, small: string}, i: number) => {
@@ -521,31 +528,24 @@ return (
                       })}
                     </select>
                   )}
-                  {reportToAdd.once_per === 'month' && "at"}
+                  {reportToAdd.once_per === 'month' && t("at_connector")}
                   {reportToAdd.once_per === 'month' && (
                     <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} value={reportToAdd.start_at_day || '1'}>
                       {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                     </select>
                   )}
                   <select value={reportToAdd.day_time ?? 'ongoing'} onChange={(e) => {setReportToAdd({...reportToAdd, day_time: e.target.value})}} className="input" style={{width: 'max-content'}}>
-                    <option value="opening">Opening</option>
-                    <option value="midday">Midday</option>
-                    <option value="closing">Closing</option>
-                    <option value="ongoing">Ongoing</option>
+                    <option value="opening">{t("day_time_opening")}</option>
+                    <option value="midday">{t("day_time_midday")}</option>
+                    <option value="closing">{t("day_time_closing")}</option>
+                    <option value="ongoing">{t("day_time_ongoing")}</option>
                   </select>
                 </div>
               </div>
-              {/* <div>
-                <div>Assinged To</div>
-                <div className="button-d-bl-sm" onClick={() => {
-                  setShowAssignedReport(reportToAdd);
-                  setShowAssigned(true);
-                }}>SET</div>
-              </div> */}
             </div>
             <div>
-              <div className='button-w-bl' onClick={() => {setShowAddReport(false)}}>Cancel</div>
-              <div className='button-d-bl' onClick={() => {addReport(reportToAdd)}}>Add Report</div>
+              <div className='button-w-bl' onClick={() => {setShowAddReport(false)}}>{t("cancel")}</div>
+              <div className='button-d-bl' onClick={() => {addReport(reportToAdd)}}>{t("add_report")}</div>
             </div>
           </div>
         </div>
@@ -553,18 +553,18 @@ return (
       {showAssigned && (
         <div className='confirm assign'>
           <div>
-            <h1>Assign {showAssignedReport?.name ?? ''} Report to</h1>
+            <h1>{t("assign_title", { name: showAssignedReport?.name ?? '' })}</h1>
             <div className="select all">
               <div>
                 <label>
                     <input checked={isAllAssigned(showAssignedReport)} onChange={(e) => { toggleAll(e.currentTarget.checked);}} type="checkbox" />
-                    <div>All leads</div>
+                    <div>{t("all_leads")}</div>
                   </label>
               </div>
             </div>
             <div className="select">
               <div className="select-leads">
-                <h6>Leads</h6>
+                <h6>{t("leads")}</h6>
                 {leads.map((lead: User) => 
                   <label key={`select_lead_${lead.id}`}>
                    <input
@@ -588,7 +588,7 @@ return (
                 )}
               </div>
               <div className="select-deparments">
-                <h6>Departments</h6>
+                <h6>{t("departments")}</h6>
                 {departments.map((department: Department) => 
                   <label key={`select_department_${department.id}`}>
                     <input
@@ -611,8 +611,8 @@ return (
               </div>
             </div>
             <div>
-              <div className='button-w-bl' onClick={() => {setShowAssigned(false)}}>Cancel</div>
-              <div className='button-d-bl' onClick={() => {assignReport(showAssignedReport)}}>Assign Report</div>
+              <div className='button-w-bl' onClick={() => {setShowAssigned(false)}}>{t("cancel")}</div>
+              <div className='button-d-bl' onClick={() => {assignReport(showAssignedReport)}}>{t("assign_report")}</div>
             </div>
           </div>
         </div>
@@ -623,33 +623,16 @@ return (
       {loading ? (<Loader></Loader>) :
         (<div>
 
-          {/* <div className="four-block three-block">
-            <div img-id="document-yellow">
-              <h1>{total_reports}</h1>
-              <div>Total Reports</div>
-              <span>All reports Scheduled for Today</span>
-            </div>
-            <div img-id="tasks-red">
-              <h1>{total_reports - done_by_all}</h1>
-              <div>Reports</div>
-              <span>Still Pending Today</span>
-            </div>
-            <div img-id="document">
-              <h1>{deparmentsWithNoReports.length}</h1>
-              <div>Departments</div>
-              <span>With no reports</span>
-            </div>
-          </div> */}
-          <h2 style={{position: 'relative', paddingBottom: '20px'}}>Departments:
+          <h2 style={{position: 'relative', paddingBottom: '20px'}}>{t("departments_heading")}
             <label className="how-to-use">
               <input type="checkbox" />
-              <strong>About Reports</strong>
+              <strong>{t("about_reports")}</strong>
               <div>
-                <div>Configure which reports appear on each department's daily board.</div>
-                <div>Assign reports to specific departments or make them available to everyone.</div>
-                <div>Set when reports should appear and who is responsible for reviewing them.</div>
-                <div>Reports are automatically included in the Daily Brief based on their configuration.</div>
-                <div>Use reports to make sure each department knows what work needs to be reviewed each day.</div>
+                <div>{t("about_1")}</div>
+                <div>{t("about_2")}</div>
+                <div>{t("about_3")}</div>
+                <div>{t("about_4")}</div>
+                <div>{t("about_5")}</div>
               </div>
               <div className="x">x</div>
           </label>
@@ -659,7 +642,7 @@ return (
           <input
             className="search"
             type="text"
-            placeholder="Search reports by name or by source..."
+            placeholder={t("search_placeholder")}
             value={reportSearch}
             onChange={(e) => setReportSearch(e.target.value)}
           />
@@ -668,7 +651,7 @@ return (
             return (
               <div key={`reports_department_${dep.id}`}>
                 <div className="flex">
-                  <h3>{dep.name} {user?.department === dep.name && ('(Your Department)')}</h3>
+                  <h3>{dep.name} {user?.department === dep.name && (t("your_department"))}</h3>
                   {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).filter((report: Report) => {
                         return report.name
                           .toLowerCase()
@@ -677,42 +660,40 @@ return (
                           .includes(reportSearch.toLowerCase());
                       }).length === 0 ? (
                     <div className="flex j-s-b">
-                      <span>- no reports</span>
+                      <span>{t("no_reports")}</span>
                       <div className="button-d-bl-sm add-report" onClick={() => {
                         if (!user?.permissions.edit_reports){
-                          toast.error("You don't have permissions for this action.")
+                          toast.error(t("no_permission"))
                           return;
                         }
                         setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
                         setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } });
                         setShowAddReport(true);
-                      }}>Add Report</div>
+                      }}>{t("add_report")}</div>
                       </div>
                   ) : (
                     <div className="button-d-bl add-report" onClick={() => {
                       if (!user?.permissions.edit_reports){
-                        toast.error("You don't have permissions for this action.")
+                        toast.error(t("no_permission"))
                         return;
                       }
                       setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
                       setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } });
                       setShowAddReport(true);
-                    }}>Add Report</div>
+                    }}>{t("add_report")}</div>
                   )}
                 </div>
                 {reports.filter((r: Report) => !r.archived && (r.assigned_to.department.assigned === true && r.assigned_to.department.list.indexOf(dep.id) !== -1 || r.assigned_to.all.assigned === true)).length > 0 && (<div className="table-wrapper">
                   <div className="table-reports">
                     <div>
-                      <div>EDIT</div>
-                      {/* <div>SAVE</div> */}
-                      <div>REPORT</div>
-                      <div>SOURCE</div>
-                      <div>PERIOD</div>
-                      <div style={{textAlign: 'left'}}>DAY TIME</div>
-                      <div>METRIC</div>
-                      <div>DEFAULT HOLDER</div>
-                      {/* <div>ASSIGNED TO</div> */}
-                      <div>DELETE</div>
+                      <div>{t("col_edit")}</div>
+                      <div>{t("col_report")}</div>
+                      <div>{t("col_source")}</div>
+                      <div>{t("col_period")}</div>
+                      <div style={{textAlign: 'left'}}>{t("col_day_time")}</div>
+                      <div>{t("col_metric")}</div>
+                      <div>{t("col_default_holder")}</div>
+                      <div>{t("col_delete")}</div>
                     </div>
                     {reports.map((r: Report) => {
                       if (
@@ -723,7 +704,13 @@ return (
                             r.assigned_to.department.list.indexOf(dep.id) !== -1) ||
                           r.assigned_to.all.assigned === true
                         )
-                      ) {                        
+                      ) {
+                        const holderName = allUsers.find((user_local: User) => user_local.id === r.default_holder_id)?.name ?? "-";
+                        const holderText = r.default_holder_id ? ` ${t("by_person", { name: holderName })}` : "";
+                        const weekDaysText = (mask: number) => weekDays
+                          .filter((_, i) => mask & (1 << i))
+                          .map(day => day.small)
+                          .join(', ');
                         return (
                           <div className="report" key={`report_${r.id}`} id={`report_${r.id}`} >
                             <div>
@@ -733,18 +720,18 @@ return (
                                     <input type="checkbox" checked={true} onChange={() => {}} />
                                     <span
                                       className={r.edit !== true ? "button-d-bl" : "button-d-bl"}
-                                      onClick={() => { if (r.edit === true) saveReport(r);}}> Save
+                                      onClick={() => { if (r.edit === true) saveReport(r);}}> {t("save")}
                                     </span>
                                   </label>
                                 ) : (
                                   <label>
-                                    <span className={'button-w-bl'}>Edit</span>
+                                    <span className={'button-w-bl'}>{t("edit")}</span>
                                 <input
                                   type="checkbox"
                                   checked={r.edit ?? false}
                                   onChange={(e) => {
                                     if (!user?.permissions.edit_reports){
-                                      toast.error("You don't have permissions for this action.")
+                                      toast.error(t("no_permission"))
                                       return;
                                     }
                                     if (r.edit !== true)
@@ -762,22 +749,6 @@ return (
                                 )}
                               
                             </div>
-                            {/* <div>
-                              <label>
-                                <span
-                                  className={r.edit !== true ? "button-d-bl-sm d" : "button-d-bl-sm"}
-                                  onClick={() =>
-                                    {
-                                      if (r.edit === true){
-                                        saveReport(r);
-                                      }
-                                    }
-                                  }
-                                >
-                                  Save
-                                </span>
-                              </label>
-                            </div> */}
                             <div>
                               <div className="show">{r.name}</div>
                               <div className="edit">
@@ -796,37 +767,26 @@ return (
                             </div>
                             <div>
                                 <div className="show" style={{gap: '3px', display: 'flex', flexWrap: 'wrap', margin: 'auto 0', textAlign: "left", lineHeight: 1.2}}>
-                                  {r.once_per === 'day' && (<div style={{flexBasis: '100%', width: 'max-content'}}>Every {capitalize(r.once_per ?? "")}</div>)}
+                                  {r.once_per === 'day' && (<div style={{flexBasis: '100%', width: 'max-content'}}>{t("schedule_day")}</div>)}
                                   {r.once_per !== 'day' && 
                                     (<div style={{display: 'flex', gap: "6px", flexBasis: '100%'}}>
-                                        Every
-                                        {" "}
-                                        {capitalize(r.once_per ?? "")}
-                                        {" "}
-                                        {r.default_holder_id && `by ${allUsers.find((user_local: User) => user_local.id === r.default_holder_id)?.name ?? "-"}`}
-                                        {``}
-                                        {" "}
-                                        at
-                                        {" "}
-                                        {r.once_per === 'week' ? weekDays
-                                        .filter((_, i) => Number(r.start_at_day || 0) & (1 << i))
-                                        .map(day => day.small)
-                                        .join(', ') : r.start_at_day}
-                                        {r.once_per === 'month' && ''}
+                                        {r.once_per === 'week' && t("schedule_week", {
+                                          holder: holderText,
+                                          days: weekDaysText(Number(r.start_at_day || 0)),
+                                        })}
+                                        {r.once_per === 'month' && t("schedule_month", {
+                                          holder: holderText,
+                                          day: r.start_at_day ?? '',
+                                        })}
                                     </div>)}
                                   {r.once_per === 'week' && r.backup_holder_id && (r.backup_start_at_day ?? 0) !== 0 && (
                                     (<div style={{display: 'flex', gap: "6px", flexBasis: '100%', width: '100%', textAlign: "left", fontWeight: 600}}>
-                                      Backup by
-                                      {" "}
-                                      {allUsers.find((user_local: User) => user_local.id === r.backup_holder_id)?.name ?? "-"}
-                                      {" "}at{" "}
-                                      {weekDays
-                                        .filter((_, i) => Number(r.backup_start_at_day || 0) & (1 << i))
-                                        .map(day => day.small)
-                                        .join(', ')}
+                                      {t("backup_schedule", {
+                                        name: allUsers.find((user_local: User) => user_local.id === r.backup_holder_id)?.name ?? "-",
+                                        days: weekDaysText(Number(r.backup_start_at_day || 0)),
+                                      })}
                                     </div>)
                                   )}
-                                  {r.once_per === 'month' && 'day'}
                                 </div>
                                 <div className="edit" style={{gap: '3px', display: 'flex', flexDirection: r.once_per === "week" ? 'column' : 'row'}} >
                                   <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
@@ -837,15 +797,15 @@ return (
                                       changeReports({...r, once_per: e.target.value})
                                     }
                                   }} style={{paddingLeft: 7, height: 'max-content'}}>
-                                    <option value="day">Day</option>
-                                    <option value="week">Week</option>
-                                    <option value="month">Month</option>
+                                    <option value="day">{t("period_day")}</option>
+                                    <option value="week">{t("period_week")}</option>
+                                    <option value="month">{t("period_month")}</option>
                                   </select>
                                   {r.once_per === 'week' && (
                                     <div style={{flexDirection: 'column'}}>
                                       <div style={{display: 'flex', flexDirection: 'column', marginTop: '5px'}} className="flex input">
                                         <div style={{display: 'flex', gap: '5px'}}>
-                                          <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>Main Holder</span>
+                                          <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>{t("main_holder")}</span>
                                           <select
                                             style={{width: '100%', margin: '5px 0'}}
                                               value={r.default_holder_id ?? ''}
@@ -910,7 +870,7 @@ return (
                                       <div style={{display: 'flex', flexDirection: 'column', flexWrap: 'wrap', textAlign: 'left', marginTop: '3px'}} className="input">
                                         <label style={{display: 'flex', flexDirection: "column"}}>
                                           <div style={{display: 'flex', gap: '5px'}}>
-                                            <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>Backup Holder</span>
+                                            <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>{t("backup_holder")}</span>
                                             <select
                                               style={{margin: '5px 0', flex: 1}}
                                               value={r.backup_holder_id ?? ''}
@@ -979,39 +939,58 @@ return (
                                       {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
                                     </select>
                                   )}
-                                  {r.once_per === 'month' && 'day'}
+                                  {r.once_per === 'month' && t("day_word")}
                               </div>
                             </div>
                             <div>
-                              <div className="show">{capitalize(r.day_time)}</div>
+                              <div className="show">
+                                {r.day_time ? tr(`day_time_${r.day_time}`) : ''}
+                                {r.day_time !== 'ongoing' && r.check_before && (
+                                  <div>{t("before_time", { time: r.check_before })}</div>
+                                )}
+                              </div>
                               <div className="edit">
                                 <select value={r.day_time} onChange={(e) => {changeReports({...r, day_time: e.target.value})}}>
-                                  <option value="opening">Opening</option>
-                                  <option value="midday">Midday</option>
-                                  <option value="closing">Closing</option>
-                                  <option value="ongoing">Ongoing</option>
+                                  <option value="opening">{t("day_time_opening")}</option>
+                                  <option value="midday">{t("day_time_midday")}</option>
+                                  <option value="closing">{t("day_time_closing")}</option>
+                                  <option value="ongoing">{t("day_time_ongoing")}</option>
                                 </select>
+                                {r.day_time !== 'ongoing' && (
+                                  <div style={{ flexDirection: 'column', gap: 3, marginTop: 5 }}>
+                                    {t("check_before")}
+                                    <select value={r.check_before ?? ''} onChange={(e) => {changeReports({...r, check_before: e.target.value})}}>
+                                      <option value="">-</option>
+                                      {CHECK_BEFORE_HOURS.map((h: string) => (
+                                        <option key={`check_before_${h}`} value={h}>{h}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div>
-                              <div className="show">{r.metric}{r.metric === 'Metric' && ` (from ${r.metric_range_from} to ${r.metric_range_to})`}</div>
+                              <div className="show">
+                                {r.metric ? (metricLabels[r.metric] ?? r.metric) : ''}
+                                {r.metric === 'Metric' && ` ${t("metric_range", { from: r.metric_range_from ?? '', to: r.metric_range_to ?? '' })}`}
+                              </div>
                               <div className="edit" style={{gap: '8px', display: 'flex', flexDirection: "column"}}>
                                 <select value={r.metric ?? 'No Metric'} onChange={(e) => {changeReports({...r, metric: e.target.value})}} style={{height: 'max-content', margin: 'auto 0'}}>
-                                  <option value="No Metric">No Metric</option>
-                                  <option value="Count">Count</option>
-                                  <option value="Metric">Metric</option>
-                                  <option value="Yes/No">Yes/No</option>
-                                  <option value="Free-text">Free-text</option>
-                                  <option value="Image">Image</option>
+                                  <option value="No Metric">{t("metric_none")}</option>
+                                  <option value="Count">{t("metric_count")}</option>
+                                  <option value="Metric">{t("metric_metric")}</option>
+                                  <option value="Yes/No">{t("metric_yes_no")}</option>
+                                  <option value="Free-text">{t("metric_free_text")}</option>
+                                  <option value="Image">{t("metric_image")}</option>
                                 </select>
                                 {r.metric === 'Metric' && (
                                 <div className="metric_range">
                                   <label style={{display: 'flex', flexDirection: 'column', minWidth: 100}}>
-                                    <span>From</span>
+                                    <span>{t("from")}</span>
                                     <input type='number' value={r.metric_range_from ?? 0} onChange={(e) => {changeReports({...r, metric_range_from: Number(e.target.value)})}} />
                                   </label>
                                   <label style={{display: 'flex', flexDirection: 'column', minWidth: 100}}>
-                                    <span>To</span>
+                                    <span>{t("to")}</span>
                                     <input type='number' value={r.metric_range_to ?? 100} onChange={(e) => {changeReports({...r, metric_range_to: Number(e.target.value)})}} />
                                   </label>
 
@@ -1050,25 +1029,15 @@ return (
                                 </select>
                               </div>
                             </div>
-                            {/* <div>
-                              <div className="button-d-bl-sm" onClick={() => {
-                                if (!user?.permissions.edit_reports){
-                                  toast.error("You don't have permissions for this action.")
-                                  return;
-                                }
-                                setShowAssignedReport(r);
-                                setShowAssigned(true);
-                              }}>Set</div>
-                            </div> */}
                             <div>
                               <div style={{margin: 'auto auto auto 0', height: 'min-content'}} className="button-r-sm" onClick={() => {
                                 if (!user?.permissions.edit_reports){
-                                  toast.error("You don't have permissions for this action.")
+                                  toast.error(t("no_permission"))
                                   return;
                                 }
                                 setReportToDelete({...r, archived: true});
                                 setShowConfirmDelete(true)
-                              }}>Delete</div>
+                              }}>{t("delete")}</div>
                             </div>
                           </div>)
                       }

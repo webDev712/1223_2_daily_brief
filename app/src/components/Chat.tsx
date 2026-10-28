@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo, useLayoutEffect } from 'react';
 import './css/Chat.css'
+import { useTranslations } from 'next-intl';
 import { useUser } from './UserProvider';
 import { Message, NewMessage, UserForChat, User } from '@/lib/types';
 import { format } from 'date-fns';
@@ -11,9 +12,40 @@ import { toast } from 'sonner';
 import { Dispatch, SetStateAction } from "react";
 import ImageUploader from './ImageUploader';
 import isBlobLink from '@/lib/img';
+import FileUploader from './FileUploader';
 
 
-export const sendMessageGlobal = async (message: NewMessage) => {
+function isImageUrl(url: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp|avif)(\?.*)?$/i.test(url);
+}
+
+interface ChatFileAttachment {
+    url: string;
+    file_name: string
+}
+
+function parseFileAttachment(
+  text: string
+): ChatFileAttachment | null {
+  try {
+    const parsed = JSON.parse(text);
+
+    if (
+      typeof parsed?.url === "string" &&
+      typeof parsed?.file_name === "string"
+    ) {
+      return {
+        url: parsed.url,
+        file_name: parsed.file_name,
+      };
+    }
+  } catch { }
+
+  return null;
+}
+
+// Not a component, so it can't use hooks: the caller passes the already translated toast text.
+export const sendMessageGlobal = async (message: NewMessage, successMessage?: string) => {
     const chat_res = await fetch('/api/chat', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
@@ -23,7 +55,7 @@ export const sendMessageGlobal = async (message: NewMessage) => {
         console.error('Error while sending message');
         return;
     }
-    toast.success('Issue / Observation owner is notified with new action!')
+    toast.success(successMessage ?? 'Issue / Observation owner is notified with new action!')
 }
 
 const Chat = ({openChat, setOpenChat, class_name}: {
@@ -31,6 +63,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
         setOpenChat: Dispatch<SetStateAction<boolean>>;
         class_name?: string;
     }) => {
+
+    const t = useTranslations('chat');
+    const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
         
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState('');
@@ -102,13 +137,13 @@ const Chat = ({openChat, setOpenChat, class_name}: {
         })
         if (!chats_res.ok){
             console.error('Error while sending message');
-            toast.error(`Error while sending message to all employees. Refresh the page and try once more`)
+            toast.error(t('toast.groupError'))
             return;
         }
         setReloadChats(prev => prev + 1);
         setReloadMessages(prev => prev + 1);
         const chats_json = await chats_res.json();
-        toast.success(`Success! Message sent to ${chats_json.rows.length} users!`)
+        toast.success(t('toast.groupSuccess', { count: chats_json.rows.length }))
         setShowSendMessageToAll(false);
 
     }
@@ -402,14 +437,14 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                         <div>{selectedUserId
                                 ? (
                                     <div>
-                                        <div>Messages</div>
+                                        <div>{t('header.messages')}</div>
                                         {seeUserMessageAs.id !== me_user.id && (
                                             <div className='flex'>
                                                 <UserCircle user_name={seeUserMessageAs.name} size={25}></UserCircle>
                                                 <div>{seeUserMessageAs.name}</div>
                                             </div>
                                         )}
-                                        {seeUserMessageAs.id !== me_user.id ? (<div>and</div>) : (<div>with</div>)}
+                                        {seeUserMessageAs.id !== me_user.id ? (<div>{t('header.and')}</div>) : (<div>{t('header.with')}</div>)}
                                         <UserCircle user_name={users.find((user: UserForChat) => user.id === selectedUserId)?.name ?? ''} size={25}></UserCircle>
                                         <div>{users.find((user: UserForChat) => user.id === selectedUserId)?.name}</div>
                                     </div>
@@ -418,13 +453,13 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                     <div>
                                         {seeUserMessageAs.id !== me_user.id ? (
                                             <div className='flex'>
-                                                <div>Viewing as</div>
+                                                <div>{t('header.viewingAs')}</div>
                                                 <UserCircle user_name={seeUserMessageAs.name} size={25}></UserCircle>
                                                 <div>{seeUserMessageAs.name}</div>
-                                                <div onClick={() => {setLoading(true); setSeeUserMessageAs(me_user); setLoadingFalseNextChatReload(true); setReloadChats(prev => prev + 1); }} className='exit button-w-bl'>{`Exit`}</div>
+                                                <div onClick={() => {setLoading(true); setSeeUserMessageAs(me_user); setLoadingFalseNextChatReload(true); setReloadChats(prev => prev + 1); }} className='exit button-w-bl'>{t('header.exit')}</div>
                                             </div>
                                         ) : (
-                                            <div>All Messages</div>
+                                            <div>{t('header.allMessages')}</div>
                                         )}
                                     </div>)}</div>
                                 { me_user.permissions.send_messages_to_all === true && !selectedUserId && seeUserMessageAs.id === me_user.id && (
@@ -449,7 +484,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                         setScrollChats(prev => prev + 1);
                                     }}
                                     >
-                                        {`< Back`}
+                                        {t('header.back')}
                                     </div>
                                     {loading === true ? (<div className='messages loader'><Loader></Loader></div>) : (
                                         <div className='messages' ref={messagesRef} onScroll={() => {
@@ -465,27 +500,37 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                             {messages.length > 0 
                                                 ? messages.map((message: Message) => (
                                                     <div key={message.id} className={message.from_user === seeUserMessageAs.id ? 'right' : 'left'}>
-                                                        {isBlobLink(message.text) ?
-                                                                (<img src={`/api/blob_image?pathname=${message.text.slice(57)}`} alt='Image' onLoad={() => {
-                                                                    requestAnimationFrame(() => {
-                                                                    const container = messagesRef.current;
+                                                        {isBlobLink(message.text) || parseFileAttachment(message.text) !== null ?
+                                                                (
+                                                                    parseFileAttachment(message.text) === null ?
+                                                                        (<img src={`/api/blob_image?pathname=${message.text.slice(57)}`} alt={t('messages.image')} onLoad={() => {
+                                                                            requestAnimationFrame(() => {
+                                                                            const container = messagesRef.current;
 
-                                                                    if (!container || !shouldAutoScrollRef.current) return;
+                                                                            if (!container || !shouldAutoScrollRef.current) return;
 
-                                                                    container.scrollTop = container.scrollHeight;
-                                                                });
-                                                                }} />) : 
+                                                                            container.scrollTop = container.scrollHeight;
+                                                                        });
+                                                                        }} />)
+                                                                        : (<div>
+                                                                            <a href={`/api/download?url=${encodeURIComponent(parseFileAttachment(message.text)?.url ?? "")}&name=${encodeURIComponent(parseFileAttachment(message.text)?.file_name ?? "")}`} className='download-file-link'>
+                                                                                {parseFileAttachment(message.text)?.file_name ?? t('messages.file')}
+                                                                                <br />
+                                                                                {t('messages.download')}
+                                                                            </a>
+                                                                        </div>)
+                                                                ) : 
                                                                 (<div>{message.text}</div>)}
                                                         <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
                                                 ))
-                                                : (<p>Send first message in this chat!</p>)
+                                                : (<p>{t('messages.empty')}</p>)
                                             }
                                         </div>
                                     )}
                                     {seeUserMessageAs.id === me_user.id && (
                                         <div className='flex j-s-b'>
-                                            <input type="text" value={messageText} placeholder='Message text...' onChange={(e) => setMessageText(e.target.value)}
+                                            <input type="text" value={messageText} placeholder={t('messages.inputPlaceholder')} onChange={(e) => setMessageText(e.target.value)}
                                             onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
                                                         sendMessage({
@@ -506,6 +551,16 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                     })
                                                 }
                                             }}></ImageUploader>
+                                            <FileUploader send_url_to={(url: string, file_name: string) => {
+                                                if (url) {
+                                                    sendMessage({
+                                                        text: JSON.stringify({url: url, file_name: file_name}),
+                                                        from_user: seeUserMessageAs.id,
+                                                        to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
+                                                        timestamp: new Date(),
+                                                    })
+                                                }
+                                            }}></FileUploader>
 
                                             <div className="button-d-bl-sm" onClick={() => {
                                                 sendMessage({
@@ -515,7 +570,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                     timestamp: new Date(),
                                                 })
                                             }}
-                                            >Send</div>
+                                            >{t('messages.send')}</div>
                                         </div>
                                     )}
                                 </div>)
@@ -523,7 +578,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                 // ALL CHATS
                                 <div>
                                     <div>
-                                        <input type="text" name="" id="" value={filter} onChange={(e) => {setFilter(e.target.value)}} placeholder='Input user name to filter here...' className='filter'/>
+                                        <input type="text" name="" id="" value={filter} onChange={(e) => {setFilter(e.target.value)}} placeholder={t('list.filterPlaceholder')} className='filter'/>
                                     </div>
                                     {loading === true && (
                                         <div style={{width: '100vw', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: '10000000000000'}}>
@@ -550,7 +605,8 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         <div>{user.name}</div>
                                                     </div>
                                                     <div className='chats-list-hover-message' onClick={() => {openChatById(user.id)}}>
-                                                        <div>{isBlobLink(lastMessage?.text ?? '') ? "Image" : (lastMessage?.text ?? '')}</div>
+                                                        <div>{isBlobLink(lastMessage?.text ?? '') || parseFileAttachment(lastMessage?.text ?? '') !== null ? (
+                                                            parseFileAttachment(lastMessage?.text ?? '') !== null ? parseFileAttachment(lastMessage?.text ?? '')?.file_name : t('messages.image')) : (lastMessage?.text ?? '')}</div>
                                                         <div>
                                                             {lastMessage
                                                                 ? format(
@@ -574,10 +630,10 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                 <div className='confirm send-message-to-all'>
                     {loading === true ? (<div className='messages loader'><Loader></Loader></div>) : (
                         <div>
-                            <h1>Type in message to send <strong>to all employees:</strong></h1>
-                            <p>They will receive it <strong>in their chats</strong></p>
+                            <h1>{t.rich('group.title', { strong })}</h1>
+                            <p>{t.rich('group.subtitle', { strong })}</p>
                             <label>
-                                <div>Or select employees</div>
+                                <div>{t('group.selectEmployees')}</div>
                                 <input type="checkbox" />
                             </label>
                             <div>
@@ -602,16 +658,16 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                         } })
                                     )
                                 }}
-                                className='b-t'>Clear</span>
+                                className='b-t'>{t('group.clear')}</span>
                             </div>
                             <div>
-                                <textarea id="message-to-all" placeholder='Message to all employees...'></textarea>
+                                <textarea id="message-to-all" placeholder={t('group.placeholder')}></textarea>
                             </div>
                             <div>
-                                <div className='button-w-bl' onClick={() => {setShowSendMessageToAll(false)}}>Cancel</div>
+                                <div className='button-w-bl' onClick={() => {setShowSendMessageToAll(false)}}>{t('group.cancel')}</div>
                                 <div className='button-d-bl' onClick={() => 
                                     sendMessageToGroup()
-                                }>Send</div>
+                                }>{t('group.send')}</div>
                             </div>
                         </div>)}
                 </div>

@@ -2,9 +2,11 @@
 
 import { act, useEffect, useState } from 'react';
 import './page.css'
-import DatePicker from 'react-datepicker';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import { Action, DailyLogRow, Department, FiltersData, IdName, User } from '@/lib/types';
 import { differenceInCalendarDays, format, parse } from 'date-fns';
+import { es, enUS } from 'date-fns/locale';
+import { useLocale, useTranslations } from "next-intl";
 import capitalize from '@/lib/text';
 import Loader from '@/app/src/components/Loader';
 import getColorsFromName from '@/lib/color';
@@ -34,7 +36,34 @@ import {
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
+registerLocale('es', es);
+
 export default function ActionTracker () {
+    const t = useTranslations('actionTracker');
+    const locale = useLocale();
+
+    const isEs = locale.startsWith('es');
+    const dateLocale = isEs ? es : enUS;
+
+    // The DB / API values ("Unset", "In progress", "Resolved", "Low", "Med", "High")
+    // stay in English. Only the displayed labels are translated.
+    const statusLabel = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'unset': return t('status.unset');
+            case 'in progress': return t('status.inProgress');
+            case 'resolved': return t('status.resolved');
+            default: return capitalize(status);
+        }
+    };
+    const severityLabel = (severity: string) => {
+        switch (severity.toLowerCase()) {
+            case 'low': return t('severity.low');
+            case 'med': return t('severity.med');
+            case 'high': return t('severity.high');
+            default: return capitalize(severity);
+        }
+    };
+
     const [reload, setReload] = useState(0);
     const [loading, setLoading] = useState(true);
     const user = useUser();
@@ -65,28 +94,28 @@ export default function ActionTracker () {
 
     const datePresets = createStaticRanges([
     {
-        label: "Today",
+        label: t('presets.today'),
         range: () => ({
             startDate: startOfDay(new Date()),
             endDate: endOfDay(new Date()),
         }),
     },
     {
-        label: "Yesterday",
+        label: t('presets.yesterday'),
         range: () => ({
             startDate: startOfDay(subDays(new Date(), 1)),
             endDate: endOfDay(subDays(new Date(), 1)),
         }),
     },
     {
-        label: "Last 7 Days",
+        label: t('presets.last7Days'),
         range: () => ({
             startDate: startOfDay(subDays(new Date(), 6)),
             endDate: endOfDay(new Date()),
         }),
     },
     {
-        label: "Last Week",
+        label: t('presets.lastWeek'),
         range: () => ({
             startDate: startOfWeek(subWeeks(new Date(), 1), {
                 weekStartsOn: 1,
@@ -97,14 +126,14 @@ export default function ActionTracker () {
         }),
     },
     {
-        label: "Last 30 Days",
+        label: t('presets.last30Days'),
         range: () => ({
             startDate: startOfDay(subDays(new Date(), 29)),
             endDate: endOfDay(new Date()),
         }),
     },
     {
-        label: "Last Month",
+        label: t('presets.lastMonth'),
         range: () => ({
             startDate: startOfMonth(subMonths(new Date(), 1)),
             endDate: endOfMonth(subMonths(new Date(), 1)),
@@ -168,7 +197,7 @@ export default function ActionTracker () {
         setShowAdd(false);
         setReload(reload + 1);
         setShowResolve(false);
-        toast.success('Successfully updated Action Tracker row!');
+        toast.success(t('toast.updated'));
         return true;
     }
 
@@ -192,7 +221,7 @@ export default function ActionTracker () {
         setShowAdd(false);
         setShowDelete(false);
         setReload(reload + 1);
-        toast.success('Deleted Action Tracker row.')
+        toast.success(t('toast.deleted'))
     }
     const [showDateRange, setShowDateRange] = useState(false);
 
@@ -252,38 +281,38 @@ export default function ActionTracker () {
                             setReload(reload + 1);
                             }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "Unset").length}</h1>
-                            <div>Issues/Observations</div>
-                            <span>With "Unset" status</span>
+                            <div>{t('stats.issuesObservations')}</div>
+                            <span>{t('stats.withStatus', { status: t('status.unset') })}</span>
                         </div>
                         <div img-id="document-yellow" onClick={() => {
                             setFilters(prev => {return {...defaultFilters, status: 'In progress'}});
                             setReload(reload + 1);
                             }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "In progress").length}</h1>
-                            <div>Issues/Observations</div>
-                            <span>With "In Progress" status</span>
+                            <div>{t('stats.issuesObservations')}</div>
+                            <span>{t('stats.withStatus', { status: t('status.inProgress') })}</span>
                         </div>
                         <div img-id="document-green" onClick={() => {
                             setFilters(prev => {return {...defaultFilters, status: 'Resolved'}});
                             setReload(reload + 1);
                             }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.status === "Resolved").length}</h1>
-                            <div>Issues/Observations</div>
-                            <span>With "Resolved" status</span>
+                            <div>{t('stats.issuesObservations')}</div>
+                            <span>{t('stats.withStatus', { status: t('status.resolved') })}</span>
                         </div>
                         <div img-id="error-yellow" onClick={() => {
                             setFilters(prev => {return {...defaultFilters, severity: 'High'}});
                             setReload(reload + 1);
                             }}>
                             <h1>{auditLogData.filter((row: DailyLogRow) => row.severity === "High").length}</h1>
-                            <div>Issues/Observations</div>
-                            <span>With "High" severity</span>
+                            <div>{t('stats.issuesObservations')}</div>
+                            <span>{t('stats.withSeverity', { severity: t('severity.high') })}</span>
                         </div>
                     </div>
                     <div>
                         <div>
                             <label>
-                                <span>Timeframe</span>
+                                <span>{t('filters.timeframe')}</span>
 
                                 <button
                                     type="button"
@@ -297,9 +326,9 @@ export default function ActionTracker () {
                                         setShowDateRange(prev => !prev);
                                     }}
                                 >
-                                    📅 {format(filters.fromDate, "MMMM d, yyyy")}
+                                    📅 {format(filters.fromDate, "MMMM d, yyyy", { locale: dateLocale })}
                                     {" - "}
-                                    {format(filters.toDate, "MMMM d, yyyy")}
+                                    {format(filters.toDate, "MMMM d, yyyy", { locale: dateLocale })}
                                 </button>
                             </label>
 
@@ -316,6 +345,7 @@ export default function ActionTracker () {
                                             onChange={(ranges: RangeKeyDict) => {
                                                 setDraftRange(ranges.selection);
                                             }}
+                                            locale={dateLocale}
                                             months={2}
                                             direction="horizontal"
                                             moveRangeOnFirstSelection={false}
@@ -334,7 +364,7 @@ export default function ActionTracker () {
                                                 type="button"
                                                 onClick={() => setShowDateRange(false)}
                                             >
-                                                Cancel
+                                                {t('dateRange.cancel')}
                                             </button>
 
                                             <button
@@ -347,7 +377,7 @@ export default function ActionTracker () {
 
                                                     if (from > to) {
                                                         toast.error(
-                                                            "Please select a start date before the end date"
+                                                            t('dateRange.invalidRange')
                                                         );
                                                         return;
                                                     }
@@ -357,52 +387,52 @@ export default function ActionTracker () {
                                                     setShowDateRange(false);
                                                 }}
                                             >
-                                                Select
+                                                {t('dateRange.select')}
                                             </button>
                                         </div>
                                     </div>
                                 </>
                             )}
                             <label>
-                                <span>Status</span>
+                                <span>{t('filters.status')}</span>
                                 <select value={filters.status} onChange={(e) => {setFilters({...filters, status: e.target.value})}}>
-                                    <option value=''>All</option>
-                                    <option value="Unset" key="status_Unset">Unset</option>
-                                    <option value="In Progress" key="status_In_Progress">In Progress</option>
-                                    <option value="Resolved" key="status_Resolved">Resolved</option>
+                                    <option value=''>{t('filters.all')}</option>
+                                    <option value="Unset" key="status_Unset">{t('status.unset')}</option>
+                                    <option value="In Progress" key="status_In_Progress">{t('status.inProgress')}</option>
+                                    <option value="Resolved" key="status_Resolved">{t('status.resolved')}</option>
                                 </select>
                             </label>
                             <label>
-                                <span>Employee</span>
+                                <span>{t('filters.employee')}</span>
                                 <select value={filters.employee} onChange={(e) => {setFilters({...filters, employee: e.target.value})}}>
-                                    <option value=''>All</option>
+                                    <option value=''>{t('filters.all')}</option>
                                     {filtersData?.employees.map((employee: IdName) => (
                                         <option value={employee.id} key={`employee_${employee.id}`}>{capitalize(employee.name)}</option>
                                     ))}
                                 </select>
                             </label>
                             <label>
-                                <span>Department</span>
+                                <span>{t('filters.department')}</span>
                                 <select value={filters.department} onChange={(e) => {setFilters({...filters, department: e.target.value})}}>
-                                    <option value=''>All</option>
+                                    <option value=''>{t('filters.all')}</option>
                                     {filtersData?.departments.map((department: IdName) => (
                                         <option value={department.id} key={`department_${department.id}`}>{capitalize(department.name)}</option>
                                     ))}
                                 </select>
                             </label>
                             <label>
-                                <span>Severity</span>
+                                <span>{t('filters.severity')}</span>
                                 <select value={filters.severity} onChange={(e) => {setFilters({...filters, severity: e.target.value})}}>
-                                    <option value=''>All</option>
+                                    <option value=''>{t('filters.all')}</option>
                                     {filtersData?.severities.map((severity: string) => (
-                                        <option value={severity} key={`severity_${severity}`}>{capitalize(severity)}</option>
+                                        <option value={severity} key={`severity_${severity}`}>{severityLabel(severity)}</option>
                                     ))}
                                 </select>
                             </label>
                             <label>
-                                <span>Category</span>
+                                <span>{t('filters.category')}</span>
                                 <select value={filters.category} onChange={(e) => {setFilters({...filters, category: e.target.value})}}>
-                                    <option value=''>All</option>
+                                    <option value=''>{t('filters.all')}</option>
                                     {filtersData?.categories.map((category: string) => (
                                         <option value={category} key={`category_${category}`}>{capitalize(category)}</option>
                                     ))}
@@ -412,23 +442,23 @@ export default function ActionTracker () {
                             </label>
                         </div>
 
-                        <div className='button-d-bl-sm' onClick={() => {setReload(reload + 1)}}>Filter</div>
+                        <div className='button-d-bl-sm' onClick={() => {setReload(reload + 1)}}>{t('filters.filter')}</div>
                     </div>
                     <div>
-                        <div className="button-d-bl" style={{display: user.permissions.edit_action_tracker === true ? 'block' : 'none'}} onClick={() => {if (user.permissions.edit_action_tracker !== true) return; setAuditLogRowToAdd({...defaultNewAuditLogRow, department_id: departments[0].id}); setShowAdd(true);}}>Add Issue / Observation</div>
+                        <div className="button-d-bl" style={{display: user.permissions.edit_action_tracker === true ? 'block' : 'none'}} onClick={() => {if (user.permissions.edit_action_tracker !== true) return; setAuditLogRowToAdd({...defaultNewAuditLogRow, department_id: departments[0].id}); setShowAdd(true);}}>{t('form.add')}</div>
                     </div>
                     <div className="a-table-wrapper">
                         <div className="a-table-header">
-                            <div>DATE</div>
-                            <div>EMPLOYEE</div>
-                            <div>DEPARTMENT IMPACTED</div>
-                            <div>SHIFT</div>
-                            <div>CATEGORY</div>
-                            <div>SEVERITY</div>
-                            <div>ISSUE / OBSERVATION</div>
-                            <div>ACTIONS</div>
-                            <div>DAYS OPEN</div>
-                            <div>STATUS</div>
+                            <div>{t('table.date')}</div>
+                            <div>{t('table.employee')}</div>
+                            <div>{t('table.departmentImpacted')}</div>
+                            <div>{t('table.shift')}</div>
+                            <div>{t('table.category')}</div>
+                            <div>{t('table.severity')}</div>
+                            <div>{t('table.issueObservation')}</div>
+                            <div>{t('table.actions')}</div>
+                            <div>{t('table.daysOpen')}</div>
+                            <div>{t('table.status')}</div>
                             {user.permissions.edit_action_tracker === true && (<div></div>)}
                         </div>
                         
@@ -438,13 +468,13 @@ export default function ActionTracker () {
                                 <div key={row.id}>
                                     <div>{formatDateWithoutTimezone(row.date)}</div>
                                     <div>{row.u_name}</div>
-                                    <div style={{color: getColorsFromName(row.d_name ?? '').dark}} before-text='Department'>{row.d_name}</div>
-                                    <div before-text='Shift'>{row.shift}</div>
-                                    <div before-text='Category' style={{color: getColorsFromName(row.category ?? '').dark}} className='b'>{row.category}</div>
-                                    <div before-text='Severity' className={row.severity === 'Low' ? 'b' : (row.severity === 'Med' ? 'orange b' : 'red b')}>{row.severity}</div>
+                                    <div style={{color: getColorsFromName(row.d_name ?? '').dark}} before-text={t('table.beforeDepartment')}>{row.d_name}</div>
+                                    <div before-text={t('table.beforeShift')}>{row.shift}</div>
+                                    <div before-text={t('table.beforeCategory')} style={{color: getColorsFromName(row.category ?? '').dark}} className='b'>{row.category}</div>
+                                    <div before-text={t('table.beforeSeverity')} className={row.severity === 'Low' ? 'b' : (row.severity === 'Med' ? 'orange b' : 'red b')}>{severityLabel(row.severity)}</div>
                                     <div before-text=''>{row.text}</div>
                                     <div before-text=''>
-                                        <div className='button-w-bl' onClick={() => { setRowShowActions(row) }}>Show List {row.actions && `(${row.actions.length})`}</div>
+                                        <div className='button-w-bl' onClick={() => { setRowShowActions(row) }}>{t('table.showList')} {row.actions && `(${row.actions.length})`}</div>
                                     </div>
                                      {(() => {
         const startDate = new Date(row.date);
@@ -468,31 +498,31 @@ export default function ActionTracker () {
             </div>
         );
     })()}
-                                    <div before-text='Status'>
+                                    <div before-text={t('table.beforeStatus')}>
                                         <div className={row.status === 'Resolved' ? 'green b' : (row.status === 'In progress' ? 'orange b resolve-button' : 'red b resolve-button')}>
                                             {row.status.toLowerCase() === 'resolved' ? (
-                                                <div>Resolved</div>
+                                                <div>{t('status.resolved')}</div>
                                             ) : (
                                                 <select className={user.permissions.edit_action_tracker === true ? '' : 'd'} defaultValue={row.status} onChange={(e) => { if (user.permissions.edit_action_tracker === true) {setRowToResolve({...row, status: e.target.value}); setShowResolve(true); e.target.value = row.status} } }>
-                                                    <option className='red' value="Unset">Unset</option>
-                                                    <option className='orange' value="In progress">In progress</option>
-                                                    <option className='green' value="Resolved">Resolved</option>
+                                                    <option className='red' value="Unset">{t('status.unset')}</option>
+                                                    <option className='orange' value="In progress">{t('status.inProgress')}</option>
+                                                    <option className='green' value="Resolved">{t('status.resolved')}</option>
                                                 </select>
                                             )}
                                     </div>
                                     </div>
                                     {user.permissions.edit_action_tracker === true && (<div>
-                                        <div className="button-w-bl" onClick={() => { setAuditLogRowToAdd({...row, date: format(new Date(row.date), 'MM-dd-yyyy')}); setShowAdd(true); }}>Edit</div>
+                                        <div className="button-w-bl" onClick={() => { setAuditLogRowToAdd({...row, date: format(new Date(row.date), 'MM-dd-yyyy')}); setShowAdd(true); }}>{t('table.edit')}</div>
                                     </div>)}
                                 </div>)
                             })}
                         </div>
                         <div className="a-table-footer">
-                            <div>Displayed {auditLogData.length} rows from {resultsCount} rows</div>
+                            <div>{t('table.displayedRows', { shown: auditLogData.length, total: resultsCount })}</div>
                             <div>
-                                <div className={page > 1 ? '' : 'd'} onClick={() => {if (page > 1) setPage(page - 1)}}>{`< Back`}</div>
-                                <div>- Page {page} -</div>
-                                <div className={page * pageSize > resultsCount ? 'd' : ''} onClick={() => {if (page * pageSize < resultsCount) setPage(page + 1)}}>{`Forward >`}</div>
+                                <div className={page > 1 ? '' : 'd'} onClick={() => {if (page > 1) setPage(page - 1)}}>{t('table.back')}</div>
+                                <div>{t('table.page', { page })}</div>
+                                <div className={page * pageSize > resultsCount ? 'd' : ''} onClick={() => {if (page * pageSize < resultsCount) setPage(page + 1)}}>{t('table.forward')}</div>
                             </div>
                         </div>
 
@@ -501,16 +531,16 @@ export default function ActionTracker () {
                         <div className='confirm add-issue-or-observation'>
                             <div>
                                 {!auditLogRowToAdd.id ? (
-                                    <h1>Enter new Issue / Observation data:</h1>
+                                    <h1>{t('form.addTitle')}</h1>
                                 ) : (
-                                    <h1>Change Issue / Observation data:</h1>
+                                    <h1>{t('form.editTitle')}</h1>
                                 )}
                                 <div>
                                     <form id='add-action-tracker-row' onSubmit={() => {
                                         sendActionTrackerRow(auditLogRowToAdd);
                                     }}>
                                         <label>
-                                            <div>Employee</div>
+                                            <div>{t('form.employee')}</div>
                                             <select value={auditLogRowToAdd.user_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, user_id: e.target.value})}}>
                                                 {users.map((user: User) => (
                                                     <option value={user.id} key={`add_io_user_${user.id}`}>{user.name}</option>
@@ -518,7 +548,7 @@ export default function ActionTracker () {
                                             </select>
                                         </label>
                                         <label>
-                                            <div>Department</div>
+                                            <div>{t('form.department')}</div>
                                             <select value={auditLogRowToAdd.department_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, department_id: e.target.value})}}>
                                                 {departments.map((department: Department) => (
                                                     <option value={department.id} key={`add_io_dep_${department.id}`}>{department.name}</option>
@@ -526,13 +556,13 @@ export default function ActionTracker () {
                                             </select>
                                         </label>
                                         <label>
-                                            <div>Date</div>
+                                            <div>{t('form.date')}</div>
                                             <div>
-                                                <DatePicker className="picker" selected={new Date(auditLogRowToAdd.date)} onChange={(d: Date | null) => d && setAuditLogRowToAdd({...auditLogRowToAdd, date: format(d, 'MM-dd-yyyy')})} dateFormat={'MM-dd-yyyy'}></DatePicker>
+                                                <DatePicker className="picker" locale={isEs ? 'es' : undefined} selected={new Date(auditLogRowToAdd.date)} onChange={(d: Date | null) => d && setAuditLogRowToAdd({...auditLogRowToAdd, date: format(d, 'MM-dd-yyyy')})} dateFormat={'MM-dd-yyyy'}></DatePicker>
                                             </div>
                                         </label>
                                         <label>
-                                            <div>Shift</div>
+                                            <div>{t('form.shift')}</div>
                                             <select value={auditLogRowToAdd.shift ?? '-'} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, shift: e.target.value})}}>
                                                 <option value="10 AM - 6 PM">10 AM - 6 PM</option>
                                                 <option value="4 PM - 10 PM">4 PM - 10 PM</option>
@@ -540,38 +570,38 @@ export default function ActionTracker () {
                                             </select>
                                         </label>
                                         <label>
-                                            <div>Category</div>
+                                            <div>{t('form.category')}</div>
                                             <select value={auditLogRowToAdd.category} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, category: e.target.value})}}>
                                                 {categories.map((category: IdName) => (<option value={category.name} key={`add_io_category_${category.id}`}>{category.name}</option>))}
                                             </select>
                                         </label>
                                     
                                         <label>
-                                            <div>Status</div>
+                                            <div>{t('form.status')}</div>
                                             <select value={auditLogRowToAdd.status} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, status: e.target.value})}}>
-                                                <option value="Unset">Unset</option>
-                                                <option value="In progress">In progress</option>
-                                                <option value="Resolved">Resolved</option>
+                                                <option value="Unset">{t('status.unset')}</option>
+                                                <option value="In progress">{t('status.inProgress')}</option>
+                                                <option value="Resolved">{t('status.resolved')}</option>
                                             </select>
                                         </label>
                                         <label>
-                                            <div>Severity</div>
+                                            <div>{t('form.severity')}</div>
                                             <select value={auditLogRowToAdd.severity} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, severity: e.target.value})}}>
-                                                <option value="Low">Low</option>
-                                                <option value="Med">Med</option>
-                                                <option value="High">High</option>
+                                                <option value="Low">{t('severity.low')}</option>
+                                                <option value="Med">{t('severity.med')}</option>
+                                                <option value="High">{t('severity.high')}</option>
                                             </select>
                                         </label>
                                     </form>
                                     </div>
                                     <label>
-                                        <div>Description</div>
-                                        <textarea placeholder='The issue is about...' value={auditLogRowToAdd.text} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, text: e.target.value})}}></textarea>
+                                        <div>{t('form.description')}</div>
+                                        <textarea placeholder={t('form.descriptionPlaceholder')} value={auditLogRowToAdd.text} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, text: e.target.value})}}></textarea>
                                     </label>
                                 <div>
-                                    {auditLogRowToAdd.id && (<span className='button-w-r-sm delete' onClick={() => {setShowDelete(true)}}>Delete</span>)}
-                                    <div className='button-w-bl' onClick={() => {setShowAdd(false)}}>Cancel</div>
-                                    <button className='button-d-bl' type='submit' form='add-action-tracker-row'>{!auditLogRowToAdd.id ? 'Add Issue / Observation' : 'Save Changes'}</button>
+                                    {auditLogRowToAdd.id && (<span className='button-w-r-sm delete' onClick={() => {setShowDelete(true)}}>{t('form.delete')}</span>)}
+                                    <div className='button-w-bl' onClick={() => {setShowAdd(false)}}>{t('form.cancel')}</div>
+                                    <button className='button-d-bl' type='submit' form='add-action-tracker-row'>{!auditLogRowToAdd.id ? t('form.add') : t('form.save')}</button>
                                 </div>
                             </div>
                         </div>
@@ -579,23 +609,23 @@ export default function ActionTracker () {
                     {rowShowActions !== null && (
                         <div className='confirm actions-list'>
                             <div>
-                                <h1><strong>Actions List</strong></h1>
+                                <h1><strong>{t('actionsList.title')}</strong></h1>
                                 <div>
                                     {rowShowActions.actions && rowShowActions.actions?.length > 0 ? rowShowActions.actions?.map((action: Action) => (
                                         <div key={action.id} className={action.user_id === user.id ? 'my-action' : ''}>
                                             <div>
-                                                <UserCircle user_name={users.find((user: User) => user.id === action.user_id)?.name ?? 'User'} size={25}></UserCircle>
-                                                <div>{users.find((user: User) => user.id === action.user_id)?.name ?? 'User'}</div>
+                                                <UserCircle user_name={users.find((user: User) => user.id === action.user_id)?.name ?? t('actionsList.defaultUser')} size={25}></UserCircle>
+                                                <div>{users.find((user: User) => user.id === action.user_id)?.name ?? t('actionsList.defaultUser')}</div>
                                             </div>
                                             <div>{format(new Date(action.date), 'MM-dd-yyyy hh:mm aa')}</div>
                                             <div>{action.text}</div>
                                         </div>
                                     )) : (
-                                        <h4>No actions added.</h4>
+                                        <h4>{t('actionsList.empty')}</h4>
                                     )}
                                 </div>
                                 <span onClick={() => {setRowShowActions(null)}} className='x'>x</span>
-                                {auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved !== null && (<b>-- RESOLVED SUCCESSFULLY --</b>)}
+                                {auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved !== null && (<b>{t('actionsList.resolvedSuccessfully')}</b>)}
                                 <div className={auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved === null && user.permissions.add_actions_to_io === true ? '' : 'resolved'}>
                                     <div className={user.permissions.add_actions_to_io === true ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={async () => {
                                         const result = await sendActionTrackerRow({
@@ -611,15 +641,18 @@ export default function ActionTracker () {
                                             ],})
                                         if (result === true && user.id !== rowShowActions.user_id) {
                                             sendMessageGlobal({
-                                                text: `NOTIFICATION: Added new action by this User to the Issue / Observation, you've added (${rowShowActions.text.slice(0, 10)}...): ${actionToAdd || 'No description'}`,
+                                                text: t('actionsList.notification', {
+                                                    issue: rowShowActions.text.slice(0, 10),
+                                                    action: actionToAdd || 'No description',
+                                                }),
                                                 from_user: user.id,
                                                 to_user: rowShowActions.user_id,
                                                 timestamp: new Date()
                                             })
                                         }
-                                        }}>Add Action</div>
+                                        }}>{t('actionsList.addAction')}</div>
                                     <label className={user.permissions.add_actions_to_io === true ? "is-resolved" : "is-resolved d"} >
-                                        <div>Issue Resolved?</div>
+                                        <div>{t('actionsList.issueResolved')}</div>
                                         <input type="checkbox" checked={rowShowActions?.date_resolved !== null || false} onChange={(e) => {
                                             if (user.permissions.add_actions_to_io !== true) return;
                                             setRowShowActions({
@@ -629,7 +662,7 @@ export default function ActionTracker () {
                                             })
                                         }} />
                                     </label>
-                                    <textarea name="" id="" placeholder='New action...' value={actionToAdd} onChange={(e) => {if (user.permissions.add_actions_to_io !== true) return; setActionToAdd(e.target.value)}
+                                    <textarea name="" id="" placeholder={t('actionsList.newActionPlaceholder')} value={actionToAdd} onChange={(e) => {if (user.permissions.add_actions_to_io !== true) return; setActionToAdd(e.target.value)}
                                     } className={user.permissions.add_actions_to_io === true ? "" : " d"}></textarea>
                                 </div>
                             </div>
@@ -638,12 +671,12 @@ export default function ActionTracker () {
                     {showDelete && (
                         <div className='confirm'>
                             <div>
-                                <h1>Confirm Deleting this Issue / Observation?</h1>
+                                <h1>{t('confirm.deleteTitle')}</h1>
                                 <div>
-                                    <div className='button-w-bl' onClick={() => {setShowDelete(false)}}>Cancel</div>
+                                    <div className='button-w-bl' onClick={() => {setShowDelete(false)}}>{t('confirm.cancel')}</div>
                                     <button className='button-w-r' onClick={() => { 
                                         deleteActionTrackerRow(auditLogRowToAdd ? auditLogRowToAdd.id ?? null : null)
-                                    }}>Delete</button>
+                                    }}>{t('confirm.delete')}</button>
                                 </div>
                             </div>
                         </div>
@@ -651,12 +684,12 @@ export default function ActionTracker () {
                     {showResolve && (
                         <div className='confirm'>
                             <div>
-                                <h1>Confirm changing status of this Issue / Observation?</h1>
+                                <h1>{t('confirm.statusTitle')}</h1>
                                 <div>
-                                    <div className='button-w-bl' onClick={() => {setShowResolve(false)}}>Cancel</div>
+                                    <div className='button-w-bl' onClick={() => {setShowResolve(false)}}>{t('confirm.cancel')}</div>
                                     <button className='button-d-bl' onClick={() => { 
                                         sendActionTrackerRow(rowToResolve)
-                                    }}>Confirm</button>
+                                    }}>{t('confirm.confirm')}</button>
                                 </div>
                             </div>
                         </div>

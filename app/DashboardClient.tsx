@@ -26,6 +26,7 @@ export default function DashboardClient({
           <Header
             user_name={user.name}
             user_role={user.role}
+            user_id={user.id}
           />
 
           <Chat

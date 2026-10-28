@@ -1,0 +1,14 @@
+.language-switch{
+    background-color: rgb(10, 12, 18);
+    color: white;
+    font-size: 14px;
+    margin-left: 5px;
+    width: min-content;
+}
+
+@media (max-width: 500px) {
+    .language-switch{
+        width: calc(100vw - 30px);
+        font-size: 20px;
+    }
+}

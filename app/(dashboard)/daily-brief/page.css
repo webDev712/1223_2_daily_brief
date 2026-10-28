@@ -94,9 +94,15 @@
 .daily-brief .report{
     display: flex;
     gap: 10px;
-    padding: 5px 0;
+    padding: 5px 15px;
     position: relative;
     transition: none;
+}
+
+.daily-brief div .progress-bar{
+    width: calc(100% - 30px);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .daily-brief .report + .report.border-top{
@@ -172,6 +178,33 @@
 }
 
 .daily-brief .report > :nth-child(7) {
+    width: 35px;
+    height: 35px;
+    margin: auto 0;
+    background-image: url('../../../public/report-add-finding.png');
+    background-size: 100%;
+    background-position: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.daily-brief .report > :nth-child(7)::before{
+    content: 'Add related finding';
+    position: absolute;
+    left: -20px;
+    top: -15px;
+    font-size: 10px;
+    color: rgb(180, 178, 178);
+    width: max-content;
+    background-color: rgb(245, 245, 245);
+    display: none;
+}
+
+.daily-brief .report > :nth-child(7):hover::before{
+    display: block;
+}
+
+.daily-brief .report > :nth-child(8) {
     background-color: #F5F7FA;
     padding: 4px 10px;
     border-radius: 10px;
@@ -190,17 +223,19 @@
     margin: auto 0;
 }
 
-.daily-brief .report > :nth-child(7).done {
+.daily-brief .report > :nth-child(8).done {
     background-color: #ECFDF5;
     color: #059669;
     height: max-content;
 }
 
-.daily-brief .report > :nth-child(8) {
-    width: 90px;
-    max-width: 90px;
-    min-width: 90px;
+.daily-brief .report > :nth-child(9) {
+    width: 97px;
+    max-width: 97px;
+    min-width: 97px;
     text-align: center;
+    line-height: 1;
+    padding: 10px 0px;
 }
 
 .daily-brief .report input[type="checkbox"]{
@@ -277,7 +312,7 @@
 }
 
 .daily-brief .reports > div:nth-child(2){
-    padding: 12px 15px;
+    padding: 12px 0px 0px 0px;
 }
 
 .daily-brief .shift-info > div{
@@ -591,7 +626,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    width: 70%;
+    width: 90%;
     margin: auto;
     position: relative;
 }

@@ -5,6 +5,8 @@ import Loader from "@/app/src/components/Loader";
 import { Department, ProductionRow } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { format, toDate } from "date-fns";
+import { es, enUS } from "date-fns/locale";
+import { useLocale, useTranslations } from "next-intl";
 import './page.css'
 import {
     DateRangePicker,
@@ -25,11 +27,16 @@ import {
 } from "date-fns";
 
 import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";import { getTestEmployees } from "@/lib/config";
+import "react-date-range/dist/theme/default.css";
+import { getTestEmployees } from "@/lib/config";
 import getColorsFromName from "@/lib/color";
 import { toast } from "sonner";
 
 export default function ProductionDashboard() {
+    const t = useTranslations('ProductionDashboard');
+    const locale = useLocale();
+    const dateLocale = locale.startsWith('es') ? es : enUS;
+
     const [loading, setLoading] = useState(true);
     const [tableData, setTableData] = useState([])
     const [departments, setDeparments] = useState([])
@@ -54,28 +61,28 @@ const [draftRange, setDraftRange] = useState<Range>({
 
 const datePresets = createStaticRanges([
     {
-        label: "Today",
+        label: t('presets.today'),
         range: () => ({
             startDate: startOfDay(new Date()),
             endDate: endOfDay(new Date()),
         }),
     },
     {
-        label: "Yesterday",
+        label: t('presets.yesterday'),
         range: () => ({
             startDate: startOfDay(subDays(new Date(), 1)),
             endDate: endOfDay(subDays(new Date(), 1)),
         }),
     },
     {
-        label: "Last 7 Days",
+        label: t('presets.last7Days'),
         range: () => ({
             startDate: startOfDay(subDays(new Date(), 6)),
             endDate: endOfDay(new Date()),
         }),
     },
     {
-        label: "Last Week",
+        label: t('presets.lastWeek'),
         range: () => ({
             startDate: startOfWeek(subWeeks(new Date(), 1), {
                 weekStartsOn: 1,
@@ -86,14 +93,14 @@ const datePresets = createStaticRanges([
         }),
     },
     {
-        label: "Last 30 Days",
+        label: t('presets.last30Days'),
         range: () => ({
             startDate: startOfDay(subDays(new Date(), 29)),
             endDate: endOfDay(new Date()),
         }),
     },
     {
-        label: "Last Month",
+        label: t('presets.lastMonth'),
         range: () => ({
             startDate: startOfMonth(subMonths(new Date(), 1)),
             endDate: endOfMonth(subMonths(new Date(), 1)),
@@ -110,7 +117,7 @@ const datePresets = createStaticRanges([
     const [reload, setReload] = useState(0)
 
     const sendNotes = (id: string, newNotes: string) => {
-        fetch('/api/ppohMaster', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id, notes: newNotes})}).then(res => {if (res.status === 200) toast.success('Notes Updated!')})
+        fetch('/api/ppohMaster', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id, notes: newNotes})}).then(res => {if (res.status === 200) toast.success(t('toasts.notesUpdated'))})
     }
 
     useEffect(() => {
@@ -142,7 +149,7 @@ const datePresets = createStaticRanges([
                     <div>
                         <div className="production-date-range">
     <label>
-        <span>Timeframe</span>
+        <span>{t('filters.timeframe')}</span>
 
         <button
             type="button"
@@ -156,9 +163,9 @@ const datePresets = createStaticRanges([
                 setShowDateRange(prev => !prev);
             }}
         >
-            📅 {format(dateFrom, "MMMM d, yyyy")}
+            📅 {format(dateFrom, t('dateFormat'), { locale: dateLocale })}
             {" - "}
-            {format(dateTo, "MMMM d, yyyy")}
+            {format(dateTo, t('dateFormat'), { locale: dateLocale })}
         </button>
     </label>
 
@@ -175,6 +182,7 @@ const datePresets = createStaticRanges([
                     onChange={(ranges: RangeKeyDict) => {
                         setDraftRange(ranges.selection);
                     }}
+                    locale={dateLocale}
                     months={2}
                     direction="horizontal"
                     moveRangeOnFirstSelection={false}
@@ -193,7 +201,7 @@ const datePresets = createStaticRanges([
                         type="button"
                         onClick={() => setShowDateRange(false)}
                     >
-                        Cancel
+                        {t('filters.cancel')}
                     </button>
 
                     <button
@@ -205,9 +213,7 @@ const datePresets = createStaticRanges([
                             if (!from || !to) return;
 
                             if (from > to) {
-                                toast.error(
-                                    "Please select a start date before the end date"
-                                );
+                                toast.error(t('toasts.invalidRange'));
                                 return;
                             }
 
@@ -216,7 +222,7 @@ const datePresets = createStaticRanges([
                             setShowDateRange(false);
                         }}
                     >
-                        Select
+                        {t('filters.select')}
                     </button>
                 </div>
             </div>
@@ -224,9 +230,9 @@ const datePresets = createStaticRanges([
     )}
 </div>
                         <label>
-                            <span>Employee</span>
+                            <span>{t('filters.employee')}</span>
                             <select defaultValue={employee} onChange={(e) => setEmployee(e.target.value)}>
-                                <option value="">All</option>
+                                <option value="">{t('filters.all')}</option>
                                 {getTestEmployees().map((e: any) => (
                                     <option key={e.id} value={e.id}>{e.name}</option>
                                 ))}
@@ -234,9 +240,9 @@ const datePresets = createStaticRanges([
                             </select>
                         </label>
                         <label>
-                            <span>Department</span>
+                            <span>{t('filters.department')}</span>
                             <select defaultValue={department} onChange={(e) => setDeparment(e.target.value)}>
-                                <option value="">All</option>
+                                <option value="">{t('filters.all')}</option>
                                 {departments.map((dep_name: string) => {if (dep_name !== '') return (
                                     <option key={dep_name} value={dep_name}>{dep_name}</option>
                                 )})}
@@ -244,7 +250,7 @@ const datePresets = createStaticRanges([
                         </label>
                         <div className="button-d-bl-sm" onClick={() => {
                             if (dateFrom > dateTo) {
-                                toast.error("Please select a start date before the end date"); 
+                                toast.error(t('toasts.invalidRange')); 
                                 return 0;
                             };
                             if (dateFrom < new Date("2026-02-11")) {
@@ -253,7 +259,7 @@ const datePresets = createStaticRanges([
                             }
                             setPage(1);
                             setReload(prev => prev + 1);
-                        }}>Filter</div>
+                        }}>{t('filters.filter')}</div>
                         <div className="button-w-bl"
                             onClick={() => {
                                 setShowOnlyWithNotes(true);
@@ -261,21 +267,21 @@ const datePresets = createStaticRanges([
                                 setDateTo(yesterday);
                                 setReload(prev => prev + 1);
                             }}
-                        >Show All Notes</div>
+                        >{t('filters.showAllNotes')}</div>
                     </div>
                     <div className="table-wrapper">
                             <div className="table-header">
-                                <div>DATE</div>
-                                <div>EMPLOYEE</div>
-                                <div>DEPARTMENT</div>
-                                <div>PIECES</div>
-                                <div>VALUE</div>
-                                <div>HOURS</div>
-                                <div>PPOH</div>
-                                <div>TARGET PPOH</div>
-                                <div>Δ VS TARGET</div>
-                                <div>EFFICIENCY</div>
-                                <div>NOTES</div>
+                                <div>{t('table.date')}</div>
+                                <div>{t('table.employee')}</div>
+                                <div>{t('table.department')}</div>
+                                <div>{t('table.pieces')}</div>
+                                <div>{t('table.value')}</div>
+                                <div>{t('table.hours')}</div>
+                                <div>{t('table.ppoh')}</div>
+                                <div>{t('table.targetPpoh')}</div>
+                                <div>{t('table.deltaVsTarget')}</div>
+                                <div>{t('table.efficiency')}</div>
+                                <div>{t('table.notes')}</div>
                             </div>
                             
                             <div className="table">
@@ -286,23 +292,23 @@ const datePresets = createStaticRanges([
                                         {/* <div>{format(row.date, 'MM-dd-yyyy')}</div> */}
                                         <div>{row.employee_name}</div>
                                         <div style={{color: getColorsFromName(row.department).dark}}>{row.department}</div>
-                                        <div before-text='Pieces'>{row.pieces}</div>
-                                        <div before-text='Value'>{row.value}</div>
-                                        <div before-text='Hours'>{row.hours}</div>
-                                        <div before-text='PPOH'>{row.ppoh}</div>
-                                        <div before-text='Target PPOH'>{row.target_ppoh}</div>
-                                        <div before-text='Efficiency' className={row.delta_ppoh < 0 ? 'red-b' : row.delta_ppoh === 0 ? 'orange-b' : 'green-b'}>{row.delta_ppoh}</div>
+                                        <div before-text={t('mobileLabels.pieces')}>{row.pieces}</div>
+                                        <div before-text={t('mobileLabels.value')}>{row.value}</div>
+                                        <div before-text={t('mobileLabels.hours')}>{row.hours}</div>
+                                        <div before-text={t('mobileLabels.ppoh')}>{row.ppoh}</div>
+                                        <div before-text={t('mobileLabels.targetPpoh')}>{row.target_ppoh}</div>
+                                        <div before-text={t('mobileLabels.efficiency')} className={row.delta_ppoh < 0 ? 'red-b' : row.delta_ppoh === 0 ? 'orange-b' : 'green-b'}>{row.delta_ppoh}</div>
                                         <div className={row.efficiency < 100 ? 'red-b' : row.efficiency === 100 ? 'orange-b' : 'green-b'}>{row.efficiency}</div>
-                                        <div><textarea onBlur={(e) => {sendNotes(row.id, e.target.value)}} placeholder="Write your notes here..." defaultValue={row.notes || ""}></textarea></div>
+                                        <div><textarea onBlur={(e) => {sendNotes(row.id, e.target.value)}} placeholder={t('table.notesPlaceholder')} defaultValue={row.notes || ""}></textarea></div>
                                     </div>)
                                 })}
                             </div>
                             <div className="table-footer">
-                                <div>Displayed {tableData.length} rows from {resultsCount} rows</div>
+                                <div>{t('footer.displayed', { shown: tableData.length, total: resultsCount })}</div>
                                 <div>
-                                    <div className={page > 1 ? '' : 'd'} onClick={() => {if (page > 1) setPage(page - 1)}}>{`< Back`}</div>
-                                    <div>- Page {page} -</div>
-                                    <div className={page * pageSize > resultsCount ? 'd' : ''} onClick={() => {if (page * pageSize < resultsCount) setPage(page + 1)}}>{`Forward >`}</div>
+                                    <div className={page > 1 ? '' : 'd'} onClick={() => {if (page > 1) setPage(page - 1)}}>{t('footer.back')}</div>
+                                    <div>{t('footer.page', { page })}</div>
+                                    <div className={page * pageSize > resultsCount ? 'd' : ''} onClick={() => {if (page * pageSize < resultsCount) setPage(page + 1)}}>{t('footer.forward')}</div>
                                 </div>
                             </div>
 

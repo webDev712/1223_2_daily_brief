@@ -93,6 +93,7 @@ export async function PATCH(request: Request) {
             default_holder_id=null,
             backup_holder_id=null,
             backup_start_at_day="",
+            check_before="",
         } = body;
         const normalizedDefaultHolderId =
             default_holder_id === "" ? null : default_holder_id;
@@ -106,7 +107,7 @@ export async function PATCH(request: Request) {
 
         const rows = await sql`
             UPDATE report
-            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}, day_time = ${day_time}, default_holder_id = ${normalizedDefaultHolderId}, metric = ${metric}, metric_range_from = ${metric_range_from}, metric_range_to = ${metric_range_to}, department_id = ${department_id}, backup_holder_id = ${normalizedBackupHolderId}, backup_start_at_day = ${backup_start_at_day}
+            SET name = ${name}, source = ${source}, once_per = ${once_per}, start_at_day = ${start_at_day}, archived=${archived}, assigned_to = ${assigned_to}, day_time = ${day_time}, default_holder_id = ${normalizedDefaultHolderId}, metric = ${metric}, metric_range_from = ${metric_range_from}, metric_range_to = ${metric_range_to}, department_id = ${department_id}, backup_holder_id = ${normalizedBackupHolderId}, backup_start_at_day = ${backup_start_at_day}, check_before = ${check_before}
             WHERE id = ${id} AND company_id = ${company_id};
         `
         

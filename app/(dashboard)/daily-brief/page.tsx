@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import getColorsFromName from '@/lib/color';
 import { format, parse } from "date-fns";
 import { toast } from 'sonner';
-import { Covered, Report, SavedBrief, Shift, User } from '@/lib/types';
+import { Company, Covered, Report, SavedBrief, Shift, User } from '@/lib/types';
 import './page.css'
 import { downloadPDF, generateEmailHTML } from '@/lib/documents';
 import SmallLoader from '@/app/src/components/SmallLoader';
@@ -16,8 +16,29 @@ import capitalize from '@/lib/text';
 import UserCircle from '@/app/src/components/UserCircle';
 import ImageUploader from '@/app/src/components/ImageUploader';
 import isBlobLink from '@/lib/img';
+import scrollToElement from '@/lib/html_document';
+import { useLocale, useTranslations } from 'next-intl';
 
 
+const isBeforeTime = (time: string | undefined) => {
+  if (!time) return true;
+
+  const [hour, period] = time.split(" ");
+  
+  let checkHour = Number(hour);
+  
+  if (period === "AM") {
+      if (checkHour === 12) checkHour = 0;
+  } else {
+      if (checkHour !== 12) checkHour += 12;
+  }
+  
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const checkMinutes = checkHour * 60;
+  
+  return currentMinutes < checkMinutes;
+}
 
 export default function DailyBrief() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,7 +50,7 @@ export default function DailyBrief() {
 
   const isToday = b.date === todayString;
   
-    return (user?.role === "manager" || user?.id !== b.lead_id || b.freezed === true || !isToday) || user?.permissions.update_brief === false 
+    return (user?.id !== b.lead_id || b.freezed === true || !isToday) || user?.permissions.update_brief === false 
   };
   const [showSubmit, setShowSubmit] = useState(false)
   const [showHandoff, setShowHandoff] = useState(false)
@@ -93,12 +114,12 @@ export default function DailyBrief() {
       body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd"), created_at: new Date()}),
     });
     if (res.status === 200) setReload(prev => prev + 1);
-    toast.info(`Don't forget to select your shift.`);
+    toast.info(translation('select_shift_reminder'));
   }
 
   const submitBrief = async (b: any) => {
     if (!b.shift || b.shift === ''){
-      toast.error('Select shift to submit your brief.');
+      toast.error(translation('select_shift_to_submit_brief'));
       return;
     }
     setLoading(true)
@@ -355,10 +376,15 @@ export default function DailyBrief() {
   const [showAddTask, setShowAddTask] = useState(false)
   const [shifts, setShifts] = useState([])
   const [selectedLead, setRealSelectedLead] = useState(null)
+  const [company, setCompany] = useState<Company>();
+  const translation = useTranslations('DailyBrief');
 
   const setSelectedLead = (lead: any) => {
     setRealSelectedLead(lead)
   }
+  // const locale = useLocale();
+  // locale.startsWith("es")
+    
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     async function load() {
@@ -372,7 +398,7 @@ export default function DailyBrief() {
         return;
       }  
       let leads_data = await users_res.json();
-      leads_data = leads_data.filter((a: User) => a.user_role !== 'manager')
+      // leads_data = leads_data.filter((a: User) => a.user_role !== 'manager')
       setLeads(leads_data)
       let lead_id = selectedLead;
       
@@ -385,6 +411,12 @@ export default function DailyBrief() {
           if ((leads_data.length > 0) && (!lead_id)) setRealSelectedLead(leads_data[0].id);
         }
       }
+      const company_res = await fetch('/api/company');
+      const company_data = await company_res.json();
+      console.log('company_data')
+      console.log(company_data)
+      setCompany(company_data[0]);
+
     }
     load()
   }, [])
@@ -426,6 +458,16 @@ export default function DailyBrief() {
       }
       load();
     }, [date, selectedLead, reload]);
+
+  const addReportFinding = (r: Report, b: SavedBrief) => {
+    setShowAddFinding(true);
+    setTimeout(() => {
+      scrollToElement('add-finding');
+      if (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement) 
+        (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement).value = 
+      `Finding related to report "${r.name}":`
+    }, 300)
+  }
   const leads_to_display = leads.filter(
             (u: User) => 
               (allBriefs.filter((brief: SavedBrief) => brief.lead_id === u.id).length > 0) || (u.permissions.update_brief === true && u.id === user?.id)
@@ -433,17 +475,18 @@ export default function DailyBrief() {
   return (
     <div className="daily-brief">
       <div>
-        <div onClick={() => {history.back()}}>Back</div>
-        <div>Daily Briefs</div>
+        <div onClick={() => {history.back()}}>{translation('back')}</div>
+        <div>{translation('daily_briefs')}</div>
       </div>
       <div>
         {leads_to_display.length > 0 && (
           <div className="leads" style={{display: leads.length > 0 ? "flex" : "none", gap: "10px"}}>
             <div className='choose'>
-              <span>Choose Lead</span>
+              <span>{translation('choose_lead')}</span>
             </div>
             {leads_to_display.sort((a: User, b: User) => a.name.localeCompare(b.name)).map((u: User, i) => {
               let colors = getColorsFromName(u.name);
+              if (u.user_role.toLowerCase() === 'manager' && u.id !== user?.id && company?.main_admin_id !== user?.id) return;
               return (
                 <label className='lead' style={{
                     backgroundColor: selectedLead === u.id ? colors.medium : colors.light, 
@@ -465,8 +508,8 @@ export default function DailyBrief() {
             {allBriefs.filter(
               (b: SavedBrief) => b.original_lead_id === selectedLead).length === 0 && selectedLead === user?.id && (
               <div className='no-briefs'>
-                <h1>You have not started your own Brief</h1>
-                {selectedLead === user?.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {startMyBrief()}}>Start My Brief</div>) : (<div></div>)}
+                <h1>{translation('own_brief_not_started')}</h1>
+                {selectedLead === user?.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {startMyBrief()}}>{translation('start_my_brief')}</div>) : (<div></div>)}
               </div>
             )}
             {briefs.length == 0 || (user?.role == 'lead' && false && !briefs.some((b: SavedBrief) => b.lead_id == user?.id)) 
@@ -483,19 +526,19 @@ export default function DailyBrief() {
                   <div className='brief' id={`b-${b.id}`} key={`b-${b.id}`}>
                     <div className='shift-info'>
                       <div>
-                        <h1>Shift information ({`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? (b.freezed === true ? 'Freezed - brief day passed' : 'Freezed - brief submitted') : (b.freezed === true ? 'Freezed - brief submitted' : 'Active - Owner can edit')}){b.shift ? ` - shift ${b.shift}` : ``} </h1>
-                        <div className='button-w-bl' style={{marginLeft: "auto"}} onClick={() => {generateEmailHTML(b)}} >Copy for Email</div>
-                        <div className='button-w-bl' onClick={() => {downloadPDF(b)}}>Save as PDF</div>
-                        <div className={noAccessEdit(b) ? 'button-d-bl d tg' : 'button-d-bl tg'} onClick={() => {if (!noAccessEdit(b)) setShowSubmit(true)}}>Submit Brief</div>
+                        <h1>{translation('shift_info')} ({`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? (b.freezed === true ? 'Freezed - brief day passed' : 'Freezed - brief submitted') : (b.freezed === true ? 'Freezed - brief submitted' : translation('active_owner_can_edit'))}){b.shift ? ` - shift ${b.shift}` : ``} </h1>
+                        <div className='button-w-bl' style={{marginLeft: "auto"}} onClick={() => {generateEmailHTML(b)}} >{translation('copy_for_email')}</div>
+                        <div className='button-w-bl' onClick={() => {downloadPDF(b)}}>{translation('save_as_pdf')}</div>
+                        <div className={noAccessEdit(b) ? 'button-d-bl d tg' : 'button-d-bl tg'} onClick={() => {if (!noAccessEdit(b)) setShowSubmit(true)}}>{translation('submit_brief')}</div>
                         {showSubmit && (
                           <div className='confirm'>
                             <div>
-                              <h1>Submit Daily Brief?</h1>
-                              <p>After submission <strong>this Daily Brief will become read-only.</strong></p>
-                              <p>You will no longer be able to edit reports, tasks, findings, or notes.</p>
+                              <h1>{translation('submit_daily_brief')}?</h1>
+                              <p>{translation('after_submission')} <strong>{translation('read_only')}</strong></p>
+                              <p>{translation('freezed')}</p>
                               <div>
-                                <div className='button-w-bl' onClick={() => {setShowSubmit(false)}}>Cancel</div>
-                                <div className='button-d-bl' onClick={() => submitBrief(b)}>Submit Brief</div>
+                                <div className='button-w-bl' onClick={() => {setShowSubmit(false)}}>{translation('cancel')}</div>
+                                <div className='button-d-bl' onClick={() => submitBrief(b)}>{translation('submit_brief')}</div>
                               </div>
                             </div>
                           </div>
@@ -503,12 +546,12 @@ export default function DailyBrief() {
                         {showHandoff && (
                           <div className='confirm'>
                             <div>
-                              <h1>Handoff Daily Brief?</h1>
-                              <p>After handing off this Daily Brief <strong>you will not be able to see it</strong> (only in case, Lead you handing off this Daily Brief will give you it back).</p>
-                              <p><strong>You will not be able to create another brief today.</strong></p>
+                              <h1>{translation('handoff_daily_brief')}?</h1>
+                              <p>{translation('after_handing_off_this_daily_brief')} <strong>{translation('you_will_not_be_able_to_see_it')}</strong> {translation('only_in_case')}</p>
+                              <p><strong>{translation('another_brief_today')}</strong></p>
                               <div>
-                                <div className='button-w-bl' onClick={() => {setShowHandoff(false)}}>Cancel</div>
-                                <div className='button-d-bl' onClick={() => handoffBrief(b)}>Hand off this Brief</div>
+                                <div className='button-w-bl' onClick={() => {setShowHandoff(false)}}>{translation('cancel')}</div>
+                                <div className='button-d-bl' onClick={() => handoffBrief(b)}>{translation('hand_off_this_brief')}</div>
                               </div>
                             </div>
                           </div>
@@ -516,13 +559,13 @@ export default function DailyBrief() {
                         {showCallout && (
                           <div className='confirm callout'>
                             <div>
-                              <h1>Call-out report "{reportToCallout?.name}"?</h1>
-                              <p>If you want, you can assign it to another user right now:</p>
+                              <h1>{translation('call_out_report')} "{reportToCallout?.name}"?</h1>
+                              <p>{translation('assign_another')}</p>
                               <select className='input' style={{width: '50%', margin: '0 auto'}} id='new_holder_id'>
-                                <option value="NULL">DON'T ASSIGN</option>
+                                <option value="NULL">{translation('dont_assign')}</option>
                                 {leads.map((u: User) => 
                                   !u.archived &&
-                                  b.lead_id !== user.id &&
+                                  // b.lead_id !== user.id &&
                                   reportToCallout?.holder_id !== u.id &&
                                   leads.find((u_local: User) => u_local.id === reportToCallout?.holder_id)?.department_id === u.department_id && 
                                   (
@@ -530,7 +573,7 @@ export default function DailyBrief() {
                                   ))}
                               </select>
                               <div>
-                                <div className='button-w-bl' onClick={() => {setShowCallout(false)}}>Cancel</div>
+                                <div className='button-w-bl' onClick={() => {setShowCallout(false)}}>{translation('cancel')}</div>
                                 <div className='button-d-bl' onClick={() => {
                                   if (`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` === b.date) 
                                     {
@@ -538,7 +581,7 @@ export default function DailyBrief() {
                                       updateReports(b, {...reportToCallout, holder_id: new_holder_id === "NULL" ? null : new_holder_id}, false);
                                       setShowCallout(false);
                                     }
-                                }}>Confirm</div>
+                                }}>{translation('confirm')}</div>
                               </div>
                             </div>
                           </div>
@@ -546,14 +589,14 @@ export default function DailyBrief() {
                       </div>
                       <div>
                         <div style={{flex: 1}}>
-                          <span>Lead</span>
+                          <span>{translation('lead')}</span>
                           <div style={{display: 'flex', gap: 10}}>
                             <div className='user' style={{ backgroundColor: getColorsFromName(b.lead_name).medium }}><div>{AB_name}</div></div>
                             <div>{b.lead_id !== b.original_lead_id ? `Handed Off from` : ''} {b.lead_name} - {leads.find((el: User) => el.id == b.lead_id)?.department || ""}</div>
                           </div>
                         </div>
                         <div>
-                          <span>Shift</span>
+                          <span>{translation('shift')}</span>
                           <select className={noAccessEdit(b) ? 'shift-select d' : ''} disabled={noAccessEdit(b)} onChange={(e) => {changeShift(b, e.target.value)}} defaultValue={b.shift || ''}>
                             <option value={""}>-</option>
                             {shifts.map((s: Shift) => {
@@ -562,14 +605,14 @@ export default function DailyBrief() {
                           </select>
                         </div>
                         <div>
-                          <span>Date</span>
+                          <span>{translation('date')}</span>
                           <div>{format(
                               parse(b.date, "yyyy-MM-dd", new Date()),
                               "MMMM d, yyyy"
                           )} {b?.created_at && format(new Date(b.created_at), 'hh:mm a')}</div>
                         </div>
                         <div>
-                            <span>Work Assignment</span>
+                            <span>{translation('work_assignment')}</span>
                             <label className={b.driving ? (noAccessEdit(b) ? 'driving d' : 'driving') : (noAccessEdit(b) ? 'd' : '')}>
                               <input
                                 type="checkbox"
@@ -578,36 +621,36 @@ export default function DailyBrief() {
                                 checked={b.driving}
                                 onChange={(e) => changeDrivingStatus(b, e.target.checked)}
                               />
-                              <div>{b.driving ? 'Driving' : 'Floor'}</div>
+                              <div>{b.driving ? translation('driving') : translation('floor')}</div>
                             </label>
                         </div>
                       </div>
                       <div style={{height: b.driving === true ? 'max-content' : 0, padding: b.driving === true ? '10px 0 15px' : 0, margin: b.driving === true ? '15px' : 0, border: b.driving === true ? '1px solid #c7d2fe' : 'none'}}>
-                        <div style={{height: b.driving === true ? 'max-content' : 0}} className={noAccessEdit(b) ? 'shift-select d' : ''} onClick={() => {if (!noAccessEdit(b)) setShowAddCover(true)}}>+ Add Coverage</div>
+                        <div style={{height: b.driving === true ? 'max-content' : 0}} className={noAccessEdit(b) ? 'shift-select d' : ''} onClick={() => {if (!noAccessEdit(b)) setShowAddCover(true)}}>+ {translation('add_coverage')}</div>
                         {b.covered && b.covered.length > 0 && b.covered.map((route: Covered, route_i: number) => (
                           <div style={{height: b.driving === true ? 'max-content' : 0}} key={`${b.id}_route_${route_i}`}>
                             <div className={noAccessEdit(b) ? 'shift-select d' : ''} onClick={() => {if (!noAccessEdit(b)) removeCover(b, route.id)}}>
                               <input className={noAccessEdit(b) ? 'shift-select d' : ''} type="button" />
                             </div>
                             <div>
-                              <span>Covering For</span>
-                              <input type="text" className='d' placeholder='Drive out' value={route.covering_for} onChange={() => {}} disabled />
+                              <span>{translation('covering_for')}</span>
+                              <input type="text" className='d' placeholder={translation('drive_out')} value={route.covering_for} onChange={() => {}} disabled />
                             </div>
                             <div>
-                              <span>Route/Zone</span>
-                              <input type="text" className='d' placeholder='Route/Zone' value={route.route_zone} onChange={() => {}} disabled  />
+                              <span>{translation('route_zone')}</span>
+                              <input type="text" className='d' placeholder={translation('route_zone')} value={route.route_zone} onChange={() => {}} disabled  />
                             </div>
                             <div>
-                              <span>Van</span>
-                              <input type="text" className='d' placeholder='Van' value={route.van} onChange={() => {}} disabled  />
+                              <span>{translation('van')}</span>
+                              <input type="text" className='d' placeholder={translation('van')} value={route.van} onChange={() => {}} disabled  />
                             </div>
                             <div>
-                              <span>Stops</span>
-                              <input type="number" className='d' placeholder='Stops' value={route.stops} onChange={() => {}} disabled  />
+                              <span>{translation('stops')}</span>
+                              <input type="number" className='d' placeholder={translation('stops')} value={route.stops} onChange={() => {}} disabled  />
                             </div>
                             <div>
-                              <span>Window</span>
-                              <input type="text" className='d' placeholder='Window' value={route.windows} onChange={() => {}} disabled  />
+                              <span>{translation('window')}</span>
+                              <input type="text" className='d' placeholder={translation('window')} value={route.windows} onChange={() => {}} disabled  />
                             </div>
                             <div>
                               <div className=''></div>
@@ -619,24 +662,24 @@ export default function DailyBrief() {
                             <input type="button" />
                           </div>
                           <div>
-                            <span>Covering For</span>
-                            <input type="text" placeholder='Drive out' id={`${b.id}_covering_for`} />
+                            <span>{translation('covering_for')}</span>
+                            <input type="text" placeholder={translation('drive_out')} id={`${b.id}_covering_for`} />
                           </div>
                           <div>
-                            <span>Route/Zone</span>
-                            <input type="text" placeholder='Route/Zone' id={`${b.id}_route_zone`} />
+                            <span>{translation('route_zone')}</span>
+                            <input type="text" placeholder={translation('route_zone')} id={`${b.id}_route_zone`} />
                           </div>
                           <div>
-                            <span>Van</span>
-                            <input type="text" placeholder='Van' id={`${b.id}_van`} />
+                            <span>{translation('van')}</span>
+                            <input type="text" placeholder={translation('van')} id={`${b.id}_van`} />
                           </div>
                           <div>
-                            <span>Stops</span>
-                            <input type="number" placeholder='Stops' id={`${b.id}_stops`} />
+                            <span>{translation('stops')}</span>
+                            <input type="number" placeholder={translation('stops')} id={`${b.id}_stops`} />
                           </div>
                           <div>
-                            <span>Window</span>
-                            <input type="text" placeholder='Window' id={`${b.id}_window`} />
+                            <span>{translation('window')}</span>
+                            <input type="text" placeholder={translation('window')} id={`${b.id}_window`} />
                           </div>
                           <div>
                             <span></span>
@@ -650,13 +693,13 @@ export default function DailyBrief() {
                                 windows: (document.getElementById(`${b.id}_window`) as HTMLTextAreaElement)?.value || '',
                               }];
                               addCover(b, newRoute);
-                            }}>Add</div>
+                            }}>{translation('add')}</div>
                           </div>
-                        </div>) : (<h3>{b?.covered.length === 0 ? "No Coverage yet" : ""}</h3>)}
+                        </div>) : (<h3>{b?.covered.length === 0 ? translation('no_coverage_yet') : ""}</h3>)}
                       </div>
                     </div>
                     <div className='reports'>
-                      <div>Reports of Department "{leads.find((lead_local: User) => b.lead_id === lead_local.id)?.department}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} reviewed (yours {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
+                      <div>{translation('reports_of_department')} "{leads.find((lead_local: User) => b.lead_id === lead_local.id)?.department}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} {translation('reviewed')} ({translation('yours')} {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
                       <div>
                         <div className='progress-bar'>
                           <span style={{width: b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100 + "%"}}></span>
@@ -667,19 +710,23 @@ export default function DailyBrief() {
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
                               <div></div>
                               <div>{r.name}</div>
-                              <div>{capitalize(r.day_time)}</div>
+                              <div>
+                                <div>{capitalize(r.day_time)}</div>
+                                {r.check_before && (<div style={{ fontSize: 10, fontWeight: 600, lineHeight: 1.2 }}>{translation('check_before')}: {r.check_before}</div>)}
+                              </div>
                               <div>{r.source}</div>
-                              <div>Assignee: <div className=''>{leads.find((lead: User) => lead.id === r.holder_id)?.name ?? '-'}</div></div>
+                              <div>{translation('assignee')}: <div className=''>{leads.find((lead: User) => lead.id === r.holder_id)?.name ?? '-'}</div></div>
                               <div style={{color: '#000000'}}>{r.metric ?? 'No Metric'}</div>
-                              <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div className={noAccessEdit(b) || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!noAccessEdit(b) && b.lead_id === user.id) updateReports(b, {...r, holder_id: user.id}, r.checked)}}>Take</div>
+                              <div onClick={() => {addReportFinding(r, b)}}></div>
+                              <span className={r.timestamp ? translation('done') : translation('pending')}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
+                              <div className={noAccessEdit(b) || user.id !== b.lead_id ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!noAccessEdit(b) && b.lead_id === user.id) updateReports(b, {...r, holder_id: user.id}, r.checked)}}>{translation('take')}</div>
 
                             </div>)
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id === user.id).map(
                           (r: Report, i: number) => (
-                            <div className={i === 0 ? 'report border-top reports-you-took' : 'report'} key={r.id}>
-                              <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {
+                            <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (isBeforeTime(r.check_before)  ? '' : ' red-background')} key={r.id}>
+                              <input className={noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'd' : ''} disabled={noAccessEdit(b) || !isBeforeTime(r.check_before)} type='checkbox' checked={r.checked} onChange={() => {
                                 const metric_lowercase = r.metric?.toLowerCase();
                                 if ((metric_lowercase === 'metric' || 
                                      metric_lowercase === 'count' ||
@@ -687,21 +734,24 @@ export default function DailyBrief() {
                                      metric_lowercase === 'yes/no' ||
                                      metric_lowercase === 'image'
                                 ) && r.text === ''){
-                                  toast.error('Please, input report value first.');
+                                  toast.error(translation('input_report_value_first'));
                                   return;
                                 }
                                 updateReports(b, r, !r.checked);
                               }} />
                               <div>{r.name}</div>
-                              <div>{capitalize(r.day_time)}</div>
+                              <div>
+                                <div>{capitalize(r.day_time)}</div>
+                                {r.check_before && (<div style={{ fontSize: 10, fontWeight: 600, lineHeight: 1.2 }}>{translation('check_before')}: {r.check_before}</div>)}
+                              </div>
                               <div>{r.source}</div>
-                              <div>Assignee: <div className='green' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name} (You)</div></div>
+                              <div>{translation('assignee')}: <div className='green' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name} (You)</div></div>
                               <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}>
                                 <div className="flex" style={{ gap: 5, marginBottom: 5 }}>
                                   {r.metric ? (<div style={{ margin: 'auto 0' }}>{r.metric}</div>) : 'No Metric'}
                                   {(r.metric === 'Image') && r.checked !== true && (
-                                    <ImageUploader disabled={(r.checked ?? false) || noAccessEdit(b)} send_url_to={(url) => {
-                                      if (!r.checked && !noAccessEdit(b)) {
+                                    <ImageUploader disabled={(r.checked ?? false) || noAccessEdit(b) || !isBeforeTime(r.check_before)} send_url_to={(url) => {
+                                      if (!r.checked && !noAccessEdit(b) && isBeforeTime(r.check_before)) {
                                           updateReports(
                                               b,
                                               {
@@ -718,13 +768,13 @@ export default function DailyBrief() {
 
                                 {(r.metric === 'Metric' || r.metric === 'Count') && (
                                     <input
-                                        className={r.checked || !noAccessEdit(b) ? 'input d' : 'input'}
+                                        className={r.checked || !noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
                                         value={r.text ?? ''}
-                                        disabled={(r.checked ?? false) || noAccessEdit(b)}
+                                        disabled={(r.checked ?? false) || noAccessEdit(b) || !isBeforeTime(r.check_before)}
                                         type="number"
 
                                         onChange={(e) => {
-                                            if (!r.checked && !noAccessEdit(b)) {
+                                            if (!r.checked && !noAccessEdit(b) && isBeforeTime(r.check_before)) {
                                                 updateReports(
                                                     b,
                                                     {
@@ -738,7 +788,7 @@ export default function DailyBrief() {
                                         }}
 
                                         onBlur={(e) => {
-                                            if (r.checked || noAccessEdit(b)) return;
+                                            if (r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before)) return;
 
                                             let value = e.target.value;
                                             let start_value = e.target.value;
@@ -774,12 +824,12 @@ export default function DailyBrief() {
                                 )}
                                 {(r.metric === 'Free-text') && (
                                   <textarea 
-                                        className={r.checked || noAccessEdit(b) ? 'input d' : 'input'}
+                                        className={r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
                                         style={{ transition: 'none' }}
                                         defaultValue={r.text ?? ''}
-                                        disabled={!!r.checked || noAccessEdit(b)}
+                                        disabled={!!r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before)}
                                         onBlur={(e) => {
-                                          if (r.checked || noAccessEdit(b)) return;
+                                          if (r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before)) return;
                                           const text = e.currentTarget.value;
                                           if (text !== (r.text ?? '')) {
                                               updateReports(
@@ -821,13 +871,13 @@ export default function DailyBrief() {
                                 {(r.metric === 'Yes/No') && (
                                   <div className='flex' style={{ gap: 5, padding: '0 0 0 2px' }}>
                                     <input
-                                          className={r.checked || noAccessEdit(b)  ? 'input d' : 'input'}
+                                          className={r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before)  ? 'input d' : 'input'}
                                           checked={r.text === "Yes"}
-                                          disabled={!!r.checked || noAccessEdit(b)}
+                                          disabled={!!r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before)}
                                           type="checkbox"
   
                                           onChange={(e) => {
-                                              if (!r.checked && !noAccessEdit(b)) {
+                                              if (!r.checked && !noAccessEdit(b) && isBeforeTime(r.check_before)) {
                                                   updateReports(
                                                       b,
                                                       {
@@ -841,13 +891,13 @@ export default function DailyBrief() {
                                           }} />
                                     <div style={{padding: '0 3px'}}>/</div>
                                     <input
-                                          className={r.checked || noAccessEdit(b) ? 'input d' : 'input'}
+                                          className={r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
                                           checked={r.text === "No"}
-                                          disabled={!!r.checked || noAccessEdit(b)}
+                                          disabled={!!r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before)}
                                           type="checkbox"
   
                                           onChange={(e) => {
-                                              if (!r.checked && !noAccessEdit(b)) {
+                                              if (!r.checked && !noAccessEdit(b) && isBeforeTime(r.check_before)) {
                                                   updateReports(
                                                       b,
                                                       {
@@ -902,10 +952,12 @@ export default function DailyBrief() {
                                   </div>) }
                                 
                             </div>
-                              <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
-                              <div className={r.checked || user.id !== b.lead_id || noAccessEdit(b) ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
-                                onClick={() => {if (!r.checked && user.id === b.lead_id && !noAccessEdit(b) ) updateReports(b, {...r, holder_id: null}, r.checked)}}
-                              >Resign</div>
+                              <div onClick={() => {addReportFinding(r, b)}}></div>
+
+                              <span className={r.timestamp ? translation('done') : translation('pending')}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
+                              <div className={r.checked || user.id !== b.lead_id || noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
+                                onClick={() => {if (!r.checked && user.id === b.lead_id && !noAccessEdit(b) && isBeforeTime(r.check_before) ) updateReports(b, {...r, holder_id: null}, r.checked)}}
+                              >{translation('withdraw')}</div>
                             </div>)
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id).map(
@@ -914,9 +966,12 @@ export default function DailyBrief() {
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
                               <div></div>
                               <div>{r.name}</div>
-                              <div>{capitalize(r.day_time)}</div>
+                              <div>
+                                <div>{capitalize(r.day_time)}</div>
+                                {r.check_before && (<div style={{ fontSize: 10, fontWeight: 600, lineHeight: 1.2 }}>{translation('check_before')}: {r.check_before}</div>)}
+                              </div>
                               <div>{r.source}</div>
-                              <div>Assignee: <div className='' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name}</div></div>
+                              <div>{translation('assignee')}: <div className='' style={{display: 'flex', gap: '5px'}}><UserCircle user_name={leads.find((lead: User) => lead.id === r.holder_id)?.name || 'A'} size={15}></UserCircle>{leads.find((lead: User) => lead.id === r.holder_id)?.name}</div></div>
                               <div style={{ display: 'flex', flexDirection: 'column', color: '#000000' }}><div>{r.metric ?? 'No Metric'}</div>{r.checked && r.metric === 'Image' && r.text && isBlobLink(r.text) === true && 
                                   (<div style={{ position: 'relative' }}>
                                     {r.text && (
@@ -943,12 +998,13 @@ export default function DailyBrief() {
                                   </div>) }
                               {r.checked && r.metric !== 'Image' && (<strong>{r.text}</strong>)}
                               </div>
-                              <span className={r.timestamp ? 'done' : 'pending'}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
+                              <div onClick={() => {addReportFinding(r, b)}}></div>
+                              <span className={r.timestamp ? translation('done') : translation('pending')}>{r.timestamp ? format(new Date(r.timestamp), "h:mm a") : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               {
                                 user.permissions.reasign_reports === true && `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` === b.date ? (
                                   <div className={`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? 'button-d-bl-sm d' : 'button-d-bl-sm'} 
                                     onClick={() => {console.log(r); setReportToCallout({...r}); setShowCallout(true); }}
-                                  >Call-out</div>
+                                  >{translation('call-out')}</div>
                                 ) : (<div></div>)
                               }
                             </div>)
@@ -959,8 +1015,8 @@ export default function DailyBrief() {
                     <div style={{ display: 'flex', gap: 10 }}>
                       <div className="findings">
                         <div>
-                          <h1>Findings:</h1>
-                          <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) setShowAddFinding(true)}}>+ Add Finding</div>
+                          <h1>{translation('findings')}:</h1>
+                          <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) setShowAddFinding(true)}}>+ {translation('add_finding')}</div>
                         </div>
                         <div>{b.findings && b.findings?.length > 0 ? b.findings.map(f => (
                           <div key={`finding_div_${f.id}`} className={`finding ${f.type}-container`}>
@@ -970,23 +1026,23 @@ export default function DailyBrief() {
                             </div>
                             <div>{f.created_at && format(new Date(f.created_at), "h:mm a")}</div>
                           </div>
-                        )) : (<h3>{!showAddFinding ? 'No Findings yet' : ''}</h3>)}
-                          {showAddFinding && <div className='add-finding'>
+                        )) : (<h3>{!showAddFinding ? translation('no_findings_yet') : ''}</h3>)}
+                          {showAddFinding && <div className='add-finding' id='add-finding'>
                             <div>
-                              <span>Choose Status</span>
+                              <span>{translation('choose_status')}</span>
                               <select disabled={noAccessEdit(b)} id={`new_f_type_${b.id}`}>
-                                <option value='high'>High</option>
-                                <option value='moderate'>Moderate</option>
-                                <option value='info'>Info</option>
+                                <option value='high'>{translation('high')}</option>
+                                <option value='moderate'>{translation('moderate')}</option>
+                                <option value='info'>{translation('info')}</option>
                               </select>
                             </div>
                             <div>
-                              <span>Write Description</span>
-                              <textarea disabled={noAccessEdit(b)} id={`new_f_name_${b.id}`} placeholder="Anything the next Lead needs to know…" />
+                              <span>{translation('write_description')}</span>
+                              <textarea disabled={noAccessEdit(b)} id={`new_f_name_${b.id}`} placeholder={translation('anything_the_next_lead_needs_to_know')} />
                             </div>
                             <div>
-                              <div className='cancel' onClick={() => {setShowAddFinding(false)}}>Cancel</div>
-                              <input className='button-d-bl-sm' disabled={noAccessEdit(b)} type="button" value="Add Finding" onClick={() => { addFinding(b, {
+                              <div className='cancel' onClick={() => {setShowAddFinding(false)}}>{translation('cancel')}</div>
+                              <input className='button-d-bl-sm' disabled={noAccessEdit(b)} type="button" value={translation('add_finding')} onClick={() => { addFinding(b, {
                                     type: (document.getElementById(`new_f_type_${b.id}`) as HTMLTextAreaElement)?.value || '',
                                     description: (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement)?.value || '',
                                   });
@@ -997,8 +1053,8 @@ export default function DailyBrief() {
                       </div>
                       <div className='tasks'>
                         <div>
-                          <h1>Tasks:</h1>
-                          <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if(!noAccessEdit(b)) setShowAddTask(true)}}>+ Add task</div>
+                          <h1>{translation('tasks')}:</h1>
+                          <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if(!noAccessEdit(b)) setShowAddTask(true)}}>+ {translation('add_task')}</div>
                         </div>
                         <div>
                           {b.tasks && b.tasks?.length > 0 ? b.tasks.map(t => (
@@ -1014,23 +1070,23 @@ export default function DailyBrief() {
                               })}}></div>
                               <div key={`${t.id}-task-text`}>{t.text}</div>
                               <div key={`${t.id}-task-type`}>{t.task_type}</div>
-                            </label>)) : (<h3>{!showAddTask ? "No Tasks yet" : ""}</h3>)
+                            </label>)) : (<h3>{!showAddTask ? translation('no_tasks_yet') : ""}</h3>)
                           }
                         </div>
                         {showAddTask && (<div className='add-task'>
                             <div className='cancel' onClick={() => {setShowAddTask(false)}}></div>
                             <div>
-                              <span>Task Name</span>
-                              <input disabled={noAccessEdit(b)} id={`new_t_name_${b.id}`} type='text' placeholder='Task description...' />
+                              <span>{translation('task_name')}</span>
+                              <input disabled={noAccessEdit(b)} id={`new_t_name_${b.id}`} type='text' placeholder={translation('task_description')} />
                             </div>
                             <div>
-                              <span>Action</span>
+                              <span>{translation('action')}</span>
                               <select disabled={noAccessEdit(b)} id={`new_t_type_${b.id}`}>
-                                <option value='Report follow-up'>Report follow-up</option>
-                                <option value='Site visit'>Site visit</option>
-                                <option value='Shop / vehicle'>Shop / vehicle</option>
-                                <option value='Admin'>Admin</option>
-                                <option value='Other'>Other</option>
+                                <option value='Report follow-up'>{translation('report_follow_up')}</option>
+                                <option value='Site visit'>{translation('site_visit')}</option>
+                                <option value='Shop / vehicle'>{translation('shop_vehicle')}</option>
+                                <option value='Admin'>{translation('admin')}</option>
+                                <option value='Other'>{translation('other')}</option>
                               </select>
                             </div>
                             <input disabled={noAccessEdit(b)} type="button" value="Add" className='button-d-bl-sm' onClick={() => {
@@ -1047,25 +1103,25 @@ export default function DailyBrief() {
                       </div>
                     </div>
                     {user.permissions.handoff_brief && (<div className="handoff">
-                      <h1>Handoff:</h1>
+                      <h1>{translation('handoff')}:</h1>
                       <div>
                         <div>
                           <div>
-                            <span>Recipient</span>
+                            <span>{translation('recipient')}</span>
                             <select id={`handoff_to_${b.id}`} className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)}>
                               {leads.map((u: User) => b.lead_id != u.id && (<option value={u.id} key={u.id}>{u.name}</option>))}
                             </select>
                           </div>
                           <div>
-                            <span>Reason</span>
-                            <input className={noAccessEdit(b) ? 'd' : ''} id={`handoff_reason_${b.id}`} disabled={noAccessEdit(b)} type='text' placeholder='Reason'></input>
+                            <span>{translation('reason')}</span>
+                            <input className={noAccessEdit(b) ? 'd' : ''} id={`handoff_reason_${b.id}`} disabled={noAccessEdit(b)} type='text' placeholder={translation('reason')}></input>
                           </div>
                         </div>
                         <div>
-                          <span>Notes</span>
-                          <textarea  className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} id={`handoff_notes_${b.id}`} placeholder='Anything another Lead needs to know…'></textarea>
+                          <span>{translation('notes')}</span>
+                          <textarea  className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} id={`handoff_notes_${b.id}`} placeholder={translation('anything_the_next_lead_needs_to_know')}></textarea>
                         </div>
-                        <input className={noAccessEdit(b) ? 'button-d-bl-sm tg d' : 'button-d-bl-sm tg'} type="button" value="Complete handoff" onClick={() => { if(!noAccessEdit(b)) setShowHandoff(true) }}/>
+                        <input className={noAccessEdit(b) ? 'button-d-bl-sm tg d' : 'button-d-bl-sm tg'} type="button" value={translation('complete_handoff')} onClick={() => { if(!noAccessEdit(b)) setShowHandoff(true) }}/>
                       </div>
                     </div>)}
                   </div>

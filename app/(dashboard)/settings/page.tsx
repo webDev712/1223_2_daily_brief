@@ -2,6 +2,7 @@
 
 import Loader from '@/app/src/components/Loader';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { User, CompanyToDisplay, Company, Plan, Billing, Department, Shift } from '@/lib/types';
 import './page.css'
 import UserCircle from '@/app/src/components/UserCircle';
@@ -14,6 +15,9 @@ import Link from 'next/link';
 import formatTime12Hour from '@/lib/time';
 
 export default function Settings() {
+  const t = useTranslations('settings');
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
+
   const [user, setUser] = useState<User | null>()
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
@@ -97,10 +101,10 @@ export default function Settings() {
     fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, archived: false})}).then(res => {
       if (res.status === 200) {
         setReload(prev => prev + 1)
-        toast.success('User data saved successfully!')
+        toast.success(t('toast.userSaved'))
       }
       else{
-        toast.error('Error while saving user data. Try again later.')
+        toast.error(t('toast.userSaveError'))
       }
       setLoading(false)
       setDataChanged(false)
@@ -111,7 +115,7 @@ export default function Settings() {
     if (!user) return;
     fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, archived: true})}).then(res => {
       if (res.status === 200) {
-        toast.success('Your account archived now!');
+        toast.success(t('toast.accountArchived'));
         setTimeout(() => { window.location.href = "/landing" }, 5000)
       }
     })
@@ -153,7 +157,7 @@ export default function Settings() {
     setShowAddDepartment(false);
     setReload(prev => prev + 1);
     
-    toast.success(`Added new deparment "${newDeparmentName}"`)
+    toast.success(t('toast.departmentAdded', { name: newDeparmentName }))
     
     setLoading(false);
   }
@@ -173,7 +177,7 @@ export default function Settings() {
       return;
     }
     setShowDeleteDepartment(false);
-    toast.info(`Deleted department "${dep.name}"`)
+    toast.info(t('toast.departmentDeleted', { name: dep.name }))
     if (dep.is_main === false){
       setDepartments(prev => prev.filter((department: Department) => 
         dep.id === department.id ? false : true
@@ -207,7 +211,7 @@ export default function Settings() {
     setShowAddShift(false);
     setReload(prev => prev + 1);
     
-    toast.success(`Added new shift "${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}"`)
+    toast.success(t('toast.shiftAdded', { name: `${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}` }))
     
     setLoading(false);
   }
@@ -228,7 +232,7 @@ export default function Settings() {
       return;
     }
     setShowDeleteShift(false);
-    toast.info(`Deleted shift "${shift.name}"`)
+    toast.info(t('toast.shiftDeleted', { name: shift.name }))
     if (shift.archived === false){
       setShifts(prev => prev.filter((shift_local: Shift) => 
         shift.id === shift_local.id ? false : true
@@ -253,12 +257,12 @@ const [shiftTo, setShiftTo] = useState('16:00');
       {showSubmitArchive && (
         <div className='confirm'>
           <div>
-            <h1>Archive your account?</h1>
-            <p>After archiving <strong>you won't have access to Daily Brief system</strong></p>
-            <p>Only manager will be able to activate your account again</p>
+            <h1>{t('archive.title')}</h1>
+            <p>{t.rich('archive.warning', { strong })}</p>
+            <p>{t('archive.managerOnly')}</p>
             <div>
-              <div className='button-w-bl' onClick={() => {setShowSubmitArchive(false)}}>Cancel</div>
-              <div className='button-d-bl' onClick={() => archiveUserAccount(user)}>Archive My Account</div>
+              <div className='button-w-bl' onClick={() => {setShowSubmitArchive(false)}}>{t('common.cancel')}</div>
+              <div className='button-d-bl' onClick={() => archiveUserAccount(user)}>{t('archive.confirmButton')}</div>
             </div>
           </div>
         </div>
@@ -266,14 +270,14 @@ const [shiftTo, setShiftTo] = useState('16:00');
       {showAddDepartment && (
         <div className='confirm'>
           <div>
-            <h1>Add New Department</h1>
+            <h1>{t('department.addTitle')}</h1>
             <div>
-              <span>Department Name</span>
-              <input type="text" placeholder='Deparment ABC...' className='input' value={newDeparmentName} onChange={(e) => setNewDeparmentName(e.target.value)}/>
+              <span>{t('department.nameLabel')}</span>
+              <input type="text" placeholder={t('department.namePlaceholder')} className='input' value={newDeparmentName} onChange={(e) => setNewDeparmentName(e.target.value)}/>
             </div>
             <div>
-              <div className='button-w-bl' onClick={() => {setShowAddDepartment(false)}}>Cancel</div>
-              <div className='button-d-bl' onClick={() => addDepartment()}>Confirm</div>
+              <div className='button-w-bl' onClick={() => {setShowAddDepartment(false)}}>{t('common.cancel')}</div>
+              <div className='button-d-bl' onClick={() => addDepartment()}>{t('common.confirm')}</div>
             </div>
           </div>
         </div>
@@ -281,11 +285,11 @@ const [shiftTo, setShiftTo] = useState('16:00');
       {showAddShift && (
         <div className="confirm add-shift">
           <div>
-            <h1>Add New Shift</h1>
+            <h1>{t('shift.addTitle')}</h1>
 
             <div>
               <div>
-                <span>From</span>
+                <span>{t('shift.from')}</span>
                 <input
                   type="time"
                   className="input"
@@ -296,7 +300,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
               </div>
 
               <div>
-                <span>To</span>
+                <span>{t('shift.to')}</span>
                 <input
                   type="time"
                   className="input"
@@ -312,7 +316,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
                 className="button-w-bl"
                 onClick={() => setShowAddShift(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </div>
 
               <div
@@ -321,7 +325,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
                   addShift();
                 }}
               >
-                Confirm
+                {t('common.confirm')}
               </div>
             </div>
           </div>
@@ -330,23 +334,23 @@ const [shiftTo, setShiftTo] = useState('16:00');
       {showDeleteDepartment && departmentToDelete?.users && (
         <div className='confirm'>
           <div>
-              <h1>Delete department {departmentToDelete?.name}?</h1>
+              <h1>{t('department.deleteTitle', { name: departmentToDelete?.name ?? '' })}</h1>
               {departmentToDelete?.users?.length > 0 ? (
                 <div style={{textAlign: 'center'}}>
-                  <p style={{marginBottom: 0}}>There are still users in this department:</p>
+                  <p style={{marginBottom: 0}}>{t('department.usersRemain')}</p>
                   <div style={{marginBottom: '10px'}}>
                     {departmentToDelete.users.map((user: User) => (
                       <Link href={`teams-and-roles?scroll_to_id=${user.id}`} key={`deparmentToDelete-${departmentToDelete.id}-list-user-${user.id}`}><strong style={{textAlign: 'left', padding: '0px 30px', display: 'block'}}>{user.name}</strong></Link>
                     ))}
                   </div>
-                  <p>Change their department first and then you will be able to delete this department.</p>
+                  <p>{t('department.changeFirst')}</p>
                 </div>
               ) : (
-                <p>After deleting department <strong>you won't be able to return it</strong></p>
+                <p>{t.rich('department.afterDelete', { strong })}</p>
               )}
             <div>
-              <div className='button-w-bl' onClick={() => {setShowDeleteDepartment(false)}}>Cancel</div>
-              {departmentToDelete?.users?.length === 0 && (<div className='button-w-r' onClick={() => editDepartment({...departmentToDelete, is_main: false})} style={{lineHeight: '32px'}}>Delete</div>)}
+              <div className='button-w-bl' onClick={() => {setShowDeleteDepartment(false)}}>{t('common.cancel')}</div>
+              {departmentToDelete?.users?.length === 0 && (<div className='button-w-r' onClick={() => editDepartment({...departmentToDelete, is_main: false})} style={{lineHeight: '32px'}}>{t('common.delete')}</div>)}
             </div>
           </div>
         </div>
@@ -354,11 +358,11 @@ const [shiftTo, setShiftTo] = useState('16:00');
       {showDeleteShift && shiftToDelete && (
         <div className='confirm'>
           <div>
-              <h1>Delete shift {shiftToDelete?.name}?</h1>
-              <p>After deleting this shift, you won't be able to return it</p>
+              <h1>{t('shift.deleteTitle', { name: shiftToDelete?.name ?? '' })}</h1>
+              <p>{t('shift.afterDelete')}</p>
               <div>
-                <div className='button-w-bl' onClick={() => {setShowDeleteShift(false)}}>Cancel</div>
-                <div className='button-w-r' onClick={() => editShift({...shiftToDelete, archived: true})} style={{lineHeight: '32px'}}>Delete</div>
+                <div className='button-w-bl' onClick={() => {setShowDeleteShift(false)}}>{t('common.cancel')}</div>
+                <div className='button-w-r' onClick={() => editShift({...shiftToDelete, archived: true})} style={{lineHeight: '32px'}}>{t('common.delete')}</div>
               </div>
           </div>
         </div>
@@ -369,12 +373,12 @@ const [shiftTo, setShiftTo] = useState('16:00');
         : (
           <div>
             <div>
-              <div data-img="bell" className={selectedSettings === 'my' ? 'selected' : ''} onClick={() => {setSelectedSettings('my')}}>My Profile</div>
-              {company?.main_admin_id === user.id && (<div data-img="house" className={selectedSettings === 'company' ? 'selected' : ''} onClick={() => {setSelectedSettings('company')}}>Company</div>)}
+              <div data-img="bell" className={selectedSettings === 'my' ? 'selected' : ''} onClick={() => {setSelectedSettings('my')}}>{t('tabs.myProfile')}</div>
+              {company?.main_admin_id === user.id && (<div data-img="house" className={selectedSettings === 'company' ? 'selected' : ''} onClick={() => {setSelectedSettings('company')}}>{t('tabs.company')}</div>)}
               {user.permissions.see_app_settings && (
-                <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>Data & Security</div>
+                <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>{t('tabs.dataSecurity')}</div>
               )}
-              {user.permissions.manage_configuration && (<div data-img="lists" className={selectedSettings === 'lists' ? 'selected' : ''} onClick={() => {setSelectedSettings('lists')}}>Lists</div>)}
+              {user.permissions.manage_configuration && (<div data-img="lists" className={selectedSettings === 'lists' ? 'selected' : ''} onClick={() => {setSelectedSettings('lists')}}>{t('tabs.lists')}</div>)}
             </div>
             {selectedSettings === 'my' && (
               <div className='my'>
@@ -391,29 +395,29 @@ const [shiftTo, setShiftTo] = useState('16:00');
                 </div>
                 <div>
                   <div>
-                    <div>PERSONAL INFORMATION</div>
-                    <div className={dataChanged && user.permissions.edit_app_settings ? "button-d-bl-sm" : "button-d-bl-sm d" } onClick={() => {if (!dataChanged || !user.permissions.edit_app_settings) {return;} saveUser()}}>Save Changes</div>
+                    <div>{t('profile.personalInformation')}</div>
+                    <div className={dataChanged && user.permissions.edit_app_settings ? "button-d-bl-sm" : "button-d-bl-sm d" } onClick={() => {if (!dataChanged || !user.permissions.edit_app_settings) {return;} saveUser()}}>{t('common.saveChanges')}</div>
                   </div>
                   <div>
                     <label>
-                      <span>FULL NAME</span>
+                      <span>{t('profile.fullName')}</span>
                       <input className={user.permissions.edit_app_settings ? '' : 'd'} disabled={!user.permissions.edit_app_settings} type="text" value={user.name} onChange={(e) => changeUser({...user, name: e.target.value})}/>
                     </label>
                     <label>
-                      <span>ROLE</span>
+                      <span>{t('profile.role')}</span>
                       <input type="text" className='d' value={getRoles(user.role)} onChange={() => {}} disabled />
                     </label>
                     <label>
-                      <span>EMAIL</span>
+                      <span>{t('profile.email')}</span>
                       <input className={user.permissions.edit_app_settings ? '' : 'd'} disabled={!user.permissions.edit_app_settings} type="text" value={user.email} onChange={(e) => changeUser({...user, email: e.target.value})} />
                     </label>
                     <label>
-                      <span>PHONE</span>
+                      <span>{t('profile.phone')}</span>
                       <input className={user.permissions.edit_app_settings ? '' : 'd'}
                         type="tel"
                         inputMode="tel"
-                        placeholder="+1 202 555 0123"
-                        value={user.phone}
+                        placeholder={t('profile.phonePlaceholder')}
+                        value={user?.phone ?? ''}
                         disabled={!user.permissions.edit_app_settings}
                         onChange={(e) => {
                           changeUser({
@@ -424,51 +428,51 @@ const [shiftTo, setShiftTo] = useState('16:00');
                       />                    
                     </label>
                     <label>
-                      <span>DEPARTMENT</span>
+                      <span>{t('profile.department')}</span>
                       <input type="text" className='d' value={user.department} onChange={() => {}} disabled/>
                     </label>
                   </div>
                 </div>
                 <div>
                   <div>
-                    <div>Danger zone</div>
-                    <div>Permanently delete your profile and all associated data. This cannot be undone.</div>
+                    <div>{t('profile.dangerZone')}</div>
+                    <div>{t('profile.dangerDescription')}</div>
                   </div>
-                  <div className={user.permissions.edit_profile_settings ? 'button-w-r-sm' : 'button-w-r-sm d' } onClick={() => {if (!user.permissions.edit_profile_settings) return; setShowSubmitArchive(true)}}>Archive my account</div>
+                  <div className={user.permissions.edit_profile_settings ? 'button-w-r-sm' : 'button-w-r-sm d' } onClick={() => {if (!user.permissions.edit_profile_settings) return; setShowSubmitArchive(true)}}>{t('profile.archiveButton')}</div>
                 </div>
                 {/* {JSON.stringify(user)} */}
               </div>)}
             {selectedSettings === 'company' && (
               <div className='company'>
-                <h1>Company</h1>
-                <p>Manage company settings and subscriptions.</p>
+                <h1>{t('company.title')}</h1>
+                <p>{t('company.description')}</p>
                 {company && (
                   <div>
                     <div>
                       <div>
-                        <h2>MAIN ADMIN OF "{companyName}"</h2>
+                        <h2>{t('company.mainAdminOf', { company: companyName ?? '' })}</h2>
                         <div className='flex'>
-                          <UserCircle user_name={company.admin_name || 'Admin'} size={30}></UserCircle>
+                          <UserCircle user_name={company.admin_name || t('company.defaultAdmin')} size={30}></UserCircle>
                           <div>{company.admin_name}</div>
-                          <div className='button-d-bl-sm' onClick={() => {setShowAssignAnotherAdmin(true)}}>Assign another Main Admin</div>
+                          <div className='button-d-bl-sm' onClick={() => {setShowAssignAnotherAdmin(true)}}>{t('company.assignAdmin')}</div>
                         </div>
                       </div>
                       <div className='company-data'>
                         <div>
-                          <div>COMPANY DATA</div>
-                          <div className={allowSave ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={() => {if (allowSave) sendCompany(company)}}>Save Changes</div>
+                          <div>{t('company.companyData')}</div>
+                          <div className={allowSave ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={() => {if (allowSave) sendCompany(company)}}>{t('common.saveChanges')}</div>
                         </div>
                         <div>
                           <label>
-                            <span>Name</span>
+                            <span>{t('company.name')}</span>
                             <input type="text" value={company.name} onChange={(e) => {setCompany({...company, name: e.target.value}); setAllowSave(true);}} />
                           </label>
                           <label>
-                            <span>Plan</span>
+                            <span>{t('company.plan')}</span>
                             <input className="plan" type="text" value={company.plan_name} onChange={() => {}} disabled />
                           </label>
                           <label>
-                            <span>Created At</span>
+                            <span>{t('company.createdAt')}</span>
                             <input type="text" value={format(new Date(company.created_at), 'MM-dd-yyyy')} disabled className='d' onChange={() => {}}/>
                           </label>
                         </div>
@@ -482,60 +486,60 @@ const [shiftTo, setShiftTo] = useState('16:00');
               </div>)}
             {selectedSettings === 'data' && (
               <div className='data'>
-                <h1>Data & Security</h1>
-                <p>Manage data retention, exports, and security preferences.</p>
+                <h1>{t('data.title')}</h1>
+                <p>{t('data.description')}</p>
                 <div>
-                  <div>EXPORT DATA</div>
+                  <div>{t('data.exportData')}</div>
                   <div>
                     <div>
-                      <div>Export all briefs</div>
-                      <div>Download a full archive of all Route Department briefs</div>
+                      <div>{t('data.exportAllBriefs')}</div>
+                      <div>{t('data.exportAllBriefsDescription')}</div>
                     </div>
-                    <div className='button-d-bl-sm d'>Export CSV</div>
-                    <div className='button-d-bl-sm d' style={{display: 'none'}}>Export PDF</div>
+                    <div className='button-d-bl-sm d'>{t('data.exportCsv')}</div>
+                    <div className='button-d-bl-sm d' style={{display: 'none'}}>{t('data.exportPdf')}</div>
                   </div>
                 </div>
                 <div>
-                  <div>DANGER ZONE</div>
+                  <div>{t('data.dangerZone')}</div>
                   <div>
                     <div>
-                      <div>Delete all brief history</div>
-                      <div>Permanently remove all historical briefs. This cannot be undone.</div>
+                      <div>{t('data.deleteHistory')}</div>
+                      <div>{t('data.deleteHistoryDescription')}</div>
                     </div>
-                    <div className='button-w-r-sm d'>Delete all history</div>
+                    <div className='button-w-r-sm d'>{t('data.deleteHistoryButton')}</div>
                   </div>
                 </div>
               </div>)}
             {selectedSettings === 'lists' && (
               <div className='lists'>
-                <h1>Lists</h1>
-                <p>Manage config, add or delete options</p>
+                <h1>{t('lists.title')}</h1>
+                <p>{t('lists.description')}</p>
                 <div className='small-table'>
                   <h2>
-                    <div>DEPARTMENTS</div>
-                    <div className="button-d-bl-sm" onClick={() => {setShowAddDepartment(true)}}>Add Department</div>
+                    <div>{t('lists.departments')}</div>
+                    <div className="button-d-bl-sm" onClick={() => {setShowAddDepartment(true)}}>{t('lists.addDepartment')}</div>
                   </h2>
                   {departments.map((dep: Department) => (
                     <div key={`department-list-${dep.id}`}>
                       <div>
                         <div>{dep.name}</div>
-                        <div>(Users: {dep.users?.length})</div>
+                        <div>{t('lists.usersCount', { count: dep.users?.length ?? 0 })}</div>
                       </div>
-                      <div className='button-r-sm' onClick={() => {setDepartmentToDelete(dep); setShowDeleteDepartment(true);}}>Delete</div>
+                      <div className='button-r-sm' onClick={() => {setDepartmentToDelete(dep); setShowDeleteDepartment(true);}}>{t('common.delete')}</div>
                     </div>
                   ))}
                 </div>
                 <div className='small-table'>
                   <h2>
-                    <div>SHIFTS</div>
-                    <div className="button-d-bl-sm" onClick={() => {setShowAddShift(true)}}>Add Shift</div>
+                    <div>{t('lists.shifts')}</div>
+                    <div className="button-d-bl-sm" onClick={() => {setShowAddShift(true)}}>{t('lists.addShift')}</div>
                   </h2>
                   {shifts && shifts.map((shift: Shift) => (
                     <div key={`shift-list-${shift.id}`}>
                       <div>
                         <div>{shift.name}</div>
                       </div>
-                      <div className='button-r-sm' onClick={() => {setShiftToDelete(shift); setShowDeleteShift(true);}}>Delete</div>
+                      <div className='button-r-sm' onClick={() => {setShiftToDelete(shift); setShowDeleteShift(true);}}>{t('common.delete')}</div>
                     </div>
                   ))}
                 </div>
@@ -546,7 +550,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
         {showAssignAnotherAdmin && (
           <div className='confirm'>
             <div>
-              <h1>Select another Admin:</h1>
+              <h1>{t('assignAdmin.title')}</h1>
               <div>
                 {users.map((user: User) => {
                   return (
@@ -558,8 +562,8 @@ const [shiftTo, setShiftTo] = useState('16:00');
                 })}
               </div>
               <div>
-                <div className='button-w-bl' onClick={() => {setShowAssignAnotherAdmin(false)}}>Close</div>
-                <div className='button-d-bl' onClick={() => {if (selectedNewAdmin && company) sendCompany({...company, main_admin_id: selectedNewAdmin })}}>Confirm</div>
+                <div className='button-w-bl' onClick={() => {setShowAssignAnotherAdmin(false)}}>{t('common.close')}</div>
+                <div className='button-d-bl' onClick={() => {if (selectedNewAdmin && company) sendCompany({...company, main_admin_id: selectedNewAdmin })}}>{t('common.confirm')}</div>
               </div>
             </div>
           </div>
