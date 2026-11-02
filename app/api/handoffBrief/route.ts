@@ -35,7 +35,7 @@ export async function PATCH(request: Request) {
                 UPDATE saved_report
                 SET holder_id = NULL
                 WHERE holder_id = ${lead_id}
-                    AND date = (
+                     AND date = (
                         SELECT date
                         FROM saved_brief
                         WHERE id = ${brief_id}

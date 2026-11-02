@@ -893,11 +893,11 @@
 }
 
 .daily-brief .pulse-shift{
-    animation: pulse 1.2s infinite;
+    animation: pulse_blue 1.2s infinite;
     box-shadow: 0px 0px 1px 1px rgba(0, 0, 255, 0.279);
 }
 
-@keyframes pulse {
+@keyframes pulse_blue {
     0% {
         box-shadow: 0px 0px 1px 1px rgba(0, 0, 255, 0.279);
     }
