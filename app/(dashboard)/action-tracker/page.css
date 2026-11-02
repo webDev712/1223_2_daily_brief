@@ -186,11 +186,16 @@
 
 .action-tracker .a-table-wrapper .a-table-header > div:nth-child(7),
 .action-tracker .a-table > div > div:nth-child(7){
-    width: 250px;
-    min-width: 250px;
-    max-width: 250px;
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
     font-weight: 600;
     padding: 10px 20px;
+}
+
+.action-tracker .a-table > div > div:nth-child(7) {
+    text-wrap-mode: wrap;
+    line-break: anywhere;
 }
 
 .action-tracker .a-table-wrapper .a-table-header > div:nth-child(8),
@@ -601,12 +606,16 @@
     display: block;
 } */
 
+.action-tracker .image-uploader-wrapper{
+    margin-left: auto;
+}
+
+.action-tracker .action-chat-image{
+    border-radius: 0 !important;
+    margin: 10px 0;
+}
+
 @media (max-width: 500px) {
-    
-
-
-
-
     .action-tracker .confirm.add-issue-or-observation > div > div:nth-child(2) > form{
         grid-template-columns: repeat(1, 1fr);
     }

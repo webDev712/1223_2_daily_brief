@@ -35,6 +35,7 @@ import {
 } from "date-fns";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import ImageUploader from '@/app/src/components/ImageUploader';
 
 registerLocale('es', es);
 
@@ -200,6 +201,7 @@ export default function ActionTracker () {
         toast.success(t('toast.updated'));
         return true;
     }
+    const [actionImage, setActionImage] = useState('');
 
 
     const deleteActionTrackerRow = async (id: string | null) => {
@@ -618,7 +620,28 @@ export default function ActionTracker () {
                                                 <div>{users.find((user: User) => user.id === action.user_id)?.name ?? t('actionsList.defaultUser')}</div>
                                             </div>
                                             <div>{format(new Date(action.date), 'MM-dd-yyyy hh:mm aa')}</div>
-                                            <div>{action.text}</div>
+                                            <div>
+                                                {
+                                                    action.text.match(/https:\/\/n4mbcrosj0yqsqe6\.private\.blob\.vercel-storage\.com\/photos\/\S+/)
+                                                    ?
+                                                    (
+                                                        <div>
+                                                            <img
+                                                                src={"/api/blob_image?pathname="+encodeURIComponent("photos/" + action.text.match(/https:\/\/n4mbcrosj0yqsqe6\.private\.blob\.vercel-storage\.com\/photos\/(\S+)/)?.[1])}
+                                                                alt='image'
+                                                                className='action-chat-image'
+                                                            />
+
+                                                            <div>
+                                                                {/* {"/api/blob_image?pathname="+action.text.match(/https:\/\/n4mbcrosj0yqsqe6\.private\.blob\.vercel-storage\.com\/photos\/(\S+)/)?.[1]} */}
+                                                                {action.text.replace(/https:\/\/n4mbcrosj0yqsqe6\.private\.blob\.vercel-storage\.com\/photos\/\S+/, "")}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                    :
+                                                    action.text
+                                                }
+                                            </div>                                        
                                         </div>
                                     )) : (
                                         <h4>{t('actionsList.empty')}</h4>
@@ -627,30 +650,38 @@ export default function ActionTracker () {
                                 <span onClick={() => {setRowShowActions(null)}} className='x'>x</span>
                                 {auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved !== null && (<b>{t('actionsList.resolvedSuccessfully')}</b>)}
                                 <div className={auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved === null && user.permissions.add_actions_to_io === true ? '' : 'resolved'}>
-                                    <div className={user.permissions.add_actions_to_io === true ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={async () => {
-                                        const result = await sendActionTrackerRow({
-                                            ...rowShowActions,
-                                                actions: [
-                                                ...(rowShowActions.actions ?? []),
-                                                {
-                                                    id: crypto.randomUUID(),
-                                                    text: actionToAdd || 'No description',
-                                                    date: new Date().toISOString(),
-                                                    user_id: user.id
-                                                }
-                                            ],})
-                                        if (result === true && user.id !== rowShowActions.user_id) {
-                                            sendMessageGlobal({
-                                                text: t('actionsList.notification', {
-                                                    issue: rowShowActions.text.slice(0, 10),
-                                                    action: actionToAdd || 'No description',
-                                                }),
-                                                from_user: user.id,
-                                                to_user: rowShowActions.user_id,
-                                                timestamp: new Date()
-                                            })
-                                        }
-                                        }}>{t('actionsList.addAction')}</div>
+                                    <div style={{ display: 'flex', gap: 5 }}>
+                                        <div className={user.permissions.add_actions_to_io === true ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={async () => {
+                                            const result = await sendActionTrackerRow({
+                                                ...rowShowActions,
+                                                    actions: [
+                                                    ...(rowShowActions.actions ?? []),
+                                                    {
+                                                        id: crypto.randomUUID(),
+                                                        text: (actionToAdd || 'No description ') + actionImage,
+                                                        date: new Date().toISOString(),
+                                                        user_id: user.id
+                                                    }
+                                                ],})
+                                            if (result === true) setActionImage('')
+                                            if (result === true && user.id !== rowShowActions.user_id) {
+                                                sendMessageGlobal({
+                                                    text: t('actionsList.notification', {
+                                                        issue: rowShowActions.text.slice(0, 10),
+                                                        action: actionToAdd || 'No description',
+                                                    }),
+                                                    from_user: user.id,
+                                                    to_user: rowShowActions.user_id,
+                                                    timestamp: new Date()
+                                                })
+                                            }
+                                            }}>{t('actionsList.addAction')}</div>
+                                        <ImageUploader disabled={user.permissions.add_actions_to_io !== true} send_url_to={(url: string) => {
+                                            if (url) {
+                                                setActionImage(url)
+                                            }
+                                        }}></ImageUploader>
+                                    </div>
                                     <label className={user.permissions.add_actions_to_io === true ? "is-resolved" : "is-resolved d"} >
                                         <div>{t('actionsList.issueResolved')}</div>
                                         <input type="checkbox" checked={rowShowActions?.date_resolved !== null || false} onChange={(e) => {
@@ -662,6 +693,12 @@ export default function ActionTracker () {
                                             })
                                         }} />
                                     </label>
+                                    {actionImage && (
+                                        <div style={{ display: 'flex', gap: 5, position: 'relative' }}>
+                                            <i style={{ marginLeft: 'auto', marginTop: -7, paddingRight: 23 }}>Added image</i>
+                                            <div className="x" style={{ top: '30%', transform: 'translateY(-50%)', right: 5 }} onClick={() => setActionImage('')}>x</div>
+                                        </div>
+                                    )}
                                     <textarea name="" id="" placeholder={t('actionsList.newActionPlaceholder')} value={actionToAdd} onChange={(e) => {if (user.permissions.add_actions_to_io !== true) return; setActionToAdd(e.target.value)}
                                     } className={user.permissions.add_actions_to_io === true ? "" : " d"}></textarea>
                                 </div>

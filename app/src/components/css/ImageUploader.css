@@ -4,12 +4,18 @@ label:has(> .image-uploader){
     border: none !important;
     background-image: url('../../../../public/attach_image.png') !important;
     background-position: center;
-    background-size: 50%;
+    background-size: 60%;
     color: transparent !important;
     cursor: pointer !important;
     z-index: 1000;
     position: relative;
 }
+
+label:has(> .image-uploader.file-uploader){
+    background-image: url('../../../../public/attach_file.png') !important;
+    background-size: 50%;
+}
+
 
 label:has(> .image-uploader.d){
     opacity: 0.5 !important;
@@ -26,8 +32,14 @@ label:has(> .image-uploader.d){
 }
 
 label:has(> .image-uploader:hover){
+    background-size: 65%;
+}
+
+
+label:has(> .image-uploader.file-uploader:hover){
     background-size: 55%;
 }
+
 
 .image-uploader::file-selector-button {
     cursor: pointer;

@@ -892,6 +892,28 @@
     margin: auto;
 }
 
+.daily-brief .pulse-shift{
+    animation: pulse 1.2s infinite;
+    box-shadow: 0px 0px 1px 1px rgba(0, 0, 255, 0.279);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0px 0px 1px 1px rgba(0, 0, 255, 0.279);
+    }
+
+    50% {
+        box-shadow: 0px 0px 5px 5px rgba(0, 0, 255, 0.279);
+
+    }
+
+    100% {
+        box-shadow: 0px 0px 1px 1px rgba(0, 0, 255, 0.279);
+
+    }
+}
+
+
 @media (max-width: 500px) {
     .daily-brief .no-briefs > h1{
         margin: 0 20vw;

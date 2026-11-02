@@ -28,9 +28,24 @@ export async function PATCH(request: Request) {
             reason,
             notes
         } = body;
-
+        console.log(body)
         
-        try {            
+        try {          
+            const updatedReports = await sql`
+                UPDATE saved_report
+                SET holder_id = NULL
+                WHERE holder_id = ${lead_id}
+                    AND date = (
+                        SELECT date
+                        FROM saved_brief
+                        WHERE id = ${brief_id}
+                            AND company_id = ${company_id}
+                    )
+                    AND company_id = ${company_id}
+                RETURNING id, saved_brief_id, holder_id;
+            `;
+
+            console.log("Updated reports:", updatedReports);
             await sql`
                 UPDATE saved_brief
                 SET lead_id = ${new_lead_id}
@@ -46,8 +61,6 @@ export async function PATCH(request: Request) {
                         ${notes},
                         ${company_id});
             `
-
-
 
             return NextResponse.json({
                 success: true,

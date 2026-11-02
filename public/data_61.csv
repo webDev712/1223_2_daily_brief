@@ -1,0 +1,13 @@
+external_id,date,employee_name,department,pieces,value,hours,ppoh,target_ppoh,delta_ppoh,efficiency,notes
+333,10/31/2026,"Maricarmen, Sorting",Assemble,4,,0.75,,,,,
+333,10/31/2026,"Maricarmen, Sorting",Bag,17,,0.75,,,,,
+217,10/31/2026,"Stackhouse, Zar",Detail,11,,1.25,,,,,
+235,10/31/2026,"Lopez, Everardo (omar)",Detail,84,,0.25,,,,,
+333,10/31/2026,"Maricarmen, Sorting",Detail,111,,0.75,,,,,
+365,10/31/2026,"Maldonado Helenas, Andrea",Detail,201,,0.5,,,,,
+217,10/31/2026,"Stackhouse, Zar",Pickup/Delivered,1,,0.25,,,,,
+333,10/31/2026,"Maricarmen, Sorting",Pickup/Delivered,1,,0.25,,,,,
+378,10/31/2026,"Saquic, Kevin",Pickup/Delivered,369,,1,,,,,
+217,10/31/2026,"Stackhouse, Zar",Rack,1,,0.25,,,,,
+364,10/31/2026,"Maldonado, Andrea",Rack,8,,0.75,,,,,
+378,10/31/2026,"Saquic, Kevin",Rack,369,,1,,,,,

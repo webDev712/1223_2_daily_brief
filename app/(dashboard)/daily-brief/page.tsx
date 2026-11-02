@@ -44,13 +44,16 @@ export default function DailyBrief() {
   const [user, setUser] = useState<User | null>(null);
   const today = new Date();
 
-  const noAccessEdit = (b: SavedBrief) => { 
+  const noAccessEdit = (b: SavedBrief) => {
+    return noAccessEditShort(b) || !b.shift
+  }
+  const noAccessEditShort = (b: SavedBrief) => { 
     const todayString =
       `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const isToday = b.date === todayString;
   
-    return (user?.id !== b.lead_id || b.freezed === true || !isToday) || user?.permissions.update_brief === false 
+    return (user?.id !== b.lead_id || b.freezed === true || !isToday) || user?.permissions.update_brief === false
   };
   const [showSubmit, setShowSubmit] = useState(false)
   const [showHandoff, setShowHandoff] = useState(false)
@@ -449,10 +452,6 @@ export default function DailyBrief() {
           let shifts = await shifts_res.json()
   
           setShifts(shifts)
-          // if (!shifts.find((s: Shift) => s.name == briefs_data[0].shift) && briefs_data[0].shift !== '' && briefs_data[0].shift !== ' ' && briefs_data[0].shift) {
-          //   shifts.push({name: briefs_data[0].shift})
-          // }
-          // else{ setShifts(shifts); }
         }
         setLoading(false)
       }
@@ -597,7 +596,7 @@ export default function DailyBrief() {
                         </div>
                         <div>
                           <span>{translation('shift')}</span>
-                          <select className={noAccessEdit(b) ? 'shift-select d' : ''} disabled={noAccessEdit(b)} onChange={(e) => {changeShift(b, e.target.value)}} defaultValue={b.shift || ''}>
+                          <select className={(noAccessEditShort(b) ? 'shift-select d' : '') + (!b.shift ? 'pulse-shift' : '')} disabled={noAccessEditShort(b)} onChange={(e) => {changeShift(b, e.target.value)}} defaultValue={b.shift || ''}>
                             <option value={""}>-</option>
                             {shifts.map((s: Shift) => {
                               return (<option key={s.name} value={s.name}>{s.name}</option>)
@@ -768,7 +767,7 @@ export default function DailyBrief() {
 
                                 {(r.metric === 'Metric' || r.metric === 'Count') && (
                                     <input
-                                        className={r.checked || !noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
+                                        className={r.checked || noAccessEdit(b) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
                                         value={r.text ?? ''}
                                         disabled={(r.checked ?? false) || noAccessEdit(b) || !isBeforeTime(r.check_before)}
                                         type="number"
@@ -1109,7 +1108,7 @@ export default function DailyBrief() {
                           <div>
                             <span>{translation('recipient')}</span>
                             <select id={`handoff_to_${b.id}`} className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)}>
-                              {leads.map((u: User) => b.lead_id != u.id && (<option value={u.id} key={u.id}>{u.name}</option>))}
+                              {leads.map((u: User) => b.lead_id != u.id && u.department === user.department && (<option value={u.id} key={u.id}>{u.name}</option>))}
                             </select>
                           </div>
                           <div>
