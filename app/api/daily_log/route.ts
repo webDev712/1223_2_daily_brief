@@ -167,6 +167,8 @@ export async function POST(request: NextRequest) {
             date_resolved = null
         } = body;
         
+        console.log('daily_log body')
+        console.log(body)
         await sql`
             INSERT INTO daily_log (
                 id,

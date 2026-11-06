@@ -5,6 +5,31 @@
     font-size: 28px;
     line-height: 35px;
     letter-spacing: 0.38px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.dashboard h1 select{
+    font-size: 14px;
+    height: 30px;
+    margin: auto 0;
+    display: block;
+    background: white;
+    padding: 0 45px 0 15px !important;
+    border-radius: 50px;
+    -webkit-appearance: none;
+    line-height: 1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+}
+
+.dashboard h1 h1{
+    font-size: 14px;
+    line-height: 14px;
+    text-wrap-mode: nowrap;
+    margin: auto 10px auto 0;
 }
 
 .dashboard p{

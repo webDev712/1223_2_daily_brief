@@ -77,7 +77,10 @@
     "input_report_value_first": "Por favor, ingresa primero el valor del reporte",
     "select_shift_reminder": "No olvides seleccionar tu turno",
     "select_shift_to_submit_brief": "Selecciona un turno para enviar tu informe diario",
-    "choose_lead": "Seleccionar líder"
+    "choose_lead": "Seleccionar líder",
+    "select_your_shift_first": "Por favor, selecciona tu turno primero.",
+    "selecting_shift_is": "Es obligatorio seleccionar un turno antes de continuar.",
+    "cannot_finish_brief_before_checking_reports": "No puedes finalizar tu informe diario antes de revisar todos los informes que has aceptado."
   },
   "Sidebar": {
     "dashboard": "Panel",
@@ -108,6 +111,9 @@
     "see_and_edit": "Consulta y edita problemas y acciones"
   },
   "Dashboard": {
+    "display_for": "Mostrar datos de:",
+    "department": "Departamento",
+    "entire_company": "Toda la empresa",
     "good_morning": "Buenos días",
     "good_afternoon": "Buenas tardes",
     "good_evening": "Buenas tardes",

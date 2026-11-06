@@ -8,6 +8,13 @@ import { LoginButton } from '../src/components/LoginButton';
 import scrollToElement from '@/lib/html_document';
 import Link from 'next/link';
 import { Plan } from '@/lib/types';
+import { getTutorials } from '@/lib/config';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Scrollbar, A11y } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/scrollbar";
 
 export default function Landing () {
     const handlePayment = async () => {
@@ -82,6 +89,8 @@ export default function Landing () {
         scrollToElement('plans')
         toast.info("Select a plan and press Get Started")
     }
+
+    const tutorials = getTutorials();
 
     return (
         <div className="landing">
@@ -159,6 +168,35 @@ export default function Landing () {
                     <h5>Bring your daily operations, reports and team management into one place.</h5>
                     <div className="button-w-bl" onClick={scrollToPlansAndShowAlert}>Get Started</div>
                 </div>
+            </div>
+            <div className='videos'>
+                <h3>ONE CONNECTED WORKSPACE</h3>
+                <h4>Everything your team needs for the day</h4>
+                <h5>Replace scattered tools and manual follow-ups with one clear view of the work that matters.</h5>
+
+                <Swiper
+                    spaceBetween={50}
+                    slidesPerView={1}
+                    onSlideChange={() => console.log('slide change')}
+                    onSwiper={(swiper) => console.log(swiper)}
+                    modules={[Navigation, Pagination, Scrollbar, A11y]}
+                    navigation
+                    scrollbar={{ draggable: true }}
+
+                >
+                    {tutorials.map((tutorial: any) => (
+                        <SwiperSlide style={{height: '50vw'}}>
+                            <iframe
+                                key={`tutorial_${tutorial.id}`}
+                                src={`https://www.youtube-nocookie.com/embed/${tutorial.youtubeId}?autoplay=0`}
+                                title="Tutorial video"
+                                allow="autoplay; encrypted-media; picture-in-picture"
+                                allowFullScreen
+                                className="w-full h-full"
+                            />
+                        </SwiperSlide>
+                    ))}
+                </Swiper>
             </div>
             <div className="footer" id='links'>
                 <div>

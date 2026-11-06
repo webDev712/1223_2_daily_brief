@@ -313,6 +313,7 @@ export default function ActionTracker () {
                     </div>
                     <div>
                         <div>
+                            {/* {`${filters.fromDate} - ${filters.toDate}`} */}
                             <label>
                                 <span>{t('filters.timeframe')}</span>
 
@@ -469,6 +470,7 @@ export default function ActionTracker () {
                                 return (
                                 <div key={row.id}>
                                     <div>{formatDateWithoutTimezone(row.date)}</div>
+                                    {/* <div>{row.date}</div> */}
                                     <div>{row.u_name}</div>
                                     <div style={{color: getColorsFromName(row.d_name ?? '').dark}} before-text={t('table.beforeDepartment')}>{row.d_name}</div>
                                     <div before-text={t('table.beforeShift')}>{row.shift}</div>
@@ -479,27 +481,27 @@ export default function ActionTracker () {
                                         <div className='button-w-bl' onClick={() => { setRowShowActions(row) }}>{t('table.showList')} {row.actions && `(${row.actions.length})`}</div>
                                     </div>
                                      {(() => {
-        const startDate = new Date(row.date);
-        const endDate = row.date_resolved
-            ? new Date(row.date_resolved)
-            : new Date();
+                                        const startDate = new Date(row.date);
+                                        const endDate = row.date_resolved
+                                            ? new Date(row.date_resolved)
+                                            : new Date();
 
-        const daysOpen = differenceInCalendarDays(endDate, startDate);
+                                        const daysOpen = differenceInCalendarDays(endDate, startDate);
 
-        return (
-            <div
-                className={
-                    daysOpen < 3
-                        ? 'green b'
-                        : daysOpen < 10
-                            ? 'orange b'
-                            : 'red b'
-                }
-            >
-                {daysOpen}
-            </div>
-        );
-    })()}
+                                        return (
+                                            <div
+                                                className={
+                                                    daysOpen < 3
+                                                        ? 'green b'
+                                                        : daysOpen < 10
+                                                            ? 'orange b'
+                                                            : 'red b'
+                                                }
+                                            >
+                                                {daysOpen}
+                                            </div>
+                                        );
+                                    })()}
                                     <div before-text={t('table.beforeStatus')}>
                                         <div className={row.status === 'Resolved' ? 'green b' : (row.status === 'In progress' ? 'orange b resolve-button' : 'red b resolve-button')}>
                                             {row.status.toLowerCase() === 'resolved' ? (

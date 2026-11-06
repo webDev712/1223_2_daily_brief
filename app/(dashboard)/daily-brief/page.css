@@ -600,6 +600,7 @@
     padding-left: 4px;
 }
 
+.daily-brief .send-to-action-tracker,
 .daily-brief .shift-info div:has(> span + label) > label {
     display: flex;
     gap: 10px;
@@ -608,12 +609,19 @@
     background-size: 30px;
     background-position: left center;
     cursor: pointer;
+    user-select: none;
 }
 
+.daily-brief .send-to-action-tracker{
+    margin-left: auto;
+}
+
+.daily-brief .send-to-action-tracker input,
 .daily-brief .shift-info div:has(> span + label) > label input{
     display: none;
 }
 
+.daily-brief .send-to-action-tracker:has(input:checked),
 .daily-brief .shift-info div:has(> span + label) > label.driving{
     background-image: url('../../../public/checkbox_1.svg');
 }
@@ -818,7 +826,7 @@
 }
 
 
-.daily-brief .add-finding > div:last-child{
+.daily-brief .add-finding > div:nth-last-child(2){
     display: flex;
     flex-direction: row;
     justify-content: right;
