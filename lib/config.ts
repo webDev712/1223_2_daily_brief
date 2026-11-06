@@ -213,4 +213,72 @@ export const getActionLogCategories = () => {
 }
 
 
+export const getTutorials = () => {
+    return [
+        {
+            id: 0,
+            title: "Daily Brief - Demo",
+            duration: "2:19",
+            youtubeId: "k4rpq0KEeC4",
+            description: "Daily Brief — Complete System Overview | User Guide. Discover the Daily Brief system and learn how to use its main features to manage daily operations, streamline reporting, and improve team collaboration.",
+        },
+        {
+            id: 1,
+            title: "Daily Brief: 1. Daily Brief Page",
+            duration: "3:06",
+            youtubeId: "gT3qJbogl2s",
+            description: "Learn how to use the Daily Brief page to manage your daily shift. This video covers creating briefs, completing reports, managing tasks and findings, assigning report holders, and handing off briefs to other team members when needed.",
+        },
+        {
+            id: 2,
+            title: "Daily Brief: 2. Dashboard Page",
+            duration: "1:05",
+            youtubeId: "P9w3GVoJ5PY",
+            description: "Discover how to use the Dashboard to monitor daily operations at a glance. Learn how to navigate between dates and review submitted briefs, reports reviewed, open findings, tasks, handed-off briefs, items requiring attention, and completed tasks across the team.",
+        },
+        {
+            id: 3,
+            title: "Daily Brief: 3. Brief History Page",
+            duration: "1:18",
+            youtubeId: "ZioEQi7aFRk",
+            description: "Learn how to access and review previously created daily briefs. This video explains how to filter briefs by user, status, and time period, use summary blocks to find specific briefs, and review the findings and tasks recorded in each brief.",
+        },
+        {
+            id: 4,
+            title: "Daily Brief: 4. Reports Page",
+            duration: "2:01",
+            youtubeId: "nzmWATcgrNw",
+            description: "Learn how to create, search for, and edit reports in Daily Brief. This video covers report settings, metric types, reporting periods, day times, default holders, and backup holders, including how to schedule report responsibilities for specific days of the week.",
+        },
+        {
+            id: 5,
+            title: "Daily Brief: 5. Team & Roles Page",
+            duration: "1:30",
+            youtubeId: "zBOqmS7XFtY",
+            description: "Discover how managers can manage team members and control access to Daily Brief. Learn how to archive users, restore their access, change department assignments, update user roles, and configure role permissions using the Role Editor.",
+        },
+        {
+            id: 6,
+            title: "Daily Brief: 6. Action Tracker Page",
+            duration: "1:59",
+            youtubeId: "HYLGDhHCRDU",
+            description: "Learn how to use the Production Dashboard to review production-related information and performance metrics. This video introduces the dashboard and explains how it can help users monitor operational performance and identify areas requiring attention.",
+        },
+        {
+            id: 7,
+            title: "Daily Brief: 7. Settings Page",
+            duration: "0:59",
+            youtubeId: "RQGxR-H2eNU",
+            description: "Explore the Settings page and learn how to manage your personal information, configure departments and shifts, and access company settings. The video also covers data download and deletion options available to users with the appropriate permissions.",
+        },
+        {
+            id: 8,
+            title: "Daily Brief: 8. Chat",
+            duration: "1:32",
+            youtubeId: "l9nDi51Yh7A",
+            description: "Learn how to communicate with your team directly within Daily Brief. This video covers sending messages and images, reviewing conversations, receiving notifications about Daily Brief and Action Tracker activities, and sending messages to all users or selected groups with the appropriate permissions.",
+        },
+    ];
+}
+
 export default getReportsTypes;

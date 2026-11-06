@@ -19,6 +19,7 @@ export async function getCurrentUser(): Promise<User | null> {
             w.lead_letter,
             w.phone,
             d.name AS department,
+            d.id AS department_id,
             r.permissions,
             w.company_id
         FROM website_user w, department d, role r

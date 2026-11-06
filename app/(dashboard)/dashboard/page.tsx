@@ -1,6 +1,6 @@
 "use client";
 
-import { Finding, Report, SavedBrief, Task, User, Covered } from "@/lib/types";
+import { Finding, Report, SavedBrief, Task, User, Covered, Department } from "@/lib/types";
 import { useUser } from "../../src/components/UserProvider";
 import { useDate } from "../../src/components/DateContext";
 import Loader from "@/app/src/components/Loader";
@@ -27,6 +27,10 @@ export default function Dashboard() {
   }
   const { date } = useDate();
   const [leads, setLeads] = useState<User[]>([])
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [filters, setFilters] = useState({
+    department: ''
+  });
   const user = useUser();
   const [briefs, setBriefs] = useState<any[]>([]);
   const [briefsLoading, setBriefsLoading] = useState(true);
@@ -61,32 +65,60 @@ export default function Dashboard() {
         .filter((a: User) => a.archived !== true)
       setLeads(leads_data)
       
+      const departments_res = await fetch(`/api/departments`);
+      if (!departments_res.ok) {
+          console.error("Failed to load departments");
+          setLoading(false);
+          return;
+      }
+      let departments_data = await departments_res.json();
+      setDepartments(departments_data);
+      
       setBriefsLoading(false);
       setLoading(false);
     }
     load();
   }, [date]);
 
+  const briefs_count = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).length
+
   const in_progress_count = briefs.filter((b: SavedBrief) => {
-     return !b.freezed;
+    return !b.freezed && (filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department);
   }).length;
-  const reports_done_count: number = briefs.reduce((a_b, b: SavedBrief) => a_b + b.reports?.filter((r: Report) => r.checked).length, 0);
-  const reports_all_count: number = briefs.reduce((a_b, b: SavedBrief) => a_b + b.reports?.length, 0);
-  const findning_count = briefs.reduce((a_b, b: SavedBrief) => {
+  const briefs_filtered = Array.from(
+    new Map(
+        briefs
+            .filter((b: SavedBrief) =>
+                filters.department === "" ||
+                leads.find((user: User) => user.id === b.lead_id)?.department === filters.department
+            )
+            .map((b: SavedBrief) => [
+                leads.find((user: User) => user.id === b.lead_id)?.department,
+                b
+            ])
+    ).values()
+);
+  const reports_done_count: number = briefs_filtered
+  .reduce((a_b, b: SavedBrief) => a_b + b.reports?.filter((r: Report) => r.checked).length, 0);
+  
+  const reports_all_count: number = briefs_filtered
+  .reduce((a_b, b: SavedBrief) => a_b + b.reports?.length, 0);
+  
+  const findning_count = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).reduce((a_b, b: SavedBrief) => {
     if (b.findings !== null) return a_b + b.findings?.length
     else return a_b;
   }, 0);
-  const h_p_finding_count = briefs.reduce((a_b, b: SavedBrief) => {
+  const h_p_finding_count = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).reduce((a_b, b: SavedBrief) => {
     if (b.findings !== null) return b.findings && a_b + b.findings?.filter((f: Finding) => f.type === 'high').length;
     else return a_b;
   }, 0);
-  const tasks_count = briefs.reduce((a_b, b: SavedBrief) => a_b + b.tasks?.length, 0);
-  const tasks_done_count = briefs.reduce((a_b, b: SavedBrief) => a_b + b.tasks?.filter((t: Task) => t.checked === true).length, 0);
+  const tasks_count = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).reduce((a_b, b: SavedBrief) => a_b + b.tasks?.length, 0);
+  const tasks_done_count = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).reduce((a_b, b: SavedBrief) => a_b + b.tasks?.filter((t: Task) => t.checked === true).length, 0);
 
   const active_leads_today: string[] = []
-  briefs.map((b: SavedBrief) => active_leads_today.indexOf(b.lead_id) === -1 ? active_leads_today.push(b.lead_id) : '')
+  briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => active_leads_today.indexOf(b.lead_id) === -1 && (filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ) ? active_leads_today.push(b.lead_id) : '')
 
-  const attentionCount = briefs.reduce(
+  const attentionCount = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).reduce(
     (sum: number, b: SavedBrief) =>
       sum +
       (b.findings?.filter((f: Finding) => f.type === "high").length ?? 0) +
@@ -96,7 +128,7 @@ export default function Dashboard() {
     0
   )
 
-  const dutiesCount = briefs.reduce(
+  const dutiesCount = briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).reduce(
     (sum: number, b: SavedBrief) =>
       sum +
       (b.findings?.filter((f: Finding) => f.type === "info").length ?? 0) +
@@ -104,16 +136,42 @@ export default function Dashboard() {
       (b.reports?.filter((r: Report) => r.checked).length > 0 ? 1 : 0),
     0
   )
+
   return (
     <div className="dashboard">
       {loading ?
               (<Loader></Loader>) : (
         <div>
-          <h1>{getGreeting()}, {user.name.split(' ')[0]} 👋</h1>
+          <h1 className="flex">
+            <div>
+              {getGreeting()}, {user.name.split(' ')[0]} 👋
+            </div>
+            <div className="flex">
+              <h1>{t('display_for')}</h1>
+              <select className="input" value={filters.department} onChange={(e) => setFilters({department: e.target.value})}>
+                <option value="">{t('entire_company')} ({briefs.length} brief{(briefs.length > 1 || briefs.length === 0) && 's'})</option>
+                {departments.sort((a: Department, b: Department) => 
+                  {
+                    const diff = briefs.filter((brief: SavedBrief) => leads.find((user: User) => user.id === brief.lead_id)?.department === b.name ).length -
+                    briefs.filter((brief: SavedBrief) => leads.find((user: User) => user.id === brief.lead_id)?.department === a.name ).length
+                    if (diff === 0) return a.name.localeCompare(b.name);
+                    return diff;
+                  }
+                ).map((department: Department) => {
+                  if (department.is_main){
+                    let briefs_count_filtered = briefs.filter((brief: SavedBrief) => leads.find((user: User) => user.id === brief.lead_id)?.department === department.name ).length
+                    return (
+                      <option key={`filter_dashboard_by_department_${department.id}`} value={department.name}>{t('department')} {department.name} ({briefs_count_filtered} brief{(briefs_count_filtered > 1 || briefs_count_filtered === 0) && 's'})</option>
+                    )
+                  }
+                })}
+              </select>
+            </div>
+          </h1>
           <p>{t("subtitle")}</p>
           <div className="four-block">
             <div img-id="document-yellow" onClick={() => {scrollToElement('briefs')}}>
-              <h1>{briefs.length - in_progress_count}/{briefs.length}</h1>
+              <h1>{briefs_count - in_progress_count}/{briefs_count}</h1>
               <div>{t("daily_briefs")}</div>
               {in_progress_count === 0 ? 
                 (<span>{t("all_briefs_submitted")}</span>) : 
@@ -155,7 +213,7 @@ export default function Dashboard() {
             </div>
             <div>{t("briefs_active", { count: active_leads_today.length })}</div>
           </div>
-          {briefs.length > 0 ? (
+          {briefs_count > 0 ? (
             <div className="briefs">
               {briefs.map((b: SavedBrief) => {
                 const b_reports_done = b.reports?.reduce((a_r, r: Report) => a_r + (r.checked ? 1 : 0), 0);
@@ -167,6 +225,7 @@ export default function Dashboard() {
                   briefDate.getFullYear() === today.getFullYear() &&
                   briefDate.getMonth() === today.getMonth() &&
                   briefDate.getDate() === today.getDate();
+              if (filters.department === '' || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department)
                 return (
                 <div className={b.freezed ? "brief submitted" : (!b.freezed && !isToday ? "brief incomplete" : "brief")} key={`b_${b.id}`}>
                   <div className="lane"></div>
@@ -240,7 +299,7 @@ export default function Dashboard() {
                   <span>{t("col_status")}</span>
                 </div>
 
-              {briefs.map((b: SavedBrief) => {
+              {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
                 const briefDate = new Date(b.date);
 
                 const isToday =
@@ -278,7 +337,7 @@ export default function Dashboard() {
             </div>
             {attentionCount === 0 && (<h3>{t("no_attention")}</h3>)}
             <div className="attention-container">
-             {briefs.map((b: SavedBrief) => {
+             {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
               return b.findings?.map((finding: Finding, finding_i: number) => {
                 if (finding.type === 'high') return (
                   <div className="attention attention_finding" key={`${b.id}_attention_finding_${finding_i}`}>
@@ -300,7 +359,7 @@ export default function Dashboard() {
                 )
               })
             })}
-            {briefs.flatMap((b: SavedBrief) =>
+            {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).flatMap((b: SavedBrief) =>
               (b.tasks || [])
                 .filter((task: Task) => !task.checked)
                 .map((task: Task, task_i: number) => (
@@ -327,7 +386,7 @@ export default function Dashboard() {
                   </div>
                 ))
             )}
-            {briefs.map((b: SavedBrief) => {
+            {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
               const reports_pending_length = b.reports.filter((report: Report) => report.checked === false).length
               if (reports_pending_length > 0) return (
                   <div className="attention attention_report" key={`${b.id}_attention_reports`}>
@@ -348,7 +407,7 @@ export default function Dashboard() {
                   </div>
               )
             })}
-            {briefs.map((b: SavedBrief) => {
+            {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
               if (b.lead_id !== b.original_lead_id) return (
                   <div className="attention attention_handoff" key={`${b.id}_attention_handoff`}>
                     <div>
@@ -386,7 +445,7 @@ export default function Dashboard() {
             </div>
             {dutiesCount === 0 && (<h3>{t("no_duties")}</h3>)}
             <div className="attention-container duties-container">
-             {briefs.map((b: SavedBrief) => {
+             {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
               return b.findings?.map((finding: Finding, finding_i: number) => {
                 if (finding.type === 'info') return (
                   <div className="attention attention_finding" key={`${b.id}_attention_finding_${finding_i}`}>
@@ -408,7 +467,7 @@ export default function Dashboard() {
                 )
               })
             })}
-            {briefs.flatMap((b: SavedBrief) => 
+            {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).flatMap((b: SavedBrief) => 
                 (b.tasks || [])
                   .filter((task: Task) => task.checked)
                   .map((task: Task) => (
@@ -430,7 +489,7 @@ export default function Dashboard() {
 
                 ))
               )}
-            {briefs.map((b: SavedBrief) => {
+            {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
               const reports_done_length = b.reports.filter((report: Report) => report.checked === true).length
               if (reports_done_length > 0) return (
                   <div className="attention attention_report" key={`${b.id}_attention_reports`}>
@@ -453,7 +512,7 @@ export default function Dashboard() {
                   </div>
               )
             })}
-            {briefs.map((b: SavedBrief) => {
+            {briefs.filter((b: SavedBrief) => filters.department === "" || leads.find((user: User) => user.id === b.lead_id)?.department === filters.department ).map((b: SavedBrief) => {
               if (b.lead_id !== b.original_lead_id) return (
                   <div className="attention attention_handoff" key={`${b.id}_attention_handoff`}>
                     <div>

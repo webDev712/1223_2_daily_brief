@@ -77,7 +77,10 @@
     "input_report_value_first": "Please, input report value first",
     "select_shift_reminder": "Don't forget to select your shift. You won't be able to enter your brief data, before you select your shift.",
     "select_shift_to_submit_brief": "Select shift to submit your brief",
-    "choose_lead": "Choose Lead"
+    "choose_lead": "Choose Lead",
+    "select_your_shift_first": "Please select your shift first.",
+    "selecting_shift_is": "Selecting a shift is required before proceeding.",
+    "cannot_finish_brief_before_checking_reports": "You cannot finish your brief before checking all the reports you have taken."
   },
   "Sidebar": {
     "dashboard": "Dashboard",
@@ -108,6 +111,9 @@
     "see_and_edit": "See and Edit Problems & Actions"
   },
   "Dashboard": {
+    "display_for": "Display data for:",
+    "entire_company": "Entire Company",
+    "department": "Department",
     "good_morning": "Good morning",
     "good_afternoon": "Good afternoon",
     "good_evening": "Good evening",

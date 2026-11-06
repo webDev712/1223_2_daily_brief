@@ -314,6 +314,35 @@
 }
 
 
+.landing .swiper-horizontal > .swiper-scrollbar, .swiper-scrollbar.swiper-scrollbar-horizontal{
+    height: 10px !important;
+    cursor: pointer;
+}
+
+.landing .videos{
+    background-color: #fafafa;
+}
+
+.swiper-horizontal .swiper-button-prev,
+.swiper-horizontal .swiper-button-next {
+    background-image: url('../../public/arrow_grey.svg') !important;
+    background-size: 40px;
+    background-position: center;
+}
+
+.swiper-horizontal .swiper-button-next {
+    transform: rotate(180deg);
+}
+
+.swiper-horizontal .swiper-button-prev svg,
+.swiper-horizontal .swiper-button-next svg{
+    display: none;
+}
+
+.landing .videos .swiper-slide{
+    padding: 40px 80px;
+}
+
 @media (max-width: 500px) {
     .landing .header > div:nth-child(3) > div {
         height: max-content;
@@ -363,5 +392,19 @@
     .landing .footer > div:first-child > div:nth-child(2) > *{
         text-wrap-mode: wrap;
         width: min-content;
+    }
+
+    .landing .videos{
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .landing .swiper-button-prev, .swiper-button-next{
+        height: 20px !important;
+        width: 20px !important;
+    }
+
+    .landing .videos .swiper-slide{
+        padding: 0px 25px 20px 25px !important;
     }
 }

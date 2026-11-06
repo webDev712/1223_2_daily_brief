@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import getColorsFromName from '@/lib/color';
 import { format, parse } from "date-fns";
 import { toast } from 'sonner';
-import { Company, Covered, Report, SavedBrief, Shift, User } from '@/lib/types';
+import { Company, Covered, Report, SavedBrief, Shift, User, IdName, DailyLogRow } from '@/lib/types';
 import './page.css'
 import { downloadPDF, generateEmailHTML } from '@/lib/documents';
 import SmallLoader from '@/app/src/components/SmallLoader';
@@ -18,6 +18,7 @@ import ImageUploader from '@/app/src/components/ImageUploader';
 import isBlobLink from '@/lib/img';
 import scrollToElement from '@/lib/html_document';
 import { useLocale, useTranslations } from 'next-intl';
+import { getActionLogCategories } from '@/lib/config';
 
 
 const isBeforeTime = (time: string | undefined) => {
@@ -117,6 +118,9 @@ export default function DailyBrief() {
       body: JSON.stringify({lead_id: user?.id, lead_letter: user?.lead_letter, lead_name: user?.name, date: format(date, "yyyy-MM-dd"), created_at: new Date()}),
     });
     if (res.status === 200) setReload(prev => prev + 1);
+    if (showSelectShift) {
+      setShowSelectShift(false);
+    }
     toast.info(translation('select_shift_reminder'));
   }
 
@@ -170,6 +174,10 @@ export default function DailyBrief() {
       },
       body: JSON.stringify(updatedBrief),
     });
+    if (finding.send_to_action_tracker === true){
+      sendActionTrackerRow(b, 'info', finding.description);
+      // (document.getElementById(`send-to-action-tracker`) as HTMLInputElement).ch,
+    }
     savingRef.current = false;
   };
 
@@ -377,23 +385,29 @@ export default function DailyBrief() {
 
   const [showAddFinding, setShowAddFinding] = useState(false)
   const [showAddTask, setShowAddTask] = useState(false)
-  const [shifts, setShifts] = useState([])
+  const [shifts, setShifts] = useState<Shift[]>([])
   const [selectedLead, setRealSelectedLead] = useState(null)
   const [company, setCompany] = useState<Company>();
   const translation = useTranslations('DailyBrief');
+  const [showSelectShift, setShowSelectShift] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<string>("");
 
   const setSelectedLead = (lead: any) => {
     setRealSelectedLead(lead)
   }
   // const locale = useLocale();
   // locale.startsWith("es")
-    
+  
+  
+
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     async function load() {
       const me_res = await fetch("/api/me");
       const me_user = await me_res.json();
       setUser(me_user)
+      console.log('me_user')
+      console.log(me_user)
       const users_res = await fetch(`/api/users`);
       if (!users_res.ok) {
         console.error("Failed to load leads");
@@ -402,6 +416,8 @@ export default function DailyBrief() {
       }  
       let leads_data = await users_res.json();
       // leads_data = leads_data.filter((a: User) => a.user_role !== 'manager')
+      console.log('leads_data')
+      console.log(leads_data)
       setLeads(leads_data)
       let lead_id = selectedLead;
       
@@ -442,21 +458,25 @@ export default function DailyBrief() {
         briefs_data = briefs_data.filter((a: SavedBrief) => a.lead_id === lead_id)
         await setBriefs(briefs_data)
         
-        if (briefs_data.length > 0){
-          const shifts_res = await fetch(`/api/shifts`)
-          if (!shifts_res.ok) {
-            console.log("Failed while fetching shifts")
-            setLoading(false)
-            return;
-          }
-          let shifts = await shifts_res.json()
-  
-          setShifts(shifts)
-        }
         setLoading(false)
       }
       load();
     }, [date, selectedLead, reload]);
+
+    useEffect(() => {
+      async function load() {
+        const shifts_res = await fetch(`/api/shifts`)
+        if (!shifts_res.ok) {
+          console.log("Failed while fetching shifts")
+          setLoading(false)
+          return;
+        }
+        let shifts = await shifts_res.json()
+        setShifts(shifts)
+      }
+
+      load();
+    }, [])
 
   const addReportFinding = (r: Report, b: SavedBrief) => {
     setShowAddFinding(true);
@@ -468,9 +488,78 @@ export default function DailyBrief() {
     }, 300)
   }
   const leads_to_display = leads.filter(
-            (u: User) => 
-              (allBriefs.filter((brief: SavedBrief) => brief.lead_id === u.id).length > 0) || (u.permissions.update_brief === true && u.id === user?.id)
-          )
+      (u: User) => 
+        (allBriefs.filter((brief: SavedBrief) => brief.lead_id === u.id).length > 0) || (u.permissions.update_brief === true && u.id === user?.id)
+    )
+  const at_row_date = new Date()
+  at_row_date.setHours(0, 0, 0, 0);
+  const defaultNewAuditLogRow = {
+    date: at_row_date.toISOString(),
+    user_id: user?.id,
+    department_id: user?.department_id ?? '',
+    shift: '',
+    category: 'Finding',
+    severity: '',
+    date_resolved: null,
+    text: '',
+    status: 'Unset',
+    actions: null,
+  }
+
+  const sendActionTrackerRow = async (b: SavedBrief, severity: string, text: string) => {
+    const io_owner_top_list = leads.filter((u: User) => u.department === user?.department)
+      .sort((a: User, b: User) => 
+        Object.keys(b.permissions).filter((p_key: string) => 
+          b.permissions[p_key] === true
+        ).length - 
+        Object.keys(a.permissions).filter((p_key: string) => 
+          a.permissions[p_key] === true
+        ).length
+      )
+    if (io_owner_top_list.length === 0) {
+      console.log('io_owner_top_list === 0')
+      return;
+    }
+    setLoading(true);
+    const newActionTrackerRow: DailyLogRow = {
+      ...defaultNewAuditLogRow,
+      user_id: io_owner_top_list[0].id,
+      shift: b.shift ?? "",
+      severity: severity,
+      text: text
+    }
+
+
+    const action_tracker_res = await fetch('/api/daily_log', {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newActionTrackerRow)
+    });
+    if (!action_tracker_res.ok){
+      console.error('Error while sending Action Tracker Row.');
+      setLoading(false);
+      return false;
+    }
+    setLoading(false);
+    return true;
+  }
+
+  useEffect(() => {
+    if (selectedShift === "" || briefs.length === 0) return;
+
+    const brief = briefs.find((b: SavedBrief) =>
+      b.lead_id === user?.id &&
+      !b.shift
+    );
+
+    if (!brief) return;
+
+    changeShift(brief, selectedShift);
+    setSelectedShift("");
+  }, [briefs]);
+
   return (
     <div className="daily-brief">
       <div>
@@ -507,8 +596,26 @@ export default function DailyBrief() {
             {allBriefs.filter(
               (b: SavedBrief) => b.original_lead_id === selectedLead).length === 0 && selectedLead === user?.id && (
               <div className='no-briefs'>
+                {showSelectShift && (
+                  <div className='confirm'>
+                    <div>
+                      <h1>{translation('select_your_shift_first')}</h1>
+                      <p>{translation('selecting_shift_is')}</p>
+                      <select className='shift-select input' onChange={(e) => {setSelectedShift(e.target.value)}}>
+                        <option value="">-</option>
+                        {shifts.map((s: Shift) => {
+                          return (<option key={s.name} value={s.name}>{s.name}</option>)
+                        })}
+                      </select>
+                      <div>
+                        <div className='button-w-bl' onClick={() => {setShowSelectShift(false)}}>{translation('cancel')}</div>
+                        <div className={selectedShift === "" ? 'button-d-bl d' : 'button-d-bl'} onClick={() => {if (selectedShift !== "") startMyBrief()}}>{translation('confirm')}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <h1>{translation('own_brief_not_started')}</h1>
-                {selectedLead === user?.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {startMyBrief()}}>{translation('start_my_brief')}</div>) : (<div></div>)}
+                {selectedLead === user?.id && date.getDate() === today.getDate() ? (<div className='button-d-bl' onClick={() => {setShowSelectShift(true)}}>{translation('start_my_brief')}</div>) : (<div></div>)}
               </div>
             )}
             {briefs.length == 0 || (user?.role == 'lead' && false && !briefs.some((b: SavedBrief) => b.lead_id == user?.id)) 
@@ -528,7 +635,13 @@ export default function DailyBrief() {
                         <h1>{translation('shift_info')} ({`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}` !== b.date ? (b.freezed === true ? 'Freezed - brief day passed' : 'Freezed - brief submitted') : (b.freezed === true ? 'Freezed - brief submitted' : translation('active_owner_can_edit'))}){b.shift ? ` - shift ${b.shift}` : ``} </h1>
                         <div className='button-w-bl' style={{marginLeft: "auto"}} onClick={() => {generateEmailHTML(b)}} >{translation('copy_for_email')}</div>
                         <div className='button-w-bl' onClick={() => {downloadPDF(b)}}>{translation('save_as_pdf')}</div>
-                        <div className={noAccessEdit(b) ? 'button-d-bl d tg' : 'button-d-bl tg'} onClick={() => {if (!noAccessEdit(b)) setShowSubmit(true)}}>{translation('submit_brief')}</div>
+                        <div className={noAccessEdit(b) ? 'button-d-bl d tg' : 'button-d-bl tg'} onClick={() => {
+                          if (b.reports.filter((r: Report) => r.holder_id === user.id && r.checked !== true).length > 0) {
+                            toast.error(translation('cannot_finish_brief_before_checking_reports'));
+                            return;
+                          }
+                          if (!noAccessEdit(b)) setShowSubmit(true)
+                        }}>{translation('submit_brief')}</div>
                         {showSubmit && (
                           <div className='confirm'>
                             <div>
@@ -596,8 +709,8 @@ export default function DailyBrief() {
                         </div>
                         <div>
                           <span>{translation('shift')}</span>
-                          <select className={(noAccessEditShort(b) ? 'shift-select d' : '') + (!b.shift ? 'pulse-shift' : '')} disabled={noAccessEditShort(b)} onChange={(e) => {changeShift(b, e.target.value)}} defaultValue={b.shift || ''}>
-                            <option value={""}>-</option>
+                          <select className={(noAccessEditShort(b) ? 'shift-select d' : '') + (!b.shift ? 'pulse-shift' : '')} disabled={noAccessEditShort(b)} onChange={(e) => {changeShift(b, e.target.value)}} defaultValue={selectedShift !== "" && selectedShift ? selectedShift : (b.shift || '')}>
+                            {/* <option value={""}>-</option> */}
                             {shifts.map((s: Shift) => {
                               return (<option key={s.name} value={s.name}>{s.name}</option>)
                             })}
@@ -1044,9 +1157,14 @@ export default function DailyBrief() {
                               <input className='button-d-bl-sm' disabled={noAccessEdit(b)} type="button" value={translation('add_finding')} onClick={() => { addFinding(b, {
                                     type: (document.getElementById(`new_f_type_${b.id}`) as HTMLTextAreaElement)?.value || '',
                                     description: (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement)?.value || '',
+                                    send_to_action_tracker: (document.getElementById(`send-to-action-tracker`) as HTMLInputElement)?.checked || false,
                                   });
                                 }}/>
                             </div>
+                            <label className='send-to-action-tracker'>
+                              <span>Send to Action Tracker?</span>
+                              <input type="checkbox" id="send-to-action-tracker" />
+                            </label>
                           </div>}
                         </div>
                       </div>
