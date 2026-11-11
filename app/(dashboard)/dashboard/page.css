@@ -86,6 +86,10 @@
     box-shadow: rgb(252 77 77 / 15%) 0px 0px 0px 2px;
 }
 
+.dashboard .briefs .brief.not-started{
+    box-shadow: 0px 0px 0px 2px #EAECF0;
+}
+
 .dashboard .briefs .brief .lane{
     width: calc(100% + 30px);
     height: 5px;
@@ -100,6 +104,10 @@
 
 .dashboard .briefs .brief.incomplete .lane{
     background: linear-gradient(90deg, #f50b0b 0%, #ff9e9e 100%);
+}
+
+.dashboard .briefs .brief.not-started .lane{
+    background: #98A2B3;
 }
 
 
@@ -143,19 +151,33 @@
     background-color: #ECFDF5 !important;
 }
 
-.dashboard .briefs .brief .header-sm + div{
+.dashboard .briefs .brief .header-sm + div,
+.dashboard .briefs .brief .duties-list {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.dashboard .briefs .brief .header-sm + div > div{
+.dashboard .briefs .brief .duty-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 4px;
+}
+
+.dashboard .briefs .brief .duty-row > div {
     padding: 0px 10px;
+    white-space: nowrap;
 }
 
-.dashboard .briefs .brief .header-sm + div > div:nth-child(2),
-.dashboard .briefs .brief .header-sm + div > div:nth-child(3){
+.dashboard .briefs .brief .duty-row > div:first-child {
+    padding-left: 0;
+}
+
+.dashboard .briefs .brief .duty-row > div:nth-child(n + 2) {
     border-left: 1px solid #E8EAED;
     color: #6b7280;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 
@@ -334,6 +356,12 @@
 .dashboard .brief div:has(> div.incomplete){
     color: #960505 !important;
     background-color: #fdecec !important;
+}
+
+.dashboard .briefs .brief .header-sm > div:has(> div.not-started),
+.dashboard .covered .not-started{
+    color: #667085;
+    background-color: #F2F4F7;
 }
 
 
@@ -538,4 +566,38 @@ h3:has(+ .attention-container){
     .dashboard .briefs{
         grid-template-columns: repeat(1, 1fr);
     }
+}
+
+.dashboard .four-block > div .brief-badges {
+    position: absolute;
+    top: 25px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.dashboard .four-block > div .brief-badges span {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.dashboard .four-block > div .brief-badges .badge-submitted {
+    color: #059669 !important;
+    background-color: #ECFDF5;
+}
+
+.dashboard .four-block > div .brief-badges .badge-active {
+    color: #B45309 !important;
+    background-color: #FFFBEB;
+}
+
+.dashboard .four-block > div .brief-badges .badge-not-started {
+    color: #667085 !important;
+    background-color: #F2F4F7;
 }

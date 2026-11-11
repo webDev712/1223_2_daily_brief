@@ -510,15 +510,15 @@ export default function TeamsAndRoles() {
                   {user.user_role !== 'manager' ? (
                     <div>
                       <div>
-                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).length}</div>
+                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id || brief.duties?.some(d => d.user_id === user.id)).length}</div>
                         <span>{t('employee.briefs')}</span>
                       </div>
                       <div>
-                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).reduce((a: number, brief: SavedBrief) => brief.findings ? brief.findings?.length + a : a, 0)}</div>
+                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id || brief.duties?.some(d => d.user_id === user.id)).reduce((a: number, brief: SavedBrief) => brief.findings ? brief.findings?.length + a : a, 0)}</div>
                         <span>{t('employee.findings')}</span>
                       </div>
                       <div>
-                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).reduce((a: number, brief: SavedBrief) => brief.tasks ? brief.tasks?.length + a : a, 0)}</div>
+                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id || brief.duties?.some(d => d.user_id === user.id)).reduce((a: number, brief: SavedBrief) => brief.tasks ? brief.tasks?.length + a : a, 0)}</div>
                         <span>{t('employee.tasks')}</span>
                       </div>
                     </div>

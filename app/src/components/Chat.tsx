@@ -44,6 +44,24 @@ function parseFileAttachment(
   return null;
 }
 
+function parseBriefLink(text: string): { cleanText: string; url: string } | null {
+  const urlMatch = text.match(/(\/daily-brief\?\S+)/);
+  if (urlMatch) {
+    return {
+      cleanText: text.replace(urlMatch[0], "").replace(/\s*Open the brief to review the reports and accept or decline\./, "").trim(),
+      url: urlMatch[1],
+    };
+  }
+  const legacyMatch = text.match(/handoff of .+? Brief, (\d{4})-(\d{2})-(\d{2})/);
+  if (legacyMatch) {
+    return {
+      cleanText: text.replace(/\s*Open the brief to review the reports and accept or decline\./, "").trim(),
+      url: `/daily-brief?date=${Number(legacyMatch[3])}-${Number(legacyMatch[2])}-${legacyMatch[1]}`,
+    };
+  }
+  return null;
+}
+
 // Not a component, so it can't use hooks: the caller passes the already translated toast text.
 export const sendMessageGlobal = async (message: NewMessage, successMessage?: string) => {
     const chat_res = await fetch('/api/chat', {
@@ -396,10 +414,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
         const interval = setInterval(() => {
             if (document.visibilityState !== 'visible') return;
 
+            setReloadChats(prev => prev + 1);
             if (selectedUserId !== null) {
                 setReloadMessages(prev => prev + 1);
-            } else if (openChat) {
-                setReloadChats(prev => prev + 1);
             }
         }, 10000);
 
@@ -519,7 +536,36 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                                                 {t('messages.download')}
                                                                             </a>
                                                                         </div>)
-                                                                ) : 
+                                                                ) : parseBriefLink(message.text) !== null ? (
+                                                                    <div>
+                                                                        <div>{parseBriefLink(message.text)?.cleanText}</div>
+                                                                        <div
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 6,
+                                                                                marginTop: 8,
+                                                                                marginBottom: 4,
+                                                                                padding: '6px 14px',
+                                                                                borderRadius: 8,
+                                                                                fontSize: 13,
+                                                                                fontWeight: 600,
+                                                                                whiteSpace: 'nowrap',
+                                                                                cursor: 'pointer',
+                                                                                backgroundColor: '#ffffff',
+                                                                                color: message.from_user === seeUserMessageAs.id ? '#4361EE' : '#101828',
+                                                                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                const url = parseBriefLink(message.text)?.url;
+                                                                                setOpenChat(false);
+                                                                                if (url) window.location.href = url;
+                                                                            }}
+                                                                        >
+                                                                            Open Brief ➯
+                                                                        </div>
+                                                                    </div>
+                                                                ) :
                                                                 (<div>{message.text}</div>)}
                                                         <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
@@ -606,7 +652,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                     </div>
                                                     <div className='chats-list-hover-message' onClick={() => {openChatById(user.id)}}>
                                                         <div>{isBlobLink(lastMessage?.text ?? '') || parseFileAttachment(lastMessage?.text ?? '') !== null ? (
-                                                            parseFileAttachment(lastMessage?.text ?? '') !== null ? parseFileAttachment(lastMessage?.text ?? '')?.file_name : t('messages.image')) : (lastMessage?.text ?? '')}</div>
+                                                            parseFileAttachment(lastMessage?.text ?? '') !== null ? parseFileAttachment(lastMessage?.text ?? '')?.file_name : t('messages.image')) : (parseBriefLink(lastMessage?.text ?? '')?.cleanText ?? lastMessage?.text ?? '')}</div>
                                                         <div>
                                                             {lastMessage
                                                                 ? format(

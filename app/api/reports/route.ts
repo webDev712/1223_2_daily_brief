@@ -17,12 +17,12 @@ export async function GET() {
         const company_id = session.user.company_id;
         const permissions = session.user.permissions;
         
-        // await requireRole("lead");
         const rows = await sql`
-            SELECT * 
-            FROM report
-            WHERE company_id = ${company_id}
-            ORDER BY id;`;
+            SELECT r.*, COALESCE((SELECT json_agg(s ORDER BY s.position)
+                FROM report_schedule s WHERE s.report_id = r.id AND s.company_id = r.company_id), '[]'::json) AS schedules
+            FROM report r
+            WHERE r.company_id = ${company_id}
+            ORDER BY r.id;`;
         return NextResponse.json(rows);
     } catch (error) {
         console.log(error);

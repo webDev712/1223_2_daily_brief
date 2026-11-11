@@ -221,6 +221,13 @@
 }
 
 .brief-history .table > label > div:nth-child(2){
+    width: 130px;
+    color: #101828;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.brief-history .table > label > div:nth-child(3){
     width: 160px;
     min-width: 160px;
     display: flex;
@@ -229,38 +236,38 @@
     flex-wrap: wrap;
 }
 
-.brief-history .table > label > div:nth-child(2) > div:nth-child(2){
+.brief-history .table > label > div:nth-child(3) > div:nth-child(2){
     margin-left: 40px;
 }
 
-.brief-history .table > label > div:nth-child(2) > div:nth-child(3),
-.brief-history .table > label > div:nth-child(2) > div:first-child{
+.brief-history .table > label > div:nth-child(3) > div:nth-child(3),
+.brief-history .table > label > div:nth-child(3) > div:first-child{
     background-color: transparent;
     margin: 0 auto;
-    text-align: center;
+    text-align: left;
     width: 100%;
 }
 
-.brief-history .table > label > div:nth-child(2) div:nth-child(3) > div:nth-child(2),
-.brief-history .table > label > div:nth-child(2) div:first-child > div:nth-child(2){
+.brief-history .table > label > div:nth-child(3) div:nth-child(3) > div:nth-child(2),
+.brief-history .table > label > div:nth-child(3) div:first-child > div:nth-child(2){
     color: #98a2b3;
     background-color: transparent !important;
 }
 
 
-.brief-history .table > label > div:nth-child(2) > div:nth-child(2){
+.brief-history .table > label > div:nth-child(3) > div:nth-child(2){
     color: #98a2b3;
     background-color: transparent;
 }
 
-.brief-history .table > label > div:nth-child(2) > div:first-child{
+.brief-history .table > label > div:nth-child(3) > div:first-child{
     flex-wrap: nowrap;
     display: flex;
     gap: 10px;
 }
 
-.brief-history .table > label > div:nth-child(2) > div:first-child,
-.brief-history .table > label > div:nth-child(2) > div:nth-child(3){
+.brief-history .table > label > div:nth-child(3) > div:first-child,
+.brief-history .table > label > div:nth-child(3) > div:nth-child(3){
     flex-wrap: nowrap;
     display: flex;
     gap: 10px;
@@ -268,18 +275,43 @@
 }
 
 
-.brief-history .table > label > div:nth-child(2) > div:first-child:has(+ div + div){
+.brief-history .table > label > div:nth-child(3) > div:first-child:has(+ div + div){
     margin-left: 0;
 }
 
-
-.brief-history .table > label:first-child > div:nth-child(2){
-    flex: 0.5;
-    display: block;
-    text-align: center;
+.brief-history .table > label > div:nth-child(3).duty-employees > .duty-employee-item{
+    flex-wrap: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-basis: 100%;
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    background-color: transparent;
 }
 
-.brief-history .table > label > div:nth-child(3){
+.brief-history .table > label > div:nth-child(3).duty-employees > .duty-employee-item > div:nth-child(2){
+    color: #98a2b3;
+    background-color: transparent !important;
+}
+
+.brief-history .table > label > b a.view-brief-link{
+    display: inline-block;
+    margin-top: 10px;
+    text-decoration: none;
+    color: white;
+    background-color: #4361EE;
+}
+
+
+.brief-history .table > label:first-child > div:nth-child(3){
+    flex: 1;
+    display: block;
+    text-align: left;
+}
+
+.brief-history .table > label > div:nth-child(4){
     width: 100px;
     color: #667085;
     font-weight: 400;
@@ -287,17 +319,17 @@
     text-align: center;
 }
 
-.brief-history .table > label:first-child > div:nth-child(3){
+.brief-history .table > label:first-child > div:nth-child(4){
     display: block;
     text-align: center;
 }
 
-.brief-history .table > label > div:nth-child(4){
+.brief-history .table > label > div:nth-child(5){
     width: 100px;
     font-size: 14px
 }
 
-.brief-history .table > label > div:nth-child(5){
+.brief-history .table > label > div:nth-child(6){
     display: flex;
     width: 100px;
     padding: 0 10px;
@@ -305,24 +337,24 @@
     font-weight: 500;
 }
 
-.brief-history .table > label > div:nth-child(5) > div:nth-child(1){
+.brief-history .table > label > div:nth-child(6) > div:nth-child(1){
     width: 50px;
     background-color: transparent;
 }
 
-.brief-history .table > label:first-child > div:nth-child(5){
+.brief-history .table > label:first-child > div:nth-child(6){
     display: block;
     text-align: left;
 }
 
 
-.brief-history .table > label > div:nth-child(5) .progress-bar{
+.brief-history .table > label > div:nth-child(6) .progress-bar{
     width: 50px;
     margin: auto 0;
     height: 6px !important;
 }
 
-.brief-history .table > label > div:nth-child(6){
+.brief-history .table > label > div:nth-child(7){
     width: 100px;
     background-repeat: no-repeat;
     background-position: left center;
@@ -331,24 +363,24 @@
     font-size: 12px;
 }
 
-.brief-history .table > label:first-child > div:nth-child(6){
+.brief-history .table > label:first-child > div:nth-child(7){
     padding-left: 0;
 }
 
-.brief-history .table > label > div:nth-child(6).yellow{
+.brief-history .table > label > div:nth-child(7).yellow{
     color: #F79009;
     background-image: url('../../../public/medium.svg');
     font-size: 14px;
 }
 
 
-.brief-history .table > label > div:nth-child(6).red{
+.brief-history .table > label > div:nth-child(7).red{
     color: #F04438;
     background-image: url('../../../public/high.svg');
     font-size: 14px;
 }
 
-.brief-history .table > label > div:nth-child(7){
+.brief-history .table > label > div:nth-child(8){
     width: 100px;
     background-image: url('../../../public/task.svg');
     background-repeat: no-repeat;
@@ -357,30 +389,20 @@
     color: #667085;
 }
 
-.brief-history .table > label:first-child > div:nth-child(7){
+.brief-history .table > label:first-child > div:nth-child(8){
     padding-left: 0;
 }
 
 
-.brief-history .table > label > div:nth-child(8){
+.brief-history .table > label > div:nth-child(9){
     width: 100px;
     font-size: 14px;
 }
 
 
-.brief-history .table > label:first-child > div:nth-child(8){
-    display: block;
-    text-align: left;
-}
-
 .brief-history .table > label:first-child > div:nth-child(9){
     display: block;
-    text-align: center;
-}
-
-
-.brief-history .table > label > div:nth-child(9){
-    text-align: center;
+    text-align: left;
 }
 
 

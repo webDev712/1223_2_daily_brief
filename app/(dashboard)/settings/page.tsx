@@ -29,6 +29,7 @@ export default function Settings() {
   const [selectedNewAdmin, setSelectedNewAdmin] = useState<string>();
   const [plans, setPlans] = useState<Plan[]>();
   const [companyName, setCompanyName] = useState<string>();
+  const [smrtApiKey, setSmrtApiKey] = useState('');
   const [allowSave, setAllowSave] = useState(false);
   const [billings, setBillings] = useState<Billing[]>();
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -130,13 +131,14 @@ export default function Settings() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(company)
+      body: JSON.stringify({...company, smrt_api_key: smrtApiKey})
     })
     if (!company_res.ok) {
-      console.log("Error while sending company data.");
+      toast.error(t('toast.companySaveError'));
       setLoading(false)
       return;
     }
+    setSmrtApiKey('');
     setReload(prev => prev + 1);
   }
 
@@ -474,6 +476,10 @@ const [shiftTo, setShiftTo] = useState('16:00');
                           <label>
                             <span>{t('company.createdAt')}</span>
                             <input type="text" value={format(new Date(company.created_at), 'MM-dd-yyyy')} disabled className='d' onChange={() => {}}/>
+                          </label>
+                          <label>
+                            <span>{t('company.smrtApiKey')}</span>
+                            <input type="password" value={smrtApiKey} autoComplete="new-password" placeholder={t('company.smrtApiKeyPlaceholder')} onChange={(e) => {setSmrtApiKey(e.target.value); setAllowSave(true);}} />
                           </label>
                         </div>
                       </div>

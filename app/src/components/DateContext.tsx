@@ -4,6 +4,9 @@ import { createContext, useContext } from "react";
 
 type DateContextType = {
   date: Date;
+  today: string;
+  timezone: string;
+  now: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
 };
 

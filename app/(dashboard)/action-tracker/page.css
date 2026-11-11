@@ -160,8 +160,11 @@
     display: flex;
     gap: 10px;
     text-align: center;
-    width: max-content;
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
     justify-content: center;
+    overflow-wrap: break-word;
 }
 
 .action-tracker .a-table-wrapper .a-table-header > div:nth-child(3),
@@ -183,12 +186,26 @@
     padding-right: 5px;
 }
 
+.action-tracker .a-table-wrapper .a-table-header > div:nth-child(5),
+.action-tracker .a-table > div > div:nth-child(5){
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    overflow-wrap: break-word;
+}
+
+.action-tracker .a-table-wrapper .a-table-header > div:nth-child(6),
+.action-tracker .a-table > div > div:nth-child(6){
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+}
+
 
 .action-tracker .a-table-wrapper .a-table-header > div:nth-child(7),
 .action-tracker .a-table > div > div:nth-child(7){
-    width: 300px;
-    min-width: 300px;
-    max-width: 300px;
+    flex: 1;
+    min-width: 0;
     font-weight: 600;
     padding: 10px 20px;
 }
@@ -543,7 +560,7 @@
 }
 
 
-.action-tracker .confirm.add-issue-or-observation > div > div:nth-child(2) > form > label:first-child {
+.action-tracker .confirm.add-issue-or-observation > div > div:nth-child(2) > form > label:nth-child(9) {
     grid-column: 1 / -1;
 }
 

@@ -1,88 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
 import sql from "@/lib/db";
 import { IdName } from "@/lib/types";
-import { auth } from "@/auth";
+import { getCurrentUser } from "@/lib/auth";
+import { managesBriefs } from "@/lib/briefs";
 
 export async function GET(request: NextRequest) {
     try{
-        const session = await auth();
+        const user = await getCurrentUser();
 
-        if (!session?.user) {
+        if (!user) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
             );
         }
 
-        const user_id = session.user.id;
-        const company_id = session.user.company_id;
-        const permissions = session.user.permissions;
+        const user_id = user.id;
+        const company_id = user.company_id;
+        const canSeeAll = managesBriefs(user) || user.permissions.see_all_briefs === true || user.permissions.see_dashboard === true;
             
         const { searchParams } = new URL(request.url);
-        const fromDate = searchParams.get("fromDate");
-        const toDate = searchParams.get("toDate");
-        const status = searchParams.get("status");
-        const employee = searchParams.get("employee");
-        const department = searchParams.get("department");
-        const severity = searchParams.get("severity");
-        const category = searchParams.get("category");
-        const page_size = searchParams.get("pageSize");
-        const page = searchParams.get("page");
+        const fromDate = searchParams.get("fromDate") || null;
+        const toDate = searchParams.get("toDate") || null;
+        const status = searchParams.get("status") || null;
+        const employee = searchParams.get("employee") || null;
+        const department = searchParams.get("department") || null;
+        const severity = searchParams.get("severity") || null;
+        const category = searchParams.get("category") || null;
+        const page_size = Math.max(1, Number(searchParams.get("pageSize")) || 20);
+        const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
-        const rows_count = await sql`
-            SELECT COUNT(*) 
-            FROM daily_log dl, department d, website_user u
-            WHERE dl.company_id = ${company_id}
-                AND u.company_id = ${company_id}
+        const filterParams = [
+            company_id,
+            fromDate,
+            toDate,
+            employee,
+            department,
+            status,
+            severity,
+            category,
+            canSeeAll,
+            user.department_id ?? null,
+            user_id,
+        ];
+
+        const whereClause = `
+            WHERE dl.company_id = $1
+                AND u.company_id = $1
                 AND d.id = dl.department_id
                 AND u.id = dl.user_id
-            ${fromDate ? sql`
-                AND date >= ${fromDate}` : sql``}
-            ${toDate ? sql`
-                AND date <= ${toDate}` : sql``}
-            ${employee ? sql`
-                AND u.id = ${employee}` : sql``}
-            ${department ? sql`
-                AND d.id = ${department}` : sql``}
-            ${status ? sql`
-                AND status = ${status}` : sql``}
-            ${severity ? sql`
-                AND severity = ${severity}` : sql``}
-            ${category ? sql`
-                AND category = ${category}` : sql``}
-            ;
+                AND ($2::date IS NULL OR dl.date >= $2::date)
+                AND ($3::date IS NULL OR dl.date < ($3::date + INTERVAL '1 day'))
+                AND ($4::uuid IS NULL OR dl.user_id = $4::uuid OR dl.assigned_to_user_id = $4::uuid)
+                AND ($5::uuid IS NULL OR dl.department_id = $5::uuid)
+                AND ($6::text IS NULL OR LOWER(dl.status) = LOWER($6::text))
+                AND ($7::text IS NULL OR dl.severity = $7::text)
+                AND ($8::text IS NULL OR dl.category = $8::text)
+                AND ($9::boolean OR dl.department_id = $10::uuid OR dl.user_id = $11::uuid OR dl.assigned_to_user_id = $11::uuid)
         `;
 
-        const rows = await sql`
-            SELECT dl.*, d.name AS d_name, u.name AS u_name
-            FROM daily_log dl, department d, website_user u
-            WHERE dl.company_id = ${company_id}
-                AND u.company_id = ${company_id}
-                AND d.id = dl.department_id
-                AND u.id = dl.user_id
-            ${fromDate ? sql`
-                AND dl.date >= ${fromDate}` : sql``}
-            ${toDate ? sql`
-                AND dl.date <= ${toDate}` : sql``}
-            ${employee ? sql`
-                AND dl.user_id = ${employee}` : sql``}
-            ${department ? sql`
-                AND dl.department_id = ${department}` : sql``}
-            ${status ? sql`
-                AND dl.status = ${status}` : sql``}
-            ${severity ? sql`
-                AND dl.severity = ${severity}` : sql``}
-            ${category ? sql`
-                AND dl.category = ${category}` : sql``}
-            ORDER BY CASE status
+        const rows_count = await sql(`
+            SELECT COUNT(*)
+            FROM daily_log dl
+            JOIN department d ON d.id = dl.department_id
+            JOIN website_user u ON u.id = dl.user_id
+            ${whereClause}
+        `, filterParams);
+
+        const rows = await sql(`
+            SELECT dl.*, d.name AS d_name, u.name AS u_name,
+                au.name AS assigned_to_name,
+                COALESCE(sb.date::text, dl.date::date::text) AS brief_date,
+                COALESCE(sb.department_id, dl.department_id) AS brief_department_id
+            FROM daily_log dl
+            JOIN department d ON d.id = dl.department_id
+            JOIN website_user u ON u.id = dl.user_id
+            LEFT JOIN website_user au ON au.id = dl.assigned_to_user_id AND au.company_id = dl.company_id
+            LEFT JOIN saved_brief sb ON sb.id = dl.saved_brief_id AND sb.company_id = dl.company_id
+            ${whereClause}
+            ORDER BY CASE dl.status
                 WHEN 'Unset' THEN 1
                 WHEN 'In progress' THEN 2
                 WHEN 'Resolved' THEN 3
                 ELSE 4
-            END, date DESC, d_name ASC, u_name ASC
-            LIMIT ${page_size}
-            OFFSET ${(Number(page) - 1) * Number(page_size)};
-        `
+            END, dl.date DESC, d_name ASC, u_name ASC
+            LIMIT $12
+            OFFSET $13
+        `, [...filterParams, page_size, (page - 1) * page_size]);
         
         const statuses = <string[]>[];
         const employees = <IdName[]>[];
@@ -90,13 +94,16 @@ export async function GET(request: NextRequest) {
         const severities = <string[]>[];
         const categories = <string[]>[];
         
-        const all_rows = await sql`
-            SELECT dl.*, u.name AS u_name, d.name AS d_name
-            FROM daily_log dl, department d, website_user u
-            WHERE dl.company_id = ${company_id}
-                AND u.company_id = ${company_id}
-                AND d.id = dl.department_id
-                AND u.id = dl.user_id`;
+        const all_rows = await sql(`
+            SELECT dl.*, u.name AS u_name, d.name AS d_name, au.name AS assigned_to_name
+            FROM daily_log dl
+            JOIN department d ON d.id = dl.department_id
+            JOIN website_user u ON u.id = dl.user_id
+            LEFT JOIN website_user au ON au.id = dl.assigned_to_user_id AND au.company_id = dl.company_id
+            WHERE dl.company_id = $1
+                AND u.company_id = $1
+                AND ($2::boolean OR dl.department_id = $3::uuid OR dl.user_id = $4::uuid OR dl.assigned_to_user_id = $4::uuid)
+        `, [company_id, canSeeAll, user.department_id ?? null, user_id]);
         
         all_rows.map((row: any) => {
             if (row.status)
@@ -107,6 +114,12 @@ export async function GET(request: NextRequest) {
                     employees.push({
                         id: row.user_id,
                         name: row.u_name,
+                    })
+            if (row.assigned_to_user_id && row.assigned_to_name)
+                if (employees.filter((e: IdName) => e.id === row.assigned_to_user_id).length === 0)
+                    employees.push({
+                        id: row.assigned_to_user_id,
+                        name: row.assigned_to_name,
                     })
             if (row.department_id && row.d_name)
                 if (departments.filter((dep: IdName) => dep.id === row.department_id).length === 0)
@@ -140,23 +153,23 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try{
-        const session = await auth();
+        const user = await getCurrentUser();
 
-        if (!session?.user) {
+        if (!user) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
             );
         }
 
-        const company_id = session.user.company_id;
-        const permissions = session.user.permissions;
+        const company_id = user.company_id;
 
         const body = await request.json();
         const {
             id = crypto.randomUUID(),
             date,
             user_id,
+            assigned_to_user_id = null,
             department_id,
             shift,
             category,
@@ -167,13 +180,12 @@ export async function POST(request: NextRequest) {
             date_resolved = null
         } = body;
         
-        console.log('daily_log body')
-        console.log(body)
         await sql`
             INSERT INTO daily_log (
                 id,
                 date,
                 user_id,
+                assigned_to_user_id,
                 department_id,
                 shift,
                 category,
@@ -187,7 +199,8 @@ export async function POST(request: NextRequest) {
             VALUES (
                 ${id},
                 ${date},
-                ${user_id},
+                ${user_id || user.id},
+                ${assigned_to_user_id || null},
                 ${department_id},
                 ${shift},
                 ${category},
@@ -201,7 +214,8 @@ export async function POST(request: NextRequest) {
             ON CONFLICT (id)
             DO UPDATE SET
                 date = ${date},
-                user_id = ${user_id},
+                user_id = CASE WHEN daily_log.finding_id IS NOT NULL THEN daily_log.user_id ELSE ${user_id || user.id} END,
+                assigned_to_user_id = ${assigned_to_user_id || null},
                 department_id = ${department_id},
                 shift = ${shift},
                 category = ${category},
@@ -209,7 +223,8 @@ export async function POST(request: NextRequest) {
                 text = ${text},
                 status = ${date_resolved !== null ? 'Resolved' : status},
                 actions = ${JSON.stringify(actions ?? [])},
-                date_resolved = ${status === 'Resolved' || date_resolved !== null ? date_resolved : null};
+                date_resolved = ${status === 'Resolved' || date_resolved !== null ? date_resolved : null}
+            WHERE daily_log.company_id = ${company_id};
         `
         return NextResponse.json({success: true})
     } catch (error) {
@@ -223,18 +238,16 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try{
-        const session = await auth();
+        const user = await getCurrentUser();
 
-        if (!session?.user) {
+        if (!user) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
             );
         }
 
-        const user_id = session.user.id;
-        const company_id = session.user.company_id;
-        const permissions = session.user.permissions;
+        const company_id = user.company_id;
 
         const body = await request.json();
         const { id } = body;

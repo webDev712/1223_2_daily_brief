@@ -72,13 +72,22 @@
 }
 
 .reports .table-reports .report{
-    display: flex;
+    display: grid;
+    row-gap: 8px;
     padding: 10px 20px;
+}
+
+.reports .table-reports > div{
+    grid-template-columns: 2fr 5fr 2fr 2fr 5fr 2fr 2fr 2fr;
+}
+
+.reports .table-reports > .report > div{
+    grid-row: 1 / -1;
 }
 
 
 .reports .table-reports > div:first-child{
-    display: flex;
+    display: grid;
     background-color: #F7F8FC;
     padding: 10px 20px;
     color: #98A2B3;
@@ -88,11 +97,12 @@
 
 .reports .table-reports > div > * {
     flex: 5;
+    min-width: 0;
     padding: 0 5px;
     display: flex;
 }
 
-.reports .table-reports > div > :nth-child(4){
+.reports .table-reports > div > :nth-child(5){
     flex: 5;
     text-align: center;
     padding: 0 10;
@@ -100,7 +110,7 @@
 
 .reports .table-reports > div > :first-child,
 .reports .table-reports > div > :nth-child(3),
-.reports .table-reports > div > :nth-child(5),
+.reports .table-reports > div > :nth-child(4),
 .reports .table-reports > div > :nth-child(6),
 .reports .table-reports > div > :nth-child(7),
 .reports .table-reports > div > :nth-child(8){
@@ -109,17 +119,17 @@
     padding: 0 10;
 }
 
-.reports .table-reports > .report > div:nth-child(5){
-    width: 350px;
+.reports .table-reports > .report > div:nth-child(6){
+    width: auto;
 }
 
-.reports .table-reports > .report > div:nth-child(5) > div > div{
+.reports .table-reports > .report > div:nth-child(6) > div > div{
     display: flex;
     gap: 10px;
 }
 
 
-.reports .table-reports > .report > div:nth-child(5) > div > div.show > div:nth-child(1){
+.reports .table-reports > .report > div:nth-child(6) > div > div.show > div:nth-child(1){
     width: 70px;
 }
 
@@ -159,7 +169,7 @@
     opacity: 0.5;
 }
 
-.reports .table-reports > .report > div:nth-child(5) .show{
+.reports .table-reports > .report > div:nth-child(6) .show{
     text-transform: capitalize;
     padding-left: 0;
     text-align: left;
@@ -171,7 +181,7 @@
     margin: auto 0;
 }
 
-.reports .table-reports > .report > div:nth-child(6) .show,
+.reports .table-reports > .report > div:nth-child(4) .show,
 .reports .table-reports > .report > div:nth-child(3) .show{
     text-align: left;
 }
@@ -296,7 +306,7 @@
 }
 
 .reports .confirm.add-report > div > div:nth-child(2) > div:nth-child(3) > div:nth-child(2){
-    padding-left: 12px;
+    padding-left: 4px;
 }
 
 
@@ -342,7 +352,7 @@
     background-image: url('../../../public/checkbox_1.svg');
 }
 .reports .week_day_select input{
-    display: block;
+    display: none;
     width: 10px;
     height: 10px;
 }
@@ -377,6 +387,139 @@
     height: 100%;
 }
 
+.reports .schedule-stack{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.reports .table-reports .schedule-column{
+    display: grid;
+    grid-template-rows: subgrid;
+}
+
+.reports .table-reports .schedule-column > .schedule-stack{
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 1 / -1;
+    margin: 0;
+}
+
+.reports .table-reports .schedule-column:nth-child(5) > .show{
+    text-align: left;
+    line-height: 1.2;
+}
+
+.reports .schedule-entry{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.reports .table-reports .schedule-column .schedule-stack > .schedule-entry{
+    gap: 5px;
+    justify-content: center;
+}
+
+.reports .edit .schedule-entry{
+    min-height: 140px;
+}
+
+.reports .schedule-entry select{
+    width: 100%;
+    min-width: 0;
+}
+
+.reports .schedule-stack button{
+    background-color: transparent;
+}
+
+.reports .schedule-deadline{
+    flex-direction: column;
+    gap: 3px;
+}
+
+.reports .confirm.add-report .schedule-add{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.reports .confirm.add-report .report-metric-fields{
+    flex-direction: column;
+    padding-left: 4px;
+}
+
+.reports .confirm.add-report .metric_range{
+    display: flex;
+    gap: 15px;
+}
+
+.reports .confirm.add-report .metric_range label{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 100px;
+}
+
+.reports .schedule-slot{
+    border: 1px solid #E8EAED;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.reports .schedule-slot-heading{
+    display: none;
+}
+
+.reports .schedule-slot-heading button,
+.reports .schedule-add > button{
+    background-color: transparent;
+    align-self: flex-start;
+}
+
+.reports .schedule-slot-fields{
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 14px;
+}
+
+.reports .schedule-slot-action{
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+.reports .schedule-slot-action .schedule-slot-remove{
+    width: 100%;
+    height: 38px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    background-color: transparent;
+    border: 1px solid #4361EE;
+    color: #4361EE;
+    cursor: pointer;
+    margin-top: auto;
+}
+
+.reports .schedule-slot-action .schedule-slot-remove:hover{
+    background-color: #4361EE;
+    color: #FFFFFF;
+}
+
+.reports .schedule-slot-fields > div{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.reports .schedule-slot-fields .schedule-entry{
+    min-height: 0;
+}
+
 .reports .search{
     width: 100%;
         border: 1px solid #E8EAED;
@@ -388,6 +531,10 @@
 }
 
 @media (max-width: 500px) {
+    .reports .schedule-slot-fields{
+        grid-template-columns: 1fr;
+    }
+
     .reports .table-wrapper{
         width: 100%;
         overflow-x: auto;

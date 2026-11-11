@@ -168,13 +168,28 @@
     text-wrap-mode: wrap;
 }
 
+.daily-brief .report > :nth-child(5) > div > span {
+    min-width: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
 .daily-brief .report > :nth-child(6) {
+    font-size: 14px;
+    font-family: inherit;
     color: #9CA3AF;
     width: 140px;
     min-width: 140px;
     max-width: 140px;
     text-wrap-mode: wrap;
     line-break: anywhere;
+}
+
+.daily-brief .report > :nth-child(6) input,
+.daily-brief .report > :nth-child(6) textarea {
+    font-family: inherit;
+    font-size: 14px;
 }
 
 .daily-brief .report > :nth-child(7) {
@@ -357,6 +372,11 @@
     margin: auto 0;
 }
 
+.daily-brief .shift-info > div:first-child > h1{
+    background-image: url('../../../public/brief_2.svg');
+    background-size: 14px;
+}
+
 .daily-brief .confirm.callout h1{
     background-image: none;
     padding-left: 0;
@@ -421,46 +441,38 @@
 .daily-brief .info{
     width: max-content;
     font-weight: 600;
-    padding: 3px 7px;
+    padding: 3px 8px 3px 24px;
     border-radius: 6px;
     font-size: 12px;
+    background-repeat: no-repeat;
+    background-position: left 6px center;
+    background-size: 13px;
 }
 
 
 .daily-brief .high{
     color: #DC2626;
     background-color: #FEE2E2;
+    background-image: url('../../../public/high.svg');
 }
 
 .daily-brief .moderate{
     color: #D97706;
     background-color: #FFFBEB;
+    background-image: url('../../../public/medium.svg');
 }
 
 .daily-brief .info{
     color: #7184FF;
     background-color: #e2e3fe;
+    background-image: url('../../../public/info.svg');
 }
 
 
 .daily-brief .high-container,
 .daily-brief .moderate-container,
 .daily-brief .info-container{
-    background-repeat: no-repeat;
-    background-position: left 15px top 18px;
-}
-
-
-.daily-brief .high-container{
-    background-image: url('../../../public/high.svg');
-}
-
-.daily-brief .moderate-container{
-    background-image: url('../../../public/medium.svg');
-}
-
-.daily-brief .info-container{
-    background-image: url('../../../public/info.svg');
+    background-image: none;
 }
 
 
@@ -477,8 +489,9 @@
 
 .daily-brief .shift-info > div:nth-child(2){
     display: flex;
+    flex-direction: column;
     justify-content: left;
-    gap: 10px;
+    gap: 15px;
     padding: 20px;
 }
 
@@ -541,13 +554,13 @@
     border: none;
     background-position: center;
     width: 10px !important;
-    height: 100% !important;
+    height: 36px !important;
     display: block;
     padding: 0;
 }
 
 
-.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div:nth-child(2){
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div:nth-child(3){
     flex: 8;
 }
 
@@ -556,7 +569,8 @@
     min-width: 60px;
 }
 
-.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div input {
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div input,
+.daily-brief .shift-info > div:nth-child(3) > div:nth-child(n + 2) > div select {
     width: 100%;
     border: 1px solid #E8EAED;
     background-color: white;
@@ -572,11 +586,11 @@
 
 .daily-brief .shift-info div:has(> span + select),
 .daily-brief .shift-info div:has(> span + div),
-.daily-brief .shift-info div:has(> span + label){
+.daily-brief .shift-info div:has(> span + label),
+.daily-brief .shift-info > div:nth-child(2) > div:first-child > div{
     display: flex;
     flex-direction: column;
     gap: 7px;
-    /* width: 130px; */
 }
 
 
@@ -586,7 +600,8 @@
 .daily-brief .add-finding > div > span,
 .daily-brief .add-task span,
 .daily-brief .shift-info div:has(> span + select) > span,
-.daily-brief .shift-info div:has(> span + div) > span{
+.daily-brief .shift-info div:has(> span + div) > span,
+.daily-brief .shift-info > div:nth-child(2) > div:first-child > div > span{
     font-size: 12px;
     color: #9CA3AF;
     margin-bottom: 5px;
@@ -596,7 +611,8 @@
     color: #6B7280;
 }
 
-.daily-brief .shift-info div:has(> span + select) > span{
+.daily-brief .shift-info div:has(> span + select) > span,
+.daily-brief .shift-info > div:nth-child(2) > div:first-child > div:nth-child(3) > span{
     padding-left: 4px;
 }
 
@@ -613,7 +629,8 @@
 }
 
 .daily-brief .send-to-action-tracker{
-    margin-left: auto;
+    margin-right: auto;
+    align-items: center;
 }
 
 .daily-brief .send-to-action-tracker input,
@@ -793,20 +810,21 @@
     display: flex;
     background-color: #F5F7FA;
     border: 1px solid #E8EAED;
-    padding: 12px 12px 12px 40px;
+    padding: 12px;
     border-radius: 14px;
 }
 
 .daily-brief .finding > div:last-child{
     margin-left: auto;
-    margin-top: auto;
+    margin-bottom: auto;
     color: #9CA3AF;
     font-size: 12px;
+    white-space: nowrap;
 }
 
-.daily-brief .finding > :first-child > :first-child{
+.daily-brief .finding > :first-child > :last-child{
     font-size: 14px;
-    margin-bottom: 5px;
+    margin-top: 5px;
     color: #0A0C10;
 }
 
@@ -826,10 +844,11 @@
 }
 
 
-.daily-brief .add-finding > div:nth-last-child(2){
+.daily-brief .add-finding > div:last-child{
     display: flex;
     flex-direction: row;
     justify-content: right;
+    align-items: center;
     gap: 10px;
 }
 
@@ -869,16 +888,29 @@
     gap: 10px;
 }
 
-.daily-brief .handoff > div:nth-child(2) > div:nth-child(2),
 .daily-brief .handoff > div:nth-child(2) > div:first-child > div{
-    width: 50%;
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
-
 .daily-brief .handoff > div:nth-child(2) > div:nth-child(2){
     width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.daily-brief .no-duty-block{
+    margin: 0;
+    padding: 16px 20px;
+    background-color: #F8F9FA;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    text-align: center;
+    color: #6B7280;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .daily-brief .no-briefs{

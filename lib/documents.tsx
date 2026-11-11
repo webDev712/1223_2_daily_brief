@@ -1,7 +1,22 @@
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { SavedBrief } from './types';
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { toast } from 'sonner';
+
+function formatBriefDate(dateStr: string | null | undefined, fmt: string, fallback: string = "Unknown Date"): string {
+  if (!dateStr) return fallback;
+  try {
+    const d = dateStr.includes("T") ? new Date(dateStr) : parse(dateStr, "yyyy-MM-dd", new Date());
+    return format(d, fmt);
+  } catch {
+    return fallback;
+  }
+}
+
+function capitalizeText(str: string | null | undefined): string {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 export function generateEmailHTML(b: SavedBrief) {
   const badge = {
@@ -10,7 +25,11 @@ export function generateEmailHTML(b: SavedBrief) {
     info: "#0d6efd",
   };
 
-  const reviewed = b.reports.filter((r: any) => r.checked);
+  const reviewed = (b.reports || []).filter((r: any) => r.checked);
+  const total = b.reports_all_count ?? (b.reports ? b.reports.length : 0);
+  const companyName = b.company_name || "HELENA'S CLEANERS";
+  const departmentName = b.department_name || "";
+  const dateFormatted = formatBriefDate(b.date, "MMMM d, yyyy");
 
   const html = `
     <!DOCTYPE html>
@@ -28,7 +47,7 @@ export function generateEmailHTML(b: SavedBrief) {
     ">
 
     <div style="
-        max-width:760px;
+        max-width:820px;
         margin:auto;
         background:white;
         border-radius:12px;
@@ -46,7 +65,7 @@ export function generateEmailHTML(b: SavedBrief) {
                 font-size:14px;
                 letter-spacing:2px;
                 text-transform:uppercase;
-            ">HELENA'S CLEANERS
+            ">${companyName.toUpperCase()}${departmentName ? ` · ${departmentName.toUpperCase()} DEPARTMENT` : ""}
             </div>
 
             <h1 style="
@@ -54,18 +73,57 @@ export function generateEmailHTML(b: SavedBrief) {
                 font-size:30px;
                 font-weight:700;
             ">
-                Daily Lead Brief
+                ${departmentName ? `${departmentName} Brief` : "Daily Lead Brief"}
             </h1>
 
             <div style="opacity:.8;margin-top:8px;">
-                ${format(new Date(), "MMMM d, yyyy")}
+                ${dateFormatted}
             </div>
         </div>
 
         <div style="padding:30px;">
 
+            ${b.is_department_journal && b.duties && b.duties.length > 0 ? `
             <h2 style="margin-top:0;">
-                Lead ${b.letter} — ${b.lead_name}
+                ${departmentName ? `${departmentName} Department` : "Team"}
+            </h2>
+
+            <table style="width:100%;border-collapse:collapse;margin-bottom:15px;font-size:14px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #eee;text-align:left;color:#666;">
+                        <th style="padding:8px 4px;">Employee</th>
+                        <th style="padding:8px 4px;">Shift</th>
+                        <th style="padding:8px 4px;">Assignment</th>
+                        <th style="padding:8px 4px;">Reports</th>
+                        <th style="padding:8px 4px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${b.duties.map((d: any) => {
+                        const userReports = (b.reports || []).filter((r: any) => r.holder_id === d.user_id);
+                        const userDone = userReports.filter((r: any) => r.checked).length;
+                        const status = d.ended_at
+                            ? `Transferred to ${d.handed_to || "another lead"}`
+                            : (userReports.length === 0 ? "Pending" : (userDone === userReports.length ? "Completed" : "In progress"));
+                        return `
+                        <tr style="border-bottom:1px solid #f0f0f0;">
+                            <td style="padding:8px 4px;"><b>${d.name}</b></td>
+                            <td style="padding:8px 4px;">${d.shift || "-"}</td>
+                            <td style="padding:8px 4px;">${d.driving ? "🚚 Driving" : "🏢 Floor"}</td>
+                            <td style="padding:8px 4px;">${userDone} / ${userReports.length}</td>
+                            <td style="padding:8px 4px;">${status}</td>
+                        </tr>
+                        `;
+                    }).join("")}
+                </tbody>
+            </table>
+
+            <div style="margin-bottom:25px;font-size:14px;color:#555;">
+                <b>Total Reports Reviewed:</b> ${reviewed.length} / ${total}
+            </div>
+            ` : `
+            <h2 style="margin-top:0;">
+                Lead ${b.letter ? `${b.letter} — ` : ""}${b.lead_name}
             </h2>
 
             <table style="width:100%;border-collapse:collapse;margin-bottom:30px;">
@@ -81,79 +139,81 @@ export function generateEmailHTML(b: SavedBrief) {
 
                 <tr>
                     <td><b>Reports Reviewed</b></td>
-                    <td>${reviewed.length} / ${b.reports_all_count}</td>
+                    <td>${reviewed.length} / ${total}</td>
                 </tr>
             </table>
+            `}
 
-            <h3 style="color:#caa85d;">Reports</h3>
+            <h3 style="color:#caa85d;margin-bottom:12px;">Reports</h3>
 
-            ${
-              reviewed.length
-                ? `
-            <table style="width:100%;border-collapse:collapse;">
-                ${reviewed
-                  .map(
-                    (r: any) => `
-                    <tr>
-                        <td style="padding:8px 0;">✅</td>
-                        <td>${r.name || "Untitled Report"}</td>
-                        <td>${r.source}</td>
-                        <td align="right">
-                            ${
-                              r.timestamp
-                                ? format(new Date(r.timestamp), "h:mm a")
-                                : ""
-                            }
-                        </td>
+            ${(b.reports && b.reports.length > 0) ? `
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #eee;text-align:left;color:#666;">
+                        <th style="padding:6px 4px;width:24px;"></th>
+                        <th style="padding:6px 4px;">Report</th>
+                        <th style="padding:6px 4px;">Schedule</th>
+                        <th style="padding:6px 4px;">Source</th>
+                        <th style="padding:6px 4px;">Employee</th>
+                        <th style="padding:6px 4px;">Result</th>
+                        <th style="padding:6px 4px;text-align:right;">Time</th>
                     </tr>
-                `
-                  )
-                  .join("")}
+                </thead>
+                <tbody>
+                    ${b.reports.map((r: any) => {
+                        const schedule = [r.day_time ? capitalizeText(r.day_time) : "", r.shift_name].filter(Boolean).join(" · ");
+                        const isImg = r.metric === "Image" && r.text;
+                        const resultDisplay = isImg
+                            ? `<a href="${r.text}" target="_blank" style="color:#0d6efd;text-decoration:none;">📷 Photo</a>`
+                            : (r.text ? r.text : (r.checked ? "Completed" : "-"));
+                        const timeDisplay = r.timestamp ? format(new Date(r.timestamp), "h:mm a") : "-";
+                        return `
+                        <tr style="border-bottom:1px solid #f0f0f0;">
+                            <td style="padding:8px 4px;">${r.checked ? "✅" : "⬜"}</td>
+                            <td style="padding:8px 4px;"><b>${r.name || "Untitled Report"}</b></td>
+                            <td style="padding:8px 4px;color:#666;">${schedule || "-"}</td>
+                            <td style="padding:8px 4px;"><span style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:11px;">${r.source || "-"}</span></td>
+                            <td style="padding:8px 4px;">${(r.checked ? r.completed_by_name : null) || r.holder_name || "-"}</td>
+                            <td style="padding:8px 4px;">${resultDisplay}</td>
+                            <td style="padding:8px 4px;text-align:right;color:#666;">${timeDisplay}</td>
+                        </tr>
+                        `;
+                    }).join("")}
+                </tbody>
             </table>
-            `
-                : `<p>No reports reviewed.</p>`
-            }
+            ` : `<p>No reports on file.</p>`}
 
-            ${
-              b.findings?.length
-                ? `
+            ${b.findings?.length ? `
             <h3 style="margin-top:35px;color:#caa85d;">Findings</h3>
 
-            ${b.findings
-              .map(
-                (f: any) => `
+            ${b.findings.map((f: any) => `
                 <div style="
                     margin:8px 0;
                     padding:10px 14px;
-                    border-left:5px solid ${badge[f.type as keyof typeof badge]};
+                    border-left:5px solid ${badge[f.type as keyof typeof badge] || badge.info};
                     background:#fafafa;
                 ">
-                    ${f.description}
+                    <div>${f.description}</div>
+                    <div style="font-size:12px;color:#888;margin-top:4px;">
+                        ${[
+                            f.type ? f.type.toUpperCase() : null,
+                            f.category ? `Category: ${f.category}` : null,
+                            f.created_at ? format(new Date(f.created_at), "h:mm a") : null
+                        ].filter(Boolean).join(" · ")}
+                    </div>
                 </div>
-            `
-              )
-              .join("")}
-            `
-                : ""
-            }
+            `).join("")}
+            ` : ""}
 
             <h3 style="margin-top:35px;color:#caa85d;">Tasks</h3>
 
-            ${
-              b.tasks?.length
-                ? `
-                ${b.tasks
-                  .map(
-                    (t: any) => `
+            ${b.tasks?.length ? `
+                ${b.tasks.map((t: any) => `
                     <div style="
                         padding:8px 0;
                         border-bottom:1px solid #eee;
                     ">
-                        ${
-                          t.checked
-                            ? "✅"
-                            : "⬜"
-                        }
+                        ${t.checked ? "✅" : "⬜"}
                         <b>${t.text}</b>
 
                         <span style="
@@ -163,16 +223,39 @@ export function generateEmailHTML(b: SavedBrief) {
                             (${t.task_type})
                         </span>
                     </div>
-                `
-                  )
-                  .join("")}
-            `
-                : "<p>No tasks.</p>"
-            }
+                `).join("")}
+            ` : "<p>No tasks.</p>"}
 
-            ${
-              b.notes
-                ? `
+            ${b.covered && b.covered.length > 0 ? `
+            <h3 style="margin-top:35px;color:#caa85d;">Coverage</h3>
+
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #eee;text-align:left;color:#666;">
+                        <th style="padding:6px 4px;">Driver</th>
+                        <th style="padding:6px 4px;">Covering For</th>
+                        <th style="padding:6px 4px;">Route Zone</th>
+                        <th style="padding:6px 4px;">Van</th>
+                        <th style="padding:6px 4px;">Stops</th>
+                        <th style="padding:6px 4px;">Windows</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${b.covered.map((c: any) => `
+                    <tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:8px 4px;"><b>${c.driver_name || "-"}</b></td>
+                        <td style="padding:8px 4px;">${c.covering_for || "-"}</td>
+                        <td style="padding:8px 4px;">${c.route_zone || "-"}</td>
+                        <td style="padding:8px 4px;">${c.van || "-"}</td>
+                        <td style="padding:8px 4px;">${c.stops ?? "-"}</td>
+                        <td style="padding:8px 4px;">${c.windows || "-"}</td>
+                    </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+            ` : ""}
+
+            ${b.notes ? `
             <h3 style="margin-top:35px;color:#caa85d;">Notes</h3>
 
             <div style="
@@ -183,9 +266,7 @@ export function generateEmailHTML(b: SavedBrief) {
             ">
                 ${b.notes}
             </div>
-            `
-                : ""
-            }
+            ` : ""}
 
         </div>
 
@@ -338,7 +419,7 @@ const pdfStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#9a9a9a",
     borderRadius: 2,
-    marginRight: 10,
+    marginRight: 8,
   },
   checkboxChecked: {
     backgroundColor: "#4c7a3c",
@@ -346,22 +427,32 @@ const pdfStyles = StyleSheet.create({
   },
   badge: {
     borderRadius: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    marginRight: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 8,
   },
   badgeText: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 0.5,
   },
+  reportContent: {
+    flex: 1,
+  },
+  reportName: {
+    fontSize: 9.5,
+    color: PDF_COLORS.bodyText,
+  },
+  reportMeta: {
+    fontSize: 7.5,
+    color: PDF_COLORS.mutedText,
+    marginTop: 2,
+  },
   rowText: {
     fontSize: 9.5,
-    flex: 1,
   },
   rowTextChecked: {
     color: PDF_COLORS.mutedText,
-    textDecoration: "line-through",
   },
   rowTime: {
     fontSize: 8,
@@ -385,6 +476,29 @@ const pdfStyles = StyleSheet.create({
     color: PDF_COLORS.bodyText,
     lineHeight: 1.4,
   },
+  tableHeader: {
+    flexDirection: "row",
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#d0d0d0",
+    marginBottom: 4,
+  },
+  tableHeaderCol: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#6b6b70",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eeeeee",
+    alignItems: "center",
+  },
+  tableCol: {
+    fontSize: 8.5,
+    color: PDF_COLORS.bodyText,
+  },
 });
 
 function PdfSectionCard({
@@ -397,8 +511,8 @@ function PdfSectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <View style={pdfStyles.section} wrap={false}>
-      <View style={pdfStyles.sectionHeader}>
+    <View style={pdfStyles.section}>
+      <View style={pdfStyles.sectionHeader} wrap={false}>
         <Text style={pdfStyles.sectionEyebrow}>{eyebrow}</Text>
         <Text style={pdfStyles.sectionTitle}>{title}</Text>
       </View>
@@ -415,8 +529,16 @@ function PdfReportsList({ reports }: { reports: any[] }) {
     <View>
       {reports.map((r: any, i: number) => {
         const c = sourceBadgeColor(r.source);
+        const schedule = [r.day_time ? capitalizeText(r.day_time) : "", r.shift_name].filter(Boolean).join(" · ");
+        const employeeName = (r.checked ? r.completed_by_name : null) || r.holder_name;
+        const metaDetails = [
+          schedule ? `[${schedule}]` : null,
+          employeeName ? `Employee: ${employeeName}` : null,
+          r.metric === "Image" ? (r.text ? "Photo attached" : null) : (r.text ? `Val: ${r.text}` : null),
+        ].filter(Boolean).join(" | ");
+
         return (
-          <View key={r.id ?? i} style={[pdfStyles.row, i === reports.length - 1 ? pdfStyles.rowLast : {}]}>
+          <View key={r.id ?? i} style={[pdfStyles.row, i === reports.length - 1 ? pdfStyles.rowLast : {}]} wrap={false}>
             <View style={[pdfStyles.checkbox, r.checked ? pdfStyles.checkboxChecked : {}]} />
             {r.source ? (
               <View style={[pdfStyles.badge, { backgroundColor: c.bg }]}>
@@ -425,9 +547,16 @@ function PdfReportsList({ reports }: { reports: any[] }) {
                 </Text>
               </View>
             ) : null}
-            <Text style={[pdfStyles.rowText, r.checked ? pdfStyles.rowTextChecked : {}]}>
-              {r.name || "Untitled report"}
-            </Text>
+            <View style={pdfStyles.reportContent}>
+              <Text style={[pdfStyles.reportName, r.checked ? pdfStyles.rowTextChecked : {}]}>
+                {r.name || "Untitled report"}
+              </Text>
+              {metaDetails ? (
+                <Text style={pdfStyles.reportMeta}>
+                  {metaDetails}
+                </Text>
+              ) : null}
+            </View>
             {r.timestamp ? (
               <Text style={pdfStyles.rowTime}>{format(new Date(r.timestamp), "h:mm a")}</Text>
             ) : null}
@@ -446,12 +575,24 @@ function PdfFindingsList({ findings }: { findings: any[] }) {
     <View>
       {findings.map((f: any, i: number) => {
         const c = FINDING_BADGE[f.type] ?? FINDING_BADGE.info;
+        const details = [
+          f.category ? `Category: ${f.category}` : null,
+          f.created_at ? format(new Date(f.created_at), "h:mm a") : null,
+        ].filter(Boolean).join(" | ");
+
         return (
-          <View key={f.id ?? i} style={[pdfStyles.row, i === findings.length - 1 ? pdfStyles.rowLast : {}]}>
+          <View key={f.id ?? i} style={[pdfStyles.row, i === findings.length - 1 ? pdfStyles.rowLast : {}]} wrap={false}>
             <View style={[pdfStyles.badge, { backgroundColor: c.bg }]}>
               <Text style={[pdfStyles.badgeText, { color: c.text }]}>{c.label}</Text>
             </View>
-            <Text style={pdfStyles.rowText}>{f.description}</Text>
+            <View style={pdfStyles.reportContent}>
+              <Text style={pdfStyles.reportName}>{f.description}</Text>
+              {details ? (
+                <Text style={pdfStyles.reportMeta}>
+                  {details}
+                </Text>
+              ) : null}
+            </View>
           </View>
         );
       })}
@@ -477,7 +618,7 @@ function PdfTasksList({ tasks }: { tasks: any[] }) {
             {groupName} ({groupTasks.filter((t) => t.checked).length}/{groupTasks.length})
           </Text>
           {groupTasks.map((t: any, i: number) => (
-            <View key={t.id ?? i} style={[pdfStyles.row, i === groupTasks.length - 1 ? pdfStyles.rowLast : {}]}>
+            <View key={t.id ?? i} style={[pdfStyles.row, i === groupTasks.length - 1 ? pdfStyles.rowLast : {}]} wrap={false}>
               <View style={[pdfStyles.checkbox, t.checked ? pdfStyles.checkboxChecked : {}]} />
               <Text style={[pdfStyles.rowText, t.checked ? pdfStyles.rowTextChecked : {}]}>{t.text}</Text>
             </View>
@@ -488,38 +629,114 @@ function PdfTasksList({ tasks }: { tasks: any[] }) {
   );
 }
 
+function PdfCoverageList({ covered }: { covered: any[] }) {
+  if (!covered || covered.length === 0) {
+    return <Text style={pdfStyles.emptyText}>No coverage entries.</Text>;
+  }
+  return (
+    <View>
+      <View style={pdfStyles.tableHeader}>
+        <Text style={[pdfStyles.tableHeaderCol, { width: "22%" }]}>DRIVER</Text>
+        <Text style={[pdfStyles.tableHeaderCol, { width: "24%" }]}>COVERING FOR</Text>
+        <Text style={[pdfStyles.tableHeaderCol, { width: "18%" }]}>ZONE</Text>
+        <Text style={[pdfStyles.tableHeaderCol, { width: "12%" }]}>VAN</Text>
+        <Text style={[pdfStyles.tableHeaderCol, { width: "10%" }]}>STOPS</Text>
+        <Text style={[pdfStyles.tableHeaderCol, { width: "14%" }]}>WINDOWS</Text>
+      </View>
+      {covered.map((c: any, i: number) => (
+        <View key={c.id ?? i} style={pdfStyles.tableRow} wrap={false}>
+          <Text style={[pdfStyles.tableCol, { width: "22%", fontFamily: "Helvetica-Bold" }]}>{c.driver_name || "-"}</Text>
+          <Text style={[pdfStyles.tableCol, { width: "24%" }]}>{c.covering_for || "-"}</Text>
+          <Text style={[pdfStyles.tableCol, { width: "18%" }]}>{c.route_zone || "-"}</Text>
+          <Text style={[pdfStyles.tableCol, { width: "12%" }]}>{c.van || "-"}</Text>
+          <Text style={[pdfStyles.tableCol, { width: "10%" }]}>{c.stops ?? "-"}</Text>
+          <Text style={[pdfStyles.tableCol, { width: "14%" }]}>{c.windows || "-"}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function DailyBriefDocument({ brief }: { brief: any }) {
   const reviewed = (brief.reports || []).filter((r: any) => r.checked);
   const total = brief.reports_all_count ?? (brief.reports ? brief.reports.length : 0);
+  const companyName = brief.company_name || "HELENA'S CLEANERS";
+  const departmentName = brief.department_name || "";
+  const subtitleDate = formatBriefDate(brief.date, "EEEE, MMMM d, yyyy");
 
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.header}>
-          <Text style={pdfStyles.eyebrow}>HELENA'S CLEANERS · ROUTE DEPARTMENT</Text>
-          <Text style={pdfStyles.title}>Daily Lead Brief</Text>
-          <Text style={pdfStyles.subtitle}>
-            {brief.date ? format(new Date(brief.date), "EEEE, MMMM d, yyyy") : ""}
+          <Text style={pdfStyles.eyebrow}>
+            {companyName.toUpperCase()}{departmentName ? ` · ${departmentName.toUpperCase()} DEPARTMENT` : ""}
           </Text>
+          <Text style={pdfStyles.title}>
+            {departmentName ? `${departmentName} Brief` : "Daily Lead Brief"}
+          </Text>
+          <Text style={pdfStyles.subtitle}>{subtitleDate}</Text>
         </View>
 
-        <PdfSectionCard eyebrow={`EMPLOYEE ${brief.letter ?? ""}`} title={brief.lead_name}>
-          <View style={pdfStyles.metaRow}>
-            <Text style={pdfStyles.metaText}>
-              Shift — <Text style={{ color: PDF_COLORS.bodyText }}>{brief.shift || "—"}</Text>
-            </Text>
-            <Text style={pdfStyles.metaDivider}>|</Text>
-            <Text style={pdfStyles.metaText}>
-              Reports reviewed:{" "}
-              <Text style={pdfStyles.metaHighlight}>
-                {reviewed.length} / {total}
+        {brief.is_department_journal && brief.duties && brief.duties.length > 0 ? (
+          <PdfSectionCard eyebrow="DEPARTMENT TEAM" title={departmentName || "Daily Brief"}>
+            <View style={pdfStyles.metaRow}>
+              <Text style={pdfStyles.metaText}>
+                Reports reviewed:{" "}
+                <Text style={pdfStyles.metaHighlight}>
+                  {reviewed.length} / {total}
+                </Text>
               </Text>
-            </Text>
-            <Text style={pdfStyles.metaDivider}>|</Text>
-            <Text style={pdfStyles.metaText}>{brief.driving ? "Driving" : "On-site"}</Text>
-          </View>
+              <Text style={pdfStyles.metaDivider}>|</Text>
+              <Text style={pdfStyles.metaText}>
+                {brief.driving ? "Driving active" : "On-site"}
+              </Text>
+            </View>
 
-          <Text style={pdfStyles.blockLabel}>REPORTS</Text>
+            <View style={{ marginTop: 4 }}>
+              <View style={pdfStyles.tableHeader}>
+                <Text style={[pdfStyles.tableHeaderCol, { width: "26%" }]}>EMPLOYEE</Text>
+                <Text style={[pdfStyles.tableHeaderCol, { width: "26%" }]}>SHIFT</Text>
+                <Text style={[pdfStyles.tableHeaderCol, { width: "22%" }]}>ASSIGNMENT</Text>
+                <Text style={[pdfStyles.tableHeaderCol, { width: "26%" }]}>STATUS</Text>
+              </View>
+              {brief.duties.map((d: any, i: number) => {
+                const userReports = (brief.reports || []).filter((r: any) => r.holder_id === d.user_id);
+                const userDone = userReports.filter((r: any) => r.checked).length;
+                const status = d.ended_at
+                  ? `Transferred to ${d.handed_to || "lead"}`
+                  : (userReports.length === 0 ? "Pending" : (userDone === userReports.length ? "Completed" : "In progress"));
+
+                return (
+                  <View key={d.user_id ?? i} style={pdfStyles.tableRow} wrap={false}>
+                    <Text style={[pdfStyles.tableCol, { width: "26%", fontFamily: "Helvetica-Bold" }]}>{d.name}</Text>
+                    <Text style={[pdfStyles.tableCol, { width: "26%" }]}>{d.shift || "-"}</Text>
+                    <Text style={[pdfStyles.tableCol, { width: "22%" }]}>{d.driving ? "Driving" : "Floor"}</Text>
+                    <Text style={[pdfStyles.tableCol, { width: "26%", fontSize: 8, color: PDF_COLORS.mutedText }]}>{status}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </PdfSectionCard>
+        ) : (
+          <PdfSectionCard eyebrow={`EMPLOYEE ${brief.letter ?? ""}`} title={brief.lead_name}>
+            <View style={pdfStyles.metaRow}>
+              <Text style={pdfStyles.metaText}>
+                Shift — <Text style={{ color: PDF_COLORS.bodyText }}>{brief.shift || "—"}</Text>
+              </Text>
+              <Text style={pdfStyles.metaDivider}>|</Text>
+              <Text style={pdfStyles.metaText}>
+                Reports reviewed:{" "}
+                <Text style={pdfStyles.metaHighlight}>
+                  {reviewed.length} / {total}
+                </Text>
+              </Text>
+              <Text style={pdfStyles.metaDivider}>|</Text>
+              <Text style={pdfStyles.metaText}>{brief.driving ? "Driving" : "On-site"}</Text>
+            </View>
+          </PdfSectionCard>
+        )}
+
+        <PdfSectionCard eyebrow="SCHEDULED REPORTS" title="Reports">
           <PdfReportsList reports={brief.reports ?? []} />
         </PdfSectionCard>
 
@@ -530,6 +747,12 @@ function DailyBriefDocument({ brief }: { brief: any }) {
         <PdfSectionCard eyebrow="ACTION ITEMS" title="Tasks">
           <PdfTasksList tasks={brief.tasks ?? []} />
         </PdfSectionCard>
+
+        {brief.covered && brief.covered.length > 0 ? (
+          <PdfSectionCard eyebrow="ROUTE COVERAGE" title="Coverage">
+            <PdfCoverageList covered={brief.covered} />
+          </PdfSectionCard>
+        ) : null}
 
         {brief.notes ? (
           <PdfSectionCard eyebrow="SUMMARY" title="Notes">
@@ -547,9 +770,8 @@ export const downloadPDF = async (brief: any) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `daily-brief-${brief.id}-${
-      brief.date ? format(new Date(brief.date), "yyyy-MM-dd") : "brief"
-    }.pdf`;
+    const dateFormatted = brief.date ? formatBriefDate(brief.date, "yyyy-MM-dd", "brief") : "brief";
+    link.download = `daily-brief-${brief.id}-${dateFormatted}.pdf`;
     document.body.appendChild(link);
     link.click();
     link.remove();

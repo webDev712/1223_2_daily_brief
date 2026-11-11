@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { extractGraphqlFromJwt } from "@/lib/smrtSync.mjs";
 import sql from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -22,6 +23,7 @@ export async function GET () {
                 c.id,
                 c.name,
                 c.main_admin_id,
+                c.timezone,
                 c.logo,
                 c.plan_id,
                 c.stripe_customer_id,
@@ -69,13 +71,24 @@ export async function PATCH (request: NextRequest) {
             logo,
             plan_id,
             stripe_customer_id,
+            smrt_api_key,
         } = body;
+        const smrtApiKey = typeof smrt_api_key === "string" ? smrt_api_key.trim() : "";
+        if (smrtApiKey && !extractGraphqlFromJwt(smrtApiKey)) {
+            return NextResponse.json({ error: "Invalid SMRT API key" }, { status: 400 });
+        }
 
         const rows = await sql`
             UPDATE company 
-            SET name = ${name}, main_admin_id = ${main_admin_id}, logo = ${logo}, plan_id = ${plan_id}, stripe_customer_id = ${stripe_customer_id}
-            WHERE id = ${company_id};
+            SET name = ${name}, main_admin_id = ${main_admin_id}, logo = ${logo}, plan_id = ${plan_id}, stripe_customer_id = ${stripe_customer_id},
+                smrt_api_key = COALESCE(${smrtApiKey || null}, smrt_api_key)
+            WHERE id = ${company_id} AND main_admin_id = ${user_id}::uuid
+            RETURNING id;
         `
+
+        if (!rows.length) {
+            return NextResponse.json({ error: "Only the company owner can change company settings" }, { status: 403 });
+        }
 
         return NextResponse.json(rows);
     }

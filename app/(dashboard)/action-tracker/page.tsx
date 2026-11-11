@@ -14,6 +14,7 @@ import { useUser } from '@/app/src/components/UserProvider';
 import { getActionLogCategories } from '@/lib/config';
 import UserCircle from '@/app/src/components/UserCircle';
 import formatDateWithoutTimezone from '@/lib/date';
+import { safeUUID } from '@/lib/uuid';
 import { toast } from 'sonner';
 import { sendMessageGlobal } from '@/app/src/components/Chat';
 import {
@@ -36,6 +37,7 @@ import {
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import ImageUploader from '@/app/src/components/ImageUploader';
+import Link from 'next/link';
 
 registerLocale('es', es);
 
@@ -471,8 +473,15 @@ export default function ActionTracker () {
                                 <div key={row.id}>
                                     <div>{formatDateWithoutTimezone(row.date)}</div>
                                     {/* <div>{row.date}</div> */}
-                                    <div>{row.u_name}</div>
-                                    <div style={{color: getColorsFromName(row.d_name ?? '').dark}} before-text={t('table.beforeDepartment')}>{row.d_name}</div>
+                                    <div>{row.u_name}{row.assigned_to_name && row.assigned_to_name !== row.u_name ? ` → ${row.assigned_to_name}` : ''}</div>
+                                    <div style={{color: getColorsFromName(row.d_name ?? '').dark}} before-text={t('table.beforeDepartment')}>
+                                        <Link
+                                            href={`/daily-brief?${row.saved_brief_id ? `brief_id=${row.saved_brief_id}&` : ''}${row.finding_id ? `finding_id=${row.finding_id}&` : ''}${row.brief_date ? `date=${format(parse(row.brief_date, 'yyyy-MM-dd', new Date()), 'dd-MM-yyyy')}&` : ''}department_id=${row.brief_department_id ?? row.department_id}`}
+                                            style={{color: 'inherit', textDecoration: 'underline', cursor: 'pointer'}}
+                                        >
+                                            {row.d_name}
+                                        </Link>
+                                    </div>
                                     <div before-text={t('table.beforeShift')}>{row.shift}</div>
                                     <div before-text={t('table.beforeCategory')} style={{color: getColorsFromName(row.category ?? '').dark}} className='b'>{row.category}</div>
                                     <div before-text={t('table.beforeSeverity')} className={row.severity === 'Low' ? 'b' : (row.severity === 'Med' ? 'orange b' : 'red b')}>{severityLabel(row.severity)}</div>
@@ -540,14 +549,24 @@ export default function ActionTracker () {
                                     <h1>{t('form.editTitle')}</h1>
                                 )}
                                 <div>
-                                    <form id='add-action-tracker-row' onSubmit={() => {
+                                    <form id='add-action-tracker-row' onSubmit={(e) => {
+                                        e.preventDefault();
                                         sendActionTrackerRow(auditLogRowToAdd);
                                     }}>
                                         <label>
                                             <div>{t('form.employee')}</div>
-                                            <select value={auditLogRowToAdd.user_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, user_id: e.target.value})}}>
+                                            <select disabled={!!auditLogRowToAdd.finding_id} value={auditLogRowToAdd.user_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, user_id: e.target.value})}}>
                                                 {users.map((user: User) => (
                                                     <option value={user.id} key={`add_io_user_${user.id}`}>{user.name}</option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <div>{t('form.assignee')}</div>
+                                            <select value={auditLogRowToAdd.assigned_to_user_id ?? ''} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, assigned_to_user_id: e.target.value || null})}}>
+                                                <option value="">-</option>
+                                                {users.map((user: User) => (
+                                                    <option value={user.id} key={`add_io_assignee_${user.id}`}>{user.name}</option>
                                                 ))}
                                             </select>
                                         </label>
@@ -568,6 +587,9 @@ export default function ActionTracker () {
                                         <label>
                                             <div>{t('form.shift')}</div>
                                             <select value={auditLogRowToAdd.shift ?? '-'} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, shift: e.target.value})}}>
+                                                {auditLogRowToAdd.shift && !["10 AM - 6 PM", "4 PM - 10 PM", "-"].includes(auditLogRowToAdd.shift) && (
+                                                    <option value={auditLogRowToAdd.shift}>{auditLogRowToAdd.shift}</option>
+                                                )}
                                                 <option value="10 AM - 6 PM">10 AM - 6 PM</option>
                                                 <option value="4 PM - 10 PM">4 PM - 10 PM</option>
                                                 <option value="-">-</option>
@@ -596,6 +618,17 @@ export default function ActionTracker () {
                                                 <option value="High">{t('severity.high')}</option>
                                             </select>
                                         </label>
+                                        {auditLogRowToAdd.saved_brief_id && (
+                                            <label>
+                                                <div>{t('form.sourceBrief')}</div>
+                                                <Link
+                                                    href={`/daily-brief?brief_id=${auditLogRowToAdd.saved_brief_id}${auditLogRowToAdd.finding_id ? `&finding_id=${auditLogRowToAdd.finding_id}` : ''}${auditLogRowToAdd.brief_date ? `&date=${format(parse(auditLogRowToAdd.brief_date, 'yyyy-MM-dd', new Date()), 'dd-MM-yyyy')}` : ''}${auditLogRowToAdd.brief_department_id ? `&department_id=${auditLogRowToAdd.brief_department_id}` : ''}`}
+                                                    style={{textDecoration: 'none', color: '#4361EE', fontWeight: 600}}
+                                                >
+                                                    {t('form.viewSourceBrief')}
+                                                </Link>
+                                            </label>
+                                        )}
                                     </form>
                                     </div>
                                     <label>
@@ -653,24 +686,29 @@ export default function ActionTracker () {
                                 {auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved !== null && (<b>{t('actionsList.resolvedSuccessfully')}</b>)}
                                 <div className={auditLogData.find((row: DailyLogRow) => row.id === rowShowActions.id)?.date_resolved === null && user.permissions.add_actions_to_io === true ? '' : 'resolved'}>
                                     <div style={{ display: 'flex', gap: 5 }}>
-                                        <div className={user.permissions.add_actions_to_io === true ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={async () => {
+                                        <div className={user.permissions.add_actions_to_io === true && (actionToAdd.trim() || actionImage) ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={async () => {
+                                            if (user.permissions.add_actions_to_io !== true || (!actionToAdd.trim() && !actionImage)) return;
+                                            const trimmedText = actionToAdd.trim();
                                             const result = await sendActionTrackerRow({
                                                 ...rowShowActions,
                                                     actions: [
                                                     ...(rowShowActions.actions ?? []),
                                                     {
-                                                        id: crypto.randomUUID(),
-                                                        text: (actionToAdd || 'No description ') + actionImage,
+                                                        id: safeUUID(),
+                                                        text: (trimmedText || (actionImage ? '' : 'No description')) + actionImage,
                                                         date: new Date().toISOString(),
                                                         user_id: user.id
                                                     }
                                                 ],})
-                                            if (result === true) setActionImage('')
+                                            if (result === true) {
+                                                setActionImage('')
+                                                setActionToAdd('')
+                                            }
                                             if (result === true && user.id !== rowShowActions.user_id) {
                                                 sendMessageGlobal({
                                                     text: t('actionsList.notification', {
                                                         issue: rowShowActions.text.slice(0, 10),
-                                                        action: actionToAdd || 'No description',
+                                                        action: trimmedText || 'Added image',
                                                     }),
                                                     from_user: user.id,
                                                     to_user: rowShowActions.user_id,

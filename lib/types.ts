@@ -1,5 +1,14 @@
 export interface SavedBrief {
   id: number;
+  department_id: string;
+  department_name: string;
+  company_name?: string;
+  company_timezone?: string;
+  is_department_journal: boolean;
+  duty_count: number;
+  shift_id: number | null;
+  duties: { user_id: string; name: string; shift_id: number; shift: string; started_at: string; driving: boolean; ended_at: string | null; handed_to: string | null }[];
+  handoffs: { id: number; from_user_id: string; to_user_id: string; from_name: string; to_name: string; from_shift_id?: number | null; from_shift_name?: string | null; reason: string | null; notes: string | null }[];
   date: string;
   updated_at: string | null;
   driving: boolean;
@@ -18,6 +27,7 @@ export interface SavedBrief {
   tasks: Task[];
   covered: Covered[];
   created_at?: string;
+  started_at?: string | null;
 }
 
 type Assignment = {
@@ -34,6 +44,18 @@ type Assignment = {
     list: string[];
   };
 };
+
+export interface ReportSchedule {
+  slot_key: string;
+  position: number;
+  once_per: 'day' | 'week' | 'month';
+  weekday_mask: number | null;
+  month_day: number | null;
+  day_time: string;
+  shift_id: number | null;
+  holder_id: string | null;
+  check_before: string | null;
+}
 
 export interface Report {
   id: number;
@@ -53,11 +75,21 @@ export interface Report {
   metric_range_from?: number;
   metric_range_to?: number;
   department_id?: number;
-  holder_id?: string;
+  holder_id?: string | null;
   default_holder_id?: string;
   backup_start_at_day?: string;
   backup_holder_id?: string;
   check_before?: string;
+  planned_holder_id?: string | null;
+  holder_name?: string | null;
+  completed_by?: string | null;
+  completed_by_name?: string | null;
+  cancelled_at?: string | null;
+  schedules?: ReportSchedule[];
+  slot_key?: string;
+  slot_position?: number | null;
+  shift_id?: number | null;
+  shift_name?: string | null;
 }
 
 export interface Finding {
@@ -66,6 +98,10 @@ export interface Finding {
   created_at: string;
   type: string;
   description: string;
+  user_id?: string;
+  category?: string;
+  assigned_to_user_id?: string | null;
+  action_tracker_id?: string | null;
 }
 
 export interface Project {
@@ -99,6 +135,8 @@ export interface User {
   newDepartment: string | undefined,
   role_id: string,
   company_id: string,
+  main_admin_id: string | null,
+  timezone: string,
 }
 
 export interface UserForChat extends User {
@@ -115,6 +153,8 @@ export interface Shift {
 
 export interface Covered {
   id: string,
+  driver_id?: string,
+  driver_name?: string,
   covering_for: string,
   route_zone: string,
   van: string,
@@ -217,6 +257,8 @@ export interface DailyLogRow {
   date: string;
   user_id: string;
   u_name?: string;
+  assigned_to_user_id?: string | null;
+  assigned_to_name?: string | null;
   department_id: string;
   d_name?: string;
   shift: string;
@@ -226,6 +268,10 @@ export interface DailyLogRow {
   status: string;
   severity: string;
   actions: Action[] | null;
+  saved_brief_id?: number | null;
+  finding_id?: string | null;
+  brief_date?: string | null;
+  brief_department_id?: string | null;
 }
 
 export interface IdName {
@@ -243,6 +289,7 @@ export interface FiltersData {
 
 export interface Company {
   id: string,
+  timezone: string,
   name: string,
   main_admin_id: string,
   logo: string,
