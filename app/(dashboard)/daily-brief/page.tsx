@@ -434,9 +434,7 @@ export default function DailyBrief() {
     setShowAddFinding(true);
     setTimeout(() => {
       scrollToElement('add-finding');
-      if (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement) 
-        (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement).value = 
-      `Finding related to report "${r.name}":`
+      setFindingText(`Finding related to report "${r.name}":`)
     }, 300)
   }
   const departments_to_display = departments.filter(d => manager || user?.permissions.see_all_briefs
