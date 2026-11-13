@@ -248,7 +248,7 @@ export default function Dashboard() {
                   if (department.is_main){
                     let briefs_count_filtered = briefs.filter((brief: SavedBrief) => brief.department_id === department.id).length
                     return (
-                      <option key={`filter_dashboard_by_department_${department.id}`} value={department.id}>{t('department')} {department.name} ({briefs_count_filtered} brief{(briefs_count_filtered > 1 || briefs_count_filtered === 0) && 's'})</option>
+                      <option key={`filter_dashboard_by_department_${department.id}`} value={department.id}>{t('department')} {department.name}</option>
                     )
                   }
                 })}

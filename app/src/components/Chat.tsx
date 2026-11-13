@@ -73,7 +73,7 @@ export const sendMessageGlobal = async (message: NewMessage, successMessage?: st
         console.error('Error while sending message');
         return;
     }
-    toast.success(successMessage ?? 'Issue / Observation owner is notified with new action!')
+    if (successMessage) toast.success(successMessage)
 }
 
 const Chat = ({openChat, setOpenChat, class_name}: {
@@ -148,7 +148,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({
                 id: seeUserMessageAs.id, 
-                text: `NOTIFICATION: ${textareaElement.value || '-'}`, 
+                text: `INFO: ${textareaElement.value || '-'}`, 
                 timestamp: new Date(), 
                 users_ids: usersForSendMessageToGroup.map((user: UserForChat) => {if (user.sendMessageToGroupSelected) return user.id})
             })

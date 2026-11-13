@@ -13,7 +13,7 @@ import SmallLoader from '@/app/src/components/SmallLoader';
 import { useSearchParams } from 'next/navigation';
 import { randomInt } from 'crypto';
 import capitalize from '@/lib/text';
-import UserCircle from '@/app/src/components/UserCircle';
+import UserCircle, { clearOfTheTo } from '@/app/src/components/UserCircle';
 import ImageUploader from '@/app/src/components/ImageUploader';
 import isBlobLink from '@/lib/img';
 import scrollToElement from '@/lib/html_document';
@@ -21,6 +21,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getActionLogCategories } from '@/lib/config';
 import { beforeCheckTime } from '@/lib/date';
 import { safeUUID } from '@/lib/uuid';
+import MentionsHelper from '@/app/src/components/MentionsHelper';
+import { sendMessageGlobal } from '@/app/src/components/Chat';
 
 
 export default function DailyBrief() {
@@ -60,6 +62,11 @@ export default function DailyBrief() {
   const [showAddCover, setShowAddCover] = useState(false)
   const [showCallout, setShowCallout] = useState(false)
   const [reportToCallout, setReportToCallout] = useState<Report>()
+  const [findingText, setFindingText] = useState('')
+  const [findingCursor, setFindingCursor] = useState(0)
+  const [findingFocused, setFindingFocused] = useState(false)
+  const [mentionedUsers, setMentionedUsers] = useState<string[]>([])
+  const findingTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const changeBrief = (b: SavedBrief, action: string, values: Record<string, unknown> = {}) => {
     const request = requestQueue.current.then(async () => {
@@ -144,9 +151,29 @@ export default function DailyBrief() {
 
   const addFinding = async (b: SavedBrief, finding: any) => {
     if (await changeBrief(b, 'finding', {finding: {id: safeUUID(), ...finding}})) {
+      const notificationText = translation('mentionedNotification', {
+        action: finding.description.slice(0, 20),
+        date: b.date,
+        department: b.department_name
+      });
+
+      mentionedUsers
+        .filter(user_id => user_id !== user?.id)
+        .forEach(user_id => {
+          sendMessageGlobal({
+            text: notificationText,
+            from_user: user!.id,
+            to_user: user_id,
+            timestamp: new Date(),
+          });
+        });
+      if (mentionedUsers.length > 0) toast.success('Mentioned users was notified!')
       setShowAddFinding(false);
       setSendFindingToTracker(false);
-    }
+      setFindingText('');
+      setFindingCursor(0);
+      setMentionedUsers([]);
+      setFindingFocused(false);    }
   };
 
   const changeTask = async (b: SavedBrief, task: any) => {
@@ -487,16 +514,13 @@ export default function DailyBrief() {
               <span>{translation('choose_department')}</span>
             </div>
             {departments_to_display.sort((a, b) => a.name.localeCompare(b.name)).map((d) => {
-              let colors = getColorsFromName(d.name);
+              let colors = getColorsFromName(clearOfTheTo(d.name));
               return (
                 <label className='lead' style={{
-                    backgroundColor: selectedDepartment === d.id ? colors.medium : colors.light,
+                    backgroundColor: selectedDepartment === d.id ? colors.dark : colors.light,
                     color: selectedDepartment === d.id ? "white" : "#a1a1a1"}} key={d.id}>
                   <input type='radio' name='lead' checked={selectedDepartment === d.id} onChange={() => {setActiveBriefId(null); setSelectedDepartment(d.id)}} />
-                  <span style={{
-                    backgroundColor: selectedDepartment === d.id ? colors.dark : colors.medium,
-                    color: "white"
-                    }}>{d.name.split(" ").map(word => word[0]).slice(0, 2).join('')}</span> {d.name}
+                  <UserCircle user_name={d.name} size={24}></UserCircle> {d.name}
                 </label>)
             })}
           </div>
@@ -1002,31 +1026,8 @@ export default function DailyBrief() {
                                                   true
                                               );
                                           }
-
                                         }} 
-                                        // onBlur={(e) => { updateReports( b, {...r, text: e.target.value}, r.checked, true ); }}
                                         ></textarea>
-                                  // <input
-                                  //       className={r.checked ? 'input d' : 'input'}
-                                  //       value={r.text ?? ''}
-                                  //       disabled={r.checked ?? false}
-                                  //       type="text"
-
-                                  //       onChange={(e) => {
-                                  //           if (!r.checked) {
-                                  //               updateReports(
-                                  //                   b,
-                                  //                   {
-                                  //                       ...r,
-                                  //                       text: e.target.value
-                                  //                   },
-                                  //                   r.checked,
-                                  //                   false
-                                  //               );
-                                  //           }
-                                  //       }} 
-                                  //       onBlur={() => { updateReports( b, {...r,}, r.checked, true ); }}
-                                  //       />
                                 )}
                                 {(r.metric === 'Yes/No') && (
                                   <div className='flex' style={{ gap: 5, padding: '0 0 0 2px' }}>
@@ -1205,11 +1206,69 @@ export default function DailyBrief() {
                                 <option value='info'>{translation('info')}</option>
                               </select>
                             </div>
-                            <div>
-                              <span>{translation('write_description')}</span>
-                              <textarea disabled={(!manager && noAccessEdit(b)) || readOnly(b)} id={`new_f_name_${b.id}`} placeholder={translation('anything_the_next_lead_needs_to_know')} />
-                            </div>
-                            {sendFindingToTracker && (
+<div>
+  <span>{translation('write_description')}</span>
+  <div className="finding-description-wrapper">
+    <textarea
+      ref={findingTextareaRef}
+      disabled={(!manager && noAccessEdit(b)) || readOnly(b)}
+      id={`new_f_name_${b.id}`}
+      placeholder={translation('anything_the_next_lead_needs_to_know')}
+      value={findingText}
+      onChange={e => {
+        const newText = e.target.value;
+
+        setFindingText(newText);
+        setFindingCursor(e.target.selectionStart);
+
+        setMentionedUsers(
+          leads
+            .filter(u => !u.archived && newText.includes(`@${u.name}`))
+            .map(u => u.id)
+        );
+      }}
+      onClick={e => setFindingCursor(e.currentTarget.selectionStart)}
+      onKeyUp={e => setFindingCursor(e.currentTarget.selectionStart)}
+      onSelect={e => setFindingCursor(e.currentTarget.selectionStart)}
+      onFocus={() => setFindingFocused(true)}
+      onBlur={() => setFindingFocused(false)}
+    />
+
+    <MentionsHelper
+      users={leads.filter(u => !u.archived)}
+      isFocused={findingFocused}
+      value={findingText}
+      cursorPosition={findingCursor}
+      onSelect={(selectedUser, start, end) => {
+        const mention = `@${selectedUser.name} `;
+
+        const newText =
+          findingText.slice(0, start) +
+          mention +
+          findingText.slice(end);
+
+        const newCursor = start + mention.length;
+
+        setFindingText(newText);
+        setFindingCursor(newCursor);
+
+        setMentionedUsers(prev =>
+          prev.includes(selectedUser.id)
+            ? prev
+            : [...prev, selectedUser.id]
+        );
+
+        requestAnimationFrame(() => {
+          findingTextareaRef.current?.focus();
+          findingTextareaRef.current?.setSelectionRange(
+            newCursor,
+            newCursor
+          );
+        });
+      }}
+    />
+  </div>
+</div>                            {sendFindingToTracker && (
                               <>
                                 <div>
                                   <span>{translation('category')}</span>
@@ -1242,10 +1301,10 @@ export default function DailyBrief() {
                                 <span>{translation('send_to_action_tracker')}</span>
                                 <input type="checkbox" id="send-to-action-tracker" checked={sendFindingToTracker} onChange={(e) => setSendFindingToTracker(e.target.checked)} />
                               </label>
-                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false)}}>{translation('cancel')}</div>
+                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
                               <input className='button-d-bl-sm' disabled={(!manager && noAccessEdit(b)) || readOnly(b)} type="button" value={translation('add_finding')} onClick={() => { addFinding(b, {
                                     type: (document.getElementById(`new_f_type_${b.id}`) as HTMLSelectElement)?.value || '',
-                                    description: (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement)?.value || '',
+                                    description: findingText,
                                     send_to_action_tracker: sendFindingToTracker,
                                     category: sendFindingToTracker ? ((document.getElementById(`new_f_category_${b.id}`) as HTMLSelectElement)?.value || actionLogCategories[0]?.name || '') : undefined,
                                     assigned_to_user_id: sendFindingToTracker ? ((document.getElementById(`new_f_assignee_${b.id}`) as HTMLSelectElement)?.value || null) : undefined,

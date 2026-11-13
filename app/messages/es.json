@@ -153,7 +153,8 @@
       "nothing_to_transfer": "No hay reportes sin completar ni turno activo para transferir de este usuario.",
       "invalid_action": "Esta acción no está disponible.",
       "Forbidden": "No tienes permiso para realizar esta acción."
-    }
+    },
+    "mentionedNotification": "INFO: Te mencionaron en un hallazgo del departamento {department} el {date}: \"{action}...\" Abre Daily Brief para verlo."
   },
   "Sidebar": {
     "dashboard": "Panel",
@@ -609,7 +610,8 @@
       "issueResolved": "¿Problema resuelto?",
       "newActionPlaceholder": "Nueva acción...",
       "defaultUser": "Usuario",
-      "notification": "NOTIFICACIÓN: Este usuario agregó una nueva acción al problema / observación que registraste ({issue}...): {action}"
+      "notification": "INFO: Este usuario agregó una nueva acción al problema / observación que registraste ({issue}...): {action}",
+      "mentionedNotification": "INFO: Te mencionaron en una acción: \"{action}\"... Abre Action Tracker para verlo."
     },
     "confirm": {
       "deleteTitle": "¿Confirmas la eliminación de este problema / observación?",

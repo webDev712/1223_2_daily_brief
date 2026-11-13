@@ -255,7 +255,7 @@ export async function POST(request: Request) {
                         `, [
                             user.id,
                             assignedToUserId,
-                            `NOTIFICATION: ${user.name} assigned an Action Tracker issue to you (${category}, ${severityMap[f.type]}): ${description} ${briefUrl}`,
+                            `INFO: ${user.name} assigned an Action Tracker issue to you (${category}, ${severityMap[f.type]}): ${description} ${briefUrl}`,
                             user.company_id
                         ]);
                     }

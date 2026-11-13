@@ -2,7 +2,26 @@ import getColorsFromName from "@/lib/color"
 import './css/UserCircle.css'
 
 
+export function clearOfTheTo (text: string) {
+    return text
+        .replaceAll('of', '')
+        .replaceAll('to', '')
+        .replaceAll('the', '')
+        .replaceAll('and', '')
+        .replaceAll('for', '')
+        .replaceAll('in', '')
+        .replaceAll('on', '')
+        .replaceAll('at', '')
+        .replaceAll('by', '')
+        .replaceAll('from', '')
+        .replaceAll('with', '')
+        .replaceAll('   ', ' ')
+        .replaceAll('  ', ' ');
+}
+
+
 export default function UserCircle ({user_name, size, onClick}: {user_name: string, size: number, onClick?: () => void}) {
+    user_name = clearOfTheTo(user_name);
     const colors = getColorsFromName(user_name)
     let local_user_name = user_name.trim()
     let AB_name = "";

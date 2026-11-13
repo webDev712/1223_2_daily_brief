@@ -112,7 +112,7 @@ export async function PATCH(request: Request) {
             `, [
                 user.id,
                 recipient.id,
-                `NOTIFICATION: ${user.name} sent you a Handoff request for ${b.department_name ?? 'department'} brief. Please review and accept or decline. ${briefUrl}`,
+                `INFO: ${user.name} sent you a Handoff request for ${b.department_name ?? 'department'} brief. Please review and accept or decline. ${briefUrl}`,
                 user.company_id
             ]);
 
@@ -145,7 +145,7 @@ export async function PATCH(request: Request) {
             `, [
                 user.id,
                 h.from_user_id,
-                `NOTIFICATION: ${user.name} declined your Handoff request for ${b.department_name ?? 'department'} brief: "${decline_reason.trim()}". ${briefUrl}`,
+                `INFO: ${user.name} declined your Handoff request for ${b.department_name ?? 'department'} brief: "${decline_reason.trim()}". ${briefUrl}`,
                 user.company_id
             ]);
 
@@ -227,7 +227,7 @@ export async function PATCH(request: Request) {
             `, [
                 user.id,
                 h.from_user_id,
-                `NOTIFICATION: ${user.name} accepted your Handoff request for ${b.department_name ?? 'department'} brief. Shift and reports have been transferred. ${briefUrl}`,
+                `INFO: ${user.name} accepted your Handoff request for ${b.department_name ?? 'department'} brief. Shift and reports have been transferred. ${briefUrl}`,
                 user.company_id
             ]);
 
@@ -335,14 +335,14 @@ export async function PATCH(request: Request) {
 
             const fromName = fromUser.name ? fromUser.name.trim() : "";
             const toName = toUser.name ? toUser.name.trim() : "";
-            const toMessage = `NOTIFICATION: Manager ${user.name} transferred ${fromName}'s ${reportsOnly ? 'reports' : 'shift and reports'} to you in ${b.department_name ?? 'department'} brief. ${briefUrl}`;
+            const toMessage = `INFO: Manager ${user.name} transferred ${fromName}'s ${reportsOnly ? 'reports' : 'shift and reports'} to you in ${b.department_name ?? 'department'} brief. ${briefUrl}`;
             await client.query(`
                 INSERT INTO chat (from_user, to_user, text, read, timestamp, company_id)
                 VALUES ($1, $2, $3, false, clock_timestamp(), $4)
             `, [user.id, toUser.id, toMessage, user.company_id]);
 
             if (sourceUserId !== user.id) {
-                const fromMessage = `NOTIFICATION: Manager ${user.name} transferred your ${reportsOnly ? 'reports' : 'shift and reports'} to ${toName} in ${b.department_name ?? 'department'} brief. ${briefUrl}`;
+                const fromMessage = `INFO: Manager ${user.name} transferred your ${reportsOnly ? 'reports' : 'shift and reports'} to ${toName} in ${b.department_name ?? 'department'} brief. ${briefUrl}`;
                 await client.query(`
                     INSERT INTO chat (from_user, to_user, text, read, timestamp, company_id)
                     VALUES ($1, $2, $3, false, clock_timestamp(), $4)

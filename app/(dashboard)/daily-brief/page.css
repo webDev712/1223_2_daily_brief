@@ -45,6 +45,10 @@
     transition: all 0.3s ease;
 }
 
+.daily-brief .lead * {
+    cursor: pointer;
+}
+
 .daily-brief .lead:hover{
     box-shadow: 0px 0px 10px 1px #9696968f;
 }
@@ -862,6 +866,10 @@
     padding: 5px 10px;
     font-size: 14px;
     background-color: white;
+}
+
+.daily-brief .add-finding textarea{
+    width: 100%;
 }
 
 .daily-brief .add-finding .cancel{

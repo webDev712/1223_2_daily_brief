@@ -153,7 +153,8 @@
       "nothing_to_transfer": "No unfinished reports or active duty to transfer for this user.",
       "invalid_action": "This action is not available.",
       "Forbidden": "You do not have permission for this action."
-    }
+    },
+    "mentionedNotification": "INFO: You were mentioned in a finding in the {department} department on {date}: \"{action}...\" Open Daily Brief to see it."
   },
   "Sidebar": {
     "dashboard": "Dashboard",
@@ -609,8 +610,9 @@
       "issueResolved": "Issue Resolved?",
       "newActionPlaceholder": "New action...",
       "defaultUser": "User",
-      "notification": "NOTIFICATION: Added new action by this User to the Issue / Observation, you've added ({issue}...): {action}"
-    },
+      "notification": "INFO: Added new action by this User to the Issue / Observation, you've added ({issue}...): {action}",
+      "mentionedNotification": "INFO: You were mentioned in an action: \"{action}...\" Open Action Tracker to see it."
+      },
     "confirm": {
       "deleteTitle": "Confirm Deleting this Issue / Observation?",
       "statusTitle": "Confirm changing status of this Issue / Observation?",
