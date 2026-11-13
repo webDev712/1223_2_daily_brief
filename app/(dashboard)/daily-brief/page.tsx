@@ -307,6 +307,10 @@ export default function DailyBrief() {
   const param_brief_id = searchParams.get('brief_id');
   const param_finding_id = searchParams.get('finding_id');
   const [activeBriefId, setActiveBriefId] = useState<string | null>(param_brief_id);
+  const [filters, setFilters] = useState({
+    user_id: '',
+    day_time: '',
+  })
   useEffect(() => {
     setActiveBriefId(param_brief_id);
   }, [param_brief_id]);
@@ -877,12 +881,30 @@ export default function DailyBrief() {
                       })()}
                     </div>
                     <div className='reports'>
-                      <div>{translation('reports_of_department')} "{b.department_name}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} {translation('reviewed')} ({translation('yours')} {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
+                      <div className='flex'>{translation('reports_of_department')} "{b.department_name}": <span>{b.reports.filter((r: Report) => r.checked === true && (filters.user_id === '' || filters.user_id === r.holder_id)).length} of {b.reports.filter((r: Report) => filters.user_id === '' || filters.user_id === r.holder_id).length} {translation('reviewed')} ({translation('yours')} {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span>
+                      <div className='flex ms-auto gap-2 fs-8'>
+                        <select className='input' value={filters.user_id} onChange={(e) => {setFilters(prev => {return {...prev, user_id: e.target.value}})}}>
+                          <option value="">All Employees</option>
+                          {leads.sort((a: User, b: User) => a.name.localeCompare(b.name)).map((user: User) => {
+                            if (user.archived !== true)
+                            return (
+                              <option value={user.id}>{user.name}</option>
+                            )})}
+                        </select>
+                        <select className='input' value={filters.day_time} onChange={(e) => {setFilters(prev => {return {...prev, day_time: e.target.value}})}}>
+                          <option value="">Any Day Time</option>
+                          <option value="Ongoing">Ongoing</option>
+                          <option value="Opening">Opening</option>
+                          <option value="Midday">Midday</option>
+                          <option value="Closing">Closing</option>
+                        </select>
+                      </div>
+                      </div>
                       <div>
                         <div className='progress-bar'>
                           <span style={{width: b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100 + "%"}}></span>
                         </div>
-                        {reports_sorted.filter((r: Report) => !r.holder_id).map(
+                        {reports_sorted.filter((r: Report) => !r.holder_id && (filters.user_id === '') && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report reports-to-assign' : 'report'} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
@@ -902,7 +924,7 @@ export default function DailyBrief() {
 
                             </div>)
                         )}
-                        {reports_sorted.filter((r: Report) => r.holder_id === user.id).map(
+                        {reports_sorted.filter((r: Report) => r.holder_id === user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (isBeforeTime(r.check_before)  ? '' : ' red-background')} key={r.id}>
                               <input className={noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before)) ? 'd' : ''} disabled={noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before))} type='checkbox' checked={r.checked} onChange={() => {
@@ -1117,7 +1139,7 @@ export default function DailyBrief() {
                               >{translation('withdraw')}</div>
                             </div>)
                         )}
-                        {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id).map(
+                        {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report border-top reports-other-users-took' : 'report'} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}

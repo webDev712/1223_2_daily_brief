@@ -64,7 +64,6 @@ export async function GET(request: Request) {
                 AND company_id = ${company_id}
             ORDER BY department ASC;
         `;
-        console.log(departments.map((row: any) => row.department))
 
         const employees = await sql`
             SELECT external_id AS id, name
