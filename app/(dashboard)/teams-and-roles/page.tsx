@@ -93,11 +93,17 @@ export default function TeamsAndRoles() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(user),
-    }).then(res => {
+    }).then(async res => {
       if (res.status === 200) {
         toast.success(t('toasts.addedUser', { name: user.name }))
         setReload(prev => prev + 1);
         setShowAddUser(false);
+        return;
+      }
+      const body = await res.json();
+      if (body.error_translation_key) {
+        toast.error(t(body.error_translation_key));
+        return;
       }
     });
 

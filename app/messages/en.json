@@ -413,7 +413,8 @@
       "selectPermission": "Select at least one permission.",
       "addedRole": "Added role \"{name}\" with {count, plural, one {# permission} other {# permissions}}",
       "editedRole": "Success! Now, role \"{name}\" has {count, plural, one {# permission} other {# permissions}}",
-      "userHasAccess": "Now User \"{name}\" has access!"
+      "userHasAccess": "Now User \"{name}\" has access!",
+      "user_exists": "A user with this email already exists."
     },
     "common": {
       "cancel": "Cancel",

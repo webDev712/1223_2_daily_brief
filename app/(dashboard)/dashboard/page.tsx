@@ -10,7 +10,8 @@ import './page.css'
 import UserCircle from "@/app/src/components/UserCircle";
 import scrollToElement from "@/lib/html_document";
 import { useTranslations } from "next-intl";
-
+import { toast } from "sonner";
+import randomInt from "@/lib/num";
 
 
 export default function Dashboard() {
@@ -36,9 +37,7 @@ export default function Dashboard() {
   const [briefs, setBriefs] = useState<SavedBrief[]>([]);
   const [briefsLoading, setBriefsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
+  async function load() {
       setBriefsLoading(true);
       const dateString = format(date, "yyyy-MM-dd");
 
@@ -145,6 +144,8 @@ export default function Dashboard() {
       setBriefsLoading(false);
       setLoading(false);
     }
+  useEffect(() => {
+    setLoading(true);
     load();
   }, [date, todayString]);
 
@@ -223,6 +224,15 @@ export default function Dashboard() {
       (handoffPair(b, false) ? 1 : 0),
     0
   )
+  useEffect(() => {
+      const interval = setInterval(() => {
+          if (document.visibilityState !== 'visible') return;
+          load()
+      }, 60000);
+
+      return () => clearInterval(interval);
+  }, []);
+  
 
   return (
     <div className="dashboard">
@@ -231,7 +241,7 @@ export default function Dashboard() {
         <div>
           <h1 className="flex">
             <div>
-              {getGreeting()}, {user.name.split(' ')[0]} 👋
+              {getGreeting()}, {user.name.split(' ')[0]} {['👋', '💼', '📋', '📝', '📌', '📊', '📈', '⚙️', '🗂️'][parseInt(format(new Date(), 'dd')) % 8]}
             </div>
             <div className="flex">
               <h1>{t('display_for')}</h1>

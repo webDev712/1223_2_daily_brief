@@ -66,7 +66,6 @@ async function upload(file: File) {
           if (!file) return;
           try {
             const url = await upload(file);
-            toast.success(JSON.stringify(disabled));
             toast.success('Added image!');
           } catch (error) {
             toast.error(`Error while uploading an image: ${error}`);

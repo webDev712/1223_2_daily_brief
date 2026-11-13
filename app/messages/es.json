@@ -413,7 +413,8 @@
       "selectPermission": "Selecciona al menos un permiso.",
       "addedRole": "Rol \"{name}\" agregado con {count, plural, one {# permiso} other {# permisos}}",
       "editedRole": "¡Listo! Ahora el rol \"{name}\" tiene {count, plural, one {# permiso} other {# permisos}}",
-      "userHasAccess": "¡Ahora el usuario \"{name}\" tiene acceso!"
+      "userHasAccess": "¡Ahora el usuario \"{name}\" tiene acceso!",
+      "user_exists": "Ya existe un usuario con este correo electrónico."
     },
     "common": {
       "cancel": "Cancelar",

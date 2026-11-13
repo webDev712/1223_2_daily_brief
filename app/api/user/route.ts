@@ -71,6 +71,19 @@ export async function POST(request: Request) {
             department_id
         } = body;
 
+        const existingUser = await sql`
+            SELECT id
+            FROM website_user
+            WHERE LOWER(email) = LOWER(${email})
+            LIMIT 1;
+        `;
+
+        if (existingUser.length > 0) {
+            return NextResponse.json(
+                { error_translation_key: 'toasts.user_exists' },
+                { status: 409 }
+            );
+        }
         const rows = await sql`
             INSERT INTO website_user (
                 email,
@@ -167,7 +180,6 @@ export async function PATCH(request: Request) {
             role_id,
             department
         } = body;
-        console.log(body)
         await sql`
             UPDATE website_user
             SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}, department_id = ${department}

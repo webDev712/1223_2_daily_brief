@@ -311,8 +311,6 @@ export default function DailyBrief() {
     setActiveBriefId(param_brief_id);
   }, [param_brief_id]);
   
-  
-
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     if (!loading && param_finding_id && briefs.length > 0) {
