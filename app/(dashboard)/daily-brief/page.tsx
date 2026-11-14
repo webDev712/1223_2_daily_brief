@@ -885,10 +885,10 @@ export default function DailyBrief() {
                       <div className='flex ms-auto gap-2 fs-8'>
                         <select className='input' value={filters.user_id} onChange={(e) => {setFilters(prev => {return {...prev, user_id: e.target.value}})}}>
                           <option value="">All Employees</option>
-                          {leads.sort((a: User, b: User) => a.name.localeCompare(b.name)).map((user: User) => {
+                          {leads.sort((a: User, b: User) => a.name.localeCompare(b.name)).filter((a: User) => a.department_id === b.department_id || b.reports.find((report_local: Report) => report_local.holder_id === a.id)).map((user: User) => {
                             if (user.archived !== true)
                             return (
-                              <option value={user.id}>{user.name}</option>
+                              <option key={`daily-brief-filters-sort-user-${user.id}`} value={user.id}>{user.name}</option>
                             )})}
                         </select>
                         <select className='input' value={filters.day_time} onChange={(e) => {setFilters(prev => {return {...prev, day_time: e.target.value}})}}>
