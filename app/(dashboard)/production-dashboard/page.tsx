@@ -28,7 +28,6 @@ import {
 
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { getTestEmployees } from "@/lib/config";
 import getColorsFromName from "@/lib/color";
 import { toast } from "sonner";
 
@@ -40,6 +39,7 @@ export default function ProductionDashboard() {
     const [loading, setLoading] = useState(true);
     const [tableData, setTableData] = useState([])
     const [departments, setDeparments] = useState([])
+    const [employees, setEmployees] = useState<{id: number; name: string}[]>([])
 
     const [page, setPage] = useState(1);
     const pageSize = 20;
@@ -47,9 +47,7 @@ export default function ProductionDashboard() {
     const today = new Date()
     const yesterday = new Date()
     yesterday.setDate(today.getDate() - 1)
-    const seven_days_ago = new Date()
-    seven_days_ago.setDate(yesterday.getDate() - 7)
-    const [dateFrom, setDateFrom] = useState(seven_days_ago)
+    const [dateFrom, setDateFrom] = useState(yesterday)
     const [dateTo, setDateTo] = useState(yesterday)
     const [showDateRange, setShowDateRange] = useState(false);
 
@@ -135,6 +133,7 @@ const datePresets = createStaticRanges([
             setResultsCount(ppoh_master_data.count)
 
             setDeparments(ppoh_master_data.departments)
+            setEmployees(ppoh_master_data.employees)
 
             setLoading(false);
         }
@@ -233,7 +232,7 @@ const datePresets = createStaticRanges([
                             <span>{t('filters.employee')}</span>
                             <select defaultValue={employee} onChange={(e) => setEmployee(e.target.value)}>
                                 <option value="">{t('filters.all')}</option>
-                                {getTestEmployees().map((e: any) => (
+                                {employees.map((e) => (
                                     <option key={e.id} value={e.id}>{e.name}</option>
                                 ))}
 

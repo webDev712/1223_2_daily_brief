@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useLayoutEffect } from 'react';
-import './css/Chat.css'
-import { useTranslations } from 'next-intl';
-import { useUser } from './UserProvider';
 import { Message, NewMessage, UserForChat, User } from '@/lib/types';
-import { format } from 'date-fns';
-import UserCircle from './UserCircle';
-import Loader from './Loader';
-import { toast } from 'sonner';
 import { Dispatch, SetStateAction } from "react";
+import { useTranslations } from 'next-intl';
 import ImageUploader from './ImageUploader';
-import isBlobLink from '@/lib/img';
 import FileUploader from './FileUploader';
+import { useUser } from './UserProvider';
+import UserCircle from './UserCircle';
+import isBlobLink from '@/lib/img';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import Loader from './Loader';
+import './css/Chat.css'
 
 
 function isImageUrl(url: string): boolean {
@@ -44,8 +44,26 @@ function parseFileAttachment(
   return null;
 }
 
+function parseBriefLink(text: string): { cleanText: string; url: string } | null {
+  const urlMatch = text.match(/(\/daily-brief\?\S+)/);
+  if (urlMatch) {
+    return {
+      cleanText: text.replace(urlMatch[0], "").replace(/\s*Open the brief to review the reports and accept or decline\./, "").trim(),
+      url: urlMatch[1],
+    };
+  }
+  const legacyMatch = text.match(/handoff of .+? Brief, (\d{4})-(\d{2})-(\d{2})/);
+  if (legacyMatch) {
+    return {
+      cleanText: text.replace(/\s*Open the brief to review the reports and accept or decline\./, "").trim(),
+      url: `/daily-brief?date=${Number(legacyMatch[3])}-${Number(legacyMatch[2])}-${legacyMatch[1]}`,
+    };
+  }
+  return null;
+}
+
 // Not a component, so it can't use hooks: the caller passes the already translated toast text.
-export const sendMessageGlobal = async (message: NewMessage, successMessage?: string) => {
+export const sendMessageGlobal = async (message: NewMessage, from_user: User, to_user: User | undefined, successMessage?: string) => {
     const chat_res = await fetch('/api/chat', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
@@ -55,7 +73,18 @@ export const sendMessageGlobal = async (message: NewMessage, successMessage?: st
         console.error('Error while sending message');
         return;
     }
-    toast.success(successMessage ?? 'Issue / Observation owner is notified with new action!')
+    if (successMessage) toast.success(successMessage);
+    if (!to_user) return;
+    const email_res = await fetch('/api/email', {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({
+            from_user_name: from_user.name,
+            to_user_email: to_user.email,
+            to_user_name: to_user.name,
+            message: message.text
+        })
+    });
 }
 
 const Chat = ({openChat, setOpenChat, class_name}: {
@@ -89,11 +118,10 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     const [showSendMessageToAll, setShowSendMessageToAll] = useState(false);
 
     const [scrollChats, setScrollChats] = useState(0);
-    const [scrollMessages, setScrollMessages] = useState(false);
     const [loadingFalseNextChatReload, setLoadingFalseNextChatReload] = useState(false);
 
 
-    const sendMessage = async (message: NewMessage) => {
+    const sendMessage = async (message: NewMessage, from_user: User, to_user: User | undefined) => {
         const chat_res = await fetch('/api/chat', {
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
@@ -106,6 +134,17 @@ const Chat = ({openChat, setOpenChat, class_name}: {
         setMessageText('');
         setReloadChats(prev => prev + 1);
         setReloadMessages(prev => prev + 1);
+        if (!to_user) return;
+        await fetch('/api/email', {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({
+                from_user_name: from_user.name,
+                to_user_email: to_user.email,
+                to_user_name: to_user.name,
+                message: message.text
+            })
+        });
     }
 
     const updateMessage = async (message: Message) => {
@@ -118,8 +157,6 @@ const Chat = ({openChat, setOpenChat, class_name}: {
             console.error('Error while sending message');
             return;
         }
-        // setReloadMessages(prev => prev + 1);
-        // setReloadChats(prev => prev + 1);
     }
 
     const sendMessageToGroup = async () => {
@@ -130,7 +167,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({
                 id: seeUserMessageAs.id, 
-                text: `NOTIFICATION: ${textareaElement.value || '-'}`, 
+                text: `INFO: ${textareaElement.value || '-'}`, 
                 timestamp: new Date(), 
                 users_ids: usersForSendMessageToGroup.map((user: UserForChat) => {if (user.sendMessageToGroupSelected) return user.id})
             })
@@ -194,12 +231,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                 )
             );
         }
-
-        setScrollMessages(true);
     };
     useLayoutEffect(() => {
         const container = messagesRef.current;
-
         if (!container || loading) return;
 
         const currentIds = new Set(
@@ -261,10 +295,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     }, [])
 
     useEffect(() => {
-        if (!selectedUserId) {
-            // setLoading(false);
-            return;
-        }
+        if (!selectedUserId) return; 
 
         let cancelled = false;
 
@@ -285,7 +316,6 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                 if (cancelled) return;
 
                 setMessages(data);
-                setScrollMessages(true);
             } catch (error) {
                 if (!cancelled) {
                     console.error('Error loading messages:', error);
@@ -396,10 +426,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
         const interval = setInterval(() => {
             if (document.visibilityState !== 'visible') return;
 
+            setReloadChats(prev => prev + 1);
             if (selectedUserId !== null) {
                 setReloadMessages(prev => prev + 1);
-            } else if (openChat) {
-                setReloadChats(prev => prev + 1);
             }
         }, 10000);
 
@@ -430,7 +459,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     }, [chats, seeUserMessageAs.id]);
     return (
         <div className={class_name ? class_name : "chat"}>
-            <span onClick={() => setOpenChat(prev => !prev)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
+            <span onClick={() => setOpenChat(prev => !prev)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user !== seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
             {openChat && (
                 <div>
                     <div>
@@ -519,7 +548,36 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                                                 {t('messages.download')}
                                                                             </a>
                                                                         </div>)
-                                                                ) : 
+                                                                ) : parseBriefLink(message.text) !== null ? (
+                                                                    <div>
+                                                                        <div>{parseBriefLink(message.text)?.cleanText}</div>
+                                                                        <div
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 6,
+                                                                                marginTop: 8,
+                                                                                marginBottom: 4,
+                                                                                padding: '6px 14px',
+                                                                                borderRadius: 8,
+                                                                                fontSize: 13,
+                                                                                fontWeight: 600,
+                                                                                whiteSpace: 'nowrap',
+                                                                                cursor: 'pointer',
+                                                                                backgroundColor: '#ffffff',
+                                                                                color: message.from_user === seeUserMessageAs.id ? '#4361EE' : '#101828',
+                                                                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                const url = parseBriefLink(message.text)?.url;
+                                                                                setOpenChat(false);
+                                                                                if (url) window.location.href = url;
+                                                                            }}
+                                                                        >
+                                                                            Open Brief ➯
+                                                                        </div>
+                                                                    </div>
+                                                                ) :
                                                                 (<div>{message.text}</div>)}
                                                         <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
@@ -538,7 +596,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                             from_user: seeUserMessageAs.id,
                                                             to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                             timestamp: new Date(),
-                                                        });
+                                                        },
+                                                        me_user,
+                                                        users.find((user: UserForChat) => user.id === selectedUserId));
                                                     }
                                                 }}/>
                                             <ImageUploader send_url_to={(url: string) => {
@@ -548,7 +608,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         from_user: seeUserMessageAs.id,
                                                         to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                         timestamp: new Date(),
-                                                    })
+                                                    },
+                                                    me_user,
+                                                    users.find((user: UserForChat) => user.id === selectedUserId))
                                                 }
                                             }}></ImageUploader>
                                             <FileUploader send_url_to={(url: string, file_name: string) => {
@@ -558,7 +620,10 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         from_user: seeUserMessageAs.id,
                                                         to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                         timestamp: new Date(),
-                                                    })
+                                                    },
+                                                    me_user,
+                                                    users.find((user: UserForChat) => user.id === selectedUserId))
+
                                                 }
                                             }}></FileUploader>
 
@@ -568,7 +633,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                     from_user: seeUserMessageAs.id,
                                                     to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                     timestamp: new Date(),
-                                                })
+                                                },
+                                                me_user,
+                                                users.find((user: UserForChat) => user.id === selectedUserId))
                                             }}
                                             >{t('messages.send')}</div>
                                         </div>
@@ -606,7 +673,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                     </div>
                                                     <div className='chats-list-hover-message' onClick={() => {openChatById(user.id)}}>
                                                         <div>{isBlobLink(lastMessage?.text ?? '') || parseFileAttachment(lastMessage?.text ?? '') !== null ? (
-                                                            parseFileAttachment(lastMessage?.text ?? '') !== null ? parseFileAttachment(lastMessage?.text ?? '')?.file_name : t('messages.image')) : (lastMessage?.text ?? '')}</div>
+                                                            parseFileAttachment(lastMessage?.text ?? '') !== null ? parseFileAttachment(lastMessage?.text ?? '')?.file_name : t('messages.image')) : (parseBriefLink(lastMessage?.text ?? '')?.cleanText ?? lastMessage?.text ?? '')}</div>
                                                         <div>
                                                             {lastMessage
                                                                 ? format(

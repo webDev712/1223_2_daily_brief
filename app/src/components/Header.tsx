@@ -71,7 +71,7 @@ export default function Header({user_name, user_role, user_id}: HeaderProps) {
     load();
   }, [])
   
-  const { date, setDate } = useDate()
+  const { date, setDate, today } = useDate()
 
   let header_text = '';
   let header_description = '';
@@ -109,7 +109,7 @@ export default function Header({user_name, user_role, user_id}: HeaderProps) {
     <div className={selected !== "login" ? "header" : "display-none"}>
         <div id='date_picker' className={show_date_picker.indexOf(selected) !== -1 ? "" : 'display-none'}>
             <div id='back' onClick={() => setDate(subDays(date, 1))}></div>
-            <div onClick={() => setDate(new Date())}>
+            <div onClick={() => setDate(new Date(today + 'T12:00:00'))}>
                 <div id='today'>
                   {translation('today')}
                 </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Department, Report, SavedBrief, User } from "@/lib/types";
+import { Department, Report, ReportSchedule, SavedBrief, Shift, User } from "@/lib/types";
 import scrollToElement from "@/lib/html_document";
 import Loader from "@/app/src/components/Loader";
 import { useEffect, useState } from "react";
@@ -10,9 +10,15 @@ import { toast } from "sonner";
 import './page.css'
 import { useDate } from "@/app/src/components/DateContext";
 import { useTranslations } from "next-intl";
+import { safeUUID } from "@/lib/uuid";
 
 // 12 AM, 1 AM, ... 11 PM (значения сохраняются в БД как раньше)
 const CHECK_BEFORE_HOURS = Array.from({ length: 24 }, (_, h) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`);
+
+const newSchedule = (): ReportSchedule => ({
+  slot_key: safeUUID(), position: 1, once_per: 'day', weekday_mask: null, month_day: null,
+  day_time: 'ongoing', shift_id: null, holder_id: null, check_before: null,
+});
 
 export default function Reports() {
   const t = useTranslations('Reports');
@@ -20,6 +26,7 @@ export default function Reports() {
 
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<Report[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [reportsObject, setReportsObject] = useState<Record<string, Report[]>>({});
   const [briefs, setBriefs] = useState([]);
   const [user, setUser] = useState<User | null>(null);
@@ -30,6 +37,7 @@ export default function Reports() {
   const [showAssigned, setShowAssigned] = useState(false);
   const [showAssignedReport, setShowAssignedReport] = useState<Report | null>(null);
   const [showAddReport, setShowAddReport] = useState(false);
+  const [reportDepartmentId, setReportDepartmentId] = useState<string>();
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
 
   // Названия дней недели берём из lib/config, но переводим, если есть ключ в JSON
@@ -53,11 +61,14 @@ export default function Reports() {
   const [reportToAddNameAndSource, setReportToAddNameAndSource] = useState({name: '', source: ''});
   const [reportToAdd, setReportToAdd] = useState<Report>({
       id: 0,
-      name: 'Report Name',
+      name: '',
       text: '',
       checked: false,
       saved_brief_id: 0,
-      source: 'Report Source',
+      source: getReportsTypes()[0],
+      metric: 'No Metric',
+      metric_range_from: 0,
+      metric_range_to: 100,
       archived: false,
       once_per: 'day',
       timestamp: (new Date()).toString(),
@@ -77,7 +88,8 @@ export default function Reports() {
           list: [],
         },
       },
-      day_time: 'ongoing'
+      day_time: 'ongoing',
+      schedules: [],
     })
 
   const changeReports = (new_report: Report) => {
@@ -91,36 +103,101 @@ export default function Reports() {
     );
   };
 
-  const deleteReport = (reportToDelete: Report | null) => {
+  const renderScheduleFields = (r: Report, part: 'period' | 'time' | 'holder' | 'day_time' | 'shift' | 'deadline', departmentId: string | undefined, editing: boolean, slotKey?: string) => {
+    const schedules = r.schedules ?? [];
+    const change = (next: ReportSchedule[]) => {
+      const updated = {...r, schedules: next.map((s, i) => ({...s, position: i + 1}))};
+      setReportToAdd(updated);
+    };
+    return <div className={(editing ? 'edit' : 'show') + ' schedule-stack'}>
+      {schedules.filter(s => slotKey === undefined || s.slot_key === slotKey).map(s => {
+        const update = (values: Partial<ReportSchedule>) => change(schedules.map(slot => slot.slot_key === s.slot_key ? {...slot, ...values} : slot));
+        return <div className='schedule-entry' key={s.slot_key}>
+          {part === 'period' && (editing ? <>
+            <select className='input' value={s.once_per} onChange={e => update({once_per: e.target.value as ReportSchedule['once_per'], weekday_mask: e.target.value === 'week' ? 1 : null, month_day: e.target.value === 'month' ? 1 : null})}>
+              <option value='day'>{t('period_day')}</option>
+              <option value='week'>{t('period_week')}</option>
+              <option value='month'>{t('period_month')}</option>
+            </select>
+            {s.once_per === 'week' && <div>{weekDays.map((day, i) => <label className='week_day_select' key={i}>
+              <span>{day.small}</span>
+              <input type='checkbox' checked={!!((s.weekday_mask ?? 0) & (1 << i))} onChange={e => update({weekday_mask: e.target.checked ? (s.weekday_mask ?? 0) | (1 << i) : (s.weekday_mask ?? 0) & ~(1 << i)})} />
+            </label>)}</div>}
+            {s.once_per === 'month' && <select className='input' value={s.month_day ?? 1} onChange={e => update({month_day: Number(e.target.value)})}>
+              {Array.from({length: 31}, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+            </select>}
+          </> : <>
+            {s.once_per === 'day' ? t('schedule_day') : s.once_per === 'week'
+              ? t('schedule_week', {holder: '', days: weekDays.filter((_, i) => (s.weekday_mask ?? 0) & (1 << i)).map(day => day.small).join(', ')})
+              : t('schedule_month', {holder: '', day: s.month_day ?? ''})}
+          </>)}
+          {(part === 'time' || part === 'day_time') && (editing ?
+            <select className='input' value={s.day_time} onChange={e => update({day_time: e.target.value})}>
+              <option value='opening'>{t('day_time_opening')}</option>
+              <option value='midday'>{t('day_time_midday')}</option>
+              <option value='closing'>{t('day_time_closing')}</option>
+              <option value='ongoing'>{t('day_time_ongoing')}</option>
+            </select> : <div>{tr('day_time_' + s.day_time)}</div>)}
+          {(part === 'time' || part === 'shift') && (editing ?
+            <select className='input' value={s.shift_id ?? ''} onChange={e => update({shift_id: e.target.value ? Number(e.target.value) : null})}>
+              <option value=''>{t('any_shift')}</option>
+              {shifts.filter(shift => !shift.archived).map(shift => <option key={shift.id} value={shift.id}>{shift.name}</option>)}
+            </select> : s.shift_id !== null && <div>{shifts.find(shift => Number(shift.id) === s.shift_id)?.name}</div>)}
+          {(part === 'time' || part === 'deadline') && (editing ?
+            <label className='schedule-deadline'>
+              {slotKey === undefined && t('check_before')}
+              <select className='input' value={s.check_before ?? ''} onChange={e => update({check_before: e.target.value || null})}>
+                <option value=''>-</option>
+                {CHECK_BEFORE_HOURS.map(hour => <option key={hour} value={hour}>{hour}</option>)}
+              </select>
+            </label> : s.check_before && <div>{t('before_time', {time: s.check_before})}</div>)}
+          {part === 'holder' && (editing ? <select className='input' value={s.holder_id ?? ''} onChange={e => update({holder_id: e.target.value || null})}>
+            <option value=''>{t('any_employee')}</option>
+            {leads.filter(lead => lead.department_id === departmentId).map(lead => <option key={lead.id} value={lead.id}>{lead.name}</option>)}
+          </select> : allUsers.find(lead => lead.id === s.holder_id)?.name)}
+        </div>;
+      })}
+    </div>;
+  };
+
+  const deleteReport = async (reportToDelete: Report | null) => {
     if (reportToDelete === null) return;
-    changeReports(reportToDelete);
-    saveReport(reportToDelete);
-    setShowConfirmDelete(false);
-    toast.success(t("toast_deleted"));
+    if (await saveReport(reportToDelete)) {
+      changeReports(reportToDelete);
+      setShowConfirmDelete(false);
+      toast.success(t("toast_deleted"));
+    }
   }
 
-  const saveReport = (r: Report) => {
-    fetch("/api/report", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(r),
-    }).then(res => {
+  const saveReport = async (r: Report) => {
+    try {
+      const res = await fetch("/api/report", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(r),
+      });
       if (res.status === 200) {
         setReports(prev =>
           prev.map(report =>
             report.id === r.id
-              ? { ...report, edit: false }
+              ? { ...r, edit: false }
               : report
           )
         )
         if (r.archived !== true) toast.success(t("toast_updated"));
+        return true;
       }
       else{
-        toast.error(t("toast_save_error"))
+        const data = await res.json();
+        const key = 'errors.' + data.error;
+        toast.error(t.has(key) ? tr(key) : t("toast_save_error"));
       }
-    });
+    } catch {
+      toast.error(t("toast_save_error"));
+    }
+    return false;
   }
 
   const addReport = async (new_report: Report) => {
@@ -129,7 +206,7 @@ export default function Reports() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({...new_report, archived: false, name: (document.getElementById('new_report_name') as HTMLInputElement).value ?? 'New Report Name', source: (document.getElementById('new_report_source') as HTMLInputElement).value ?? 'New Report Name'}),
+      body: JSON.stringify({...new_report, archived: false}),
     })
     if (res.status === 200) {
       toast.success(t("toast_added"));
@@ -137,9 +214,13 @@ export default function Reports() {
       const id = json.id;
       setScrollToIdAfterReload(`report_${id}`);
       setReload(prev => prev + 1);
+      setShowAddReport(false);
     }
-    else toast.error(t("toast_add_error"))
-    setShowAddReport(false)
+    else {
+      const data = await res.json();
+      const key = 'errors.' + data.error;
+      toast.error(t.has(key) ? tr(key) : t("toast_add_error"));
+    }
   }
   useEffect(() => {
     async function load() {
@@ -214,6 +295,8 @@ export default function Reports() {
       }  
       let leads_data = await users_res.json();
       setAllUsers(leads_data);
+      const shifts_res = await fetch('/api/shifts');
+      if (shifts_res.ok) setShifts(await shifts_res.json());
       leads_data = leads_data.filter((a: User) => 
         // a.user_role !== 'manager' && 
         a.archived !== true);
@@ -492,18 +575,18 @@ return (
       {showAddReport && (
         <div className='confirm add-report'>
           <div>
-            <h1>{t("add_title")}</h1>
+            <h1>{t(reportToAdd.id === 0 ? 'add_title' : 'edit_title')}</h1>
             <div>
               <div>
                 <div>{t("field_name")}</div>
                 <div>
-                  <input type="text" id="new_report_name" placeholder={t("placeholder_report_name")}/>
+                  <input type="text" id="new_report_name" placeholder={t("placeholder_report_name")} value={reportToAdd.name} onChange={e => setReportToAdd({...reportToAdd, name: e.target.value})}/>
                 </div>
               </div>
               <div>
                 <div>{t("field_source")}</div>
                 <div>
-                  <select id="new_report_source" className="input">
+                  <select id="new_report_source" className="input" value={reportToAdd.source} onChange={e => setReportToAdd({...reportToAdd, source: e.target.value})}>
                       {getReportsTypes().map((report_type: string) => (
                         <option key={`report_type_option_${report_type}`} value={report_type}>{report_type}</option>
                       ))}
@@ -511,41 +594,70 @@ return (
                 </div>
               </div>
               <div>
-                <div>{t("field_period")}</div>
-                <div style={{paddingLeft: 0}}>
-                  <select value={reportToAdd.once_per ?? 'day'} onChange={(e) => {setReportToAdd({...reportToAdd, once_per: e.target.value})}} className="input" >
-                    <option value="day">{t("period_day")}</option>
-                    <option value="week">{t("period_week")}</option>
-                    <option value="month">{t("period_month")}</option>
+                <div>{t('field_metric')}</div>
+                <div className='report-metric-fields'>
+                  <select className='input' value={reportToAdd.metric ?? 'No Metric'} onChange={e => {
+                    setReportToAdd({...reportToAdd, metric: e.target.value});
+                    e.currentTarget.blur();
+                  }}>
+                    <option value="No Metric">{t("metric_none")}</option>
+                    <option value="Count">{t("metric_count")}</option>
+                    <option value="Metric">{t("metric_metric")}</option>
+                    <option value="Yes/No">{t("metric_yes_no")}</option>
+                    <option value="Free-text">{t("metric_free_text")}</option>
+                    <option value="Image">{t("metric_image")}</option>
                   </select>
-                  {reportToAdd.once_per === 'week' && t("at_connector")}
-                  {reportToAdd.once_per === 'week' && (
-                    <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} defaultValue={parseInt(reportToAdd.start_at_day || '1')} className="input">
-                      {weekDays.map((day: {full: string, small: string}, i: number) => {
-                        return (
-                          <option key={`report_${reportToAdd.id}_weekday_option_${i + 1}`} value={i + 1}>{day.full}</option>
-                        )
-                      })}
-                    </select>
-                  )}
-                  {reportToAdd.once_per === 'month' && t("at_connector")}
-                  {reportToAdd.once_per === 'month' && (
-                    <select onChange={(e) => {setReportToAdd({...reportToAdd, start_at_day: e.target.value})}} value={reportToAdd.start_at_day || '1'}>
-                      {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
-                    </select>
-                  )}
-                  <select value={reportToAdd.day_time ?? 'ongoing'} onChange={(e) => {setReportToAdd({...reportToAdd, day_time: e.target.value})}} className="input" style={{width: 'max-content'}}>
-                    <option value="opening">{t("day_time_opening")}</option>
-                    <option value="midday">{t("day_time_midday")}</option>
-                    <option value="closing">{t("day_time_closing")}</option>
-                    <option value="ongoing">{t("day_time_ongoing")}</option>
-                  </select>
+                  {reportToAdd.metric === 'Metric' && <div className='metric_range'>
+                    <label>
+                      <span>{t("from")}</span>
+                      <input className='input' type='number' value={reportToAdd.metric_range_from ?? 0} onChange={e => setReportToAdd({...reportToAdd, metric_range_from: Number(e.target.value)})}/>
+                    </label>
+                    <label>
+                      <span>{t("to")}</span>
+                      <input className='input' type='number' value={reportToAdd.metric_range_to ?? 100} onChange={e => setReportToAdd({...reportToAdd, metric_range_to: Number(e.target.value)})}/>
+                    </label>
+                  </div>}
                 </div>
               </div>
+              <section className='schedule-add'>
+                {reportToAdd.schedules?.map((slot) => <section className='schedule-slot' key={slot.slot_key}>
+                  <div className='schedule-slot-fields'>
+                    <div>
+                      <span>{t('field_period')}</span>
+                      {renderScheduleFields(reportToAdd, 'period', reportDepartmentId, true, slot.slot_key)}
+                    </div>
+                    <div>
+                      <span>{t('field_day_time')}</span>
+                      {renderScheduleFields(reportToAdd, 'day_time', reportDepartmentId, true, slot.slot_key)}
+                    </div>
+                    <div>
+                      <span>{t('field_shift')}</span>
+                      {renderScheduleFields(reportToAdd, 'shift', reportDepartmentId, true, slot.slot_key)}
+                    </div>
+                    <div>
+                      <span>{t('field_employee')}</span>
+                      {renderScheduleFields(reportToAdd, 'holder', reportDepartmentId, true, slot.slot_key)}
+                    </div>
+                    <div>
+                      <span>{t('check_before')}</span>
+                      {renderScheduleFields(reportToAdd, 'deadline', reportDepartmentId, true, slot.slot_key)}
+                    </div>
+                    <div className='schedule-slot-action'>
+                      {(reportToAdd.schedules?.length ?? 0) > 1 && (
+                        <button type='button' className='button-w-bl schedule-slot-remove' onClick={() => setReportToAdd({...reportToAdd, schedules: reportToAdd.schedules?.filter(s => s.slot_key !== slot.slot_key).map((s, index) => ({...s, position: index + 1}))})}>{t('remove_slot')}</button>
+                      )}
+                    </div>
+                  </div>
+                </section>)}
+                <button type='button' className='button-w-bl' onClick={() => setReportToAdd({...reportToAdd, schedules: [...(reportToAdd.schedules ?? []), {...newSchedule(), position: (reportToAdd.schedules?.length ?? 0) + 1}]})}>{t('add_slot')}</button>
+              </section>
             </div>
             <div>
               <div className='button-w-bl' onClick={() => {setShowAddReport(false)}}>{t("cancel")}</div>
-              <div className='button-d-bl' onClick={() => {addReport(reportToAdd)}}>{t("add_report")}</div>
+              <div className='button-d-bl' onClick={async () => {
+                if (reportToAdd.id === 0) await addReport(reportToAdd);
+                else if (await saveReport(reportToAdd)) setShowAddReport(false);
+              }}>{t(reportToAdd.id === 0 ? 'add_report' : 'save')}</div>
             </div>
           </div>
         </div>
@@ -661,12 +773,13 @@ return (
                       }).length === 0 ? (
                     <div className="flex j-s-b">
                       <span>{t("no_reports")}</span>
-                      <div className="button-d-bl-sm add-report" onClick={() => {
+                      <div className="button-d-bl add-report" onClick={() => {
                         if (!user?.permissions.edit_reports){
                           toast.error(t("no_permission"))
                           return;
                         }
-                        setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
+                        setReportToAdd({...reportToAdd, id: 0, name: '', source: getReportsTypes()[0], metric: 'No Metric', metric_range_from: 0, metric_range_to: 100, department_id: undefined, schedules: [newSchedule()], assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
+                        setReportDepartmentId(dep.id);
                         setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } });
                         setShowAddReport(true);
                       }}>{t("add_report")}</div>
@@ -677,7 +790,8 @@ return (
                         toast.error(t("no_permission"))
                         return;
                       }
-                      setReportToAdd({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
+                      setReportToAdd({...reportToAdd, id: 0, name: '', source: getReportsTypes()[0], metric: 'No Metric', metric_range_from: 0, metric_range_to: 100, department_id: undefined, schedules: [newSchedule()], assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } })
+                      setReportDepartmentId(dep.id);
                       setShowAssignedReport({...reportToAdd, assigned_to: {all: {assigned: false, list: [],}, person: {assigned: false, list: [], }, department: { assigned: true, list: [dep.id], }, } });
                       setShowAddReport(true);
                     }}>{t("add_report")}</div>
@@ -689,9 +803,9 @@ return (
                       <div>{t("col_edit")}</div>
                       <div>{t("col_report")}</div>
                       <div>{t("col_source")}</div>
+                      <div>{t("col_metric")}</div>
                       <div>{t("col_period")}</div>
                       <div style={{textAlign: 'left'}}>{t("col_day_time")}</div>
-                      <div>{t("col_metric")}</div>
                       <div>{t("col_default_holder")}</div>
                       <div>{t("col_delete")}</div>
                     </div>
@@ -705,329 +819,39 @@ return (
                           r.assigned_to.all.assigned === true
                         )
                       ) {
-                        const holderName = allUsers.find((user_local: User) => user_local.id === r.default_holder_id)?.name ?? "-";
-                        const holderText = r.default_holder_id ? ` ${t("by_person", { name: holderName })}` : "";
-                        const weekDaysText = (mask: number) => weekDays
-                          .filter((_, i) => mask & (1 << i))
-                          .map(day => day.small)
-                          .join(', ');
                         return (
-                          <div className="report" key={`report_${r.id}`} id={`report_${r.id}`} >
+                          <div className="report" key={`report_${r.id}`} id={`report_${r.id}`} style={{gridTemplateRows: `repeat(${r.schedules?.length ?? 1}, auto)`}} >
                             <div>
-                              {r.edit}
-                               {r.edit === true ? (
-                                  <label>
-                                    <input type="checkbox" checked={true} onChange={() => {}} />
-                                    <span
-                                      className={r.edit !== true ? "button-d-bl" : "button-d-bl"}
-                                      onClick={() => { if (r.edit === true) saveReport(r);}}> {t("save")}
-                                    </span>
-                                  </label>
-                                ) : (
-                                  <label>
-                                    <span className={'button-w-bl'}>{t("edit")}</span>
-                                <input
-                                  type="checkbox"
-                                  checked={r.edit ?? false}
-                                  onChange={(e) => {
-                                    if (!user?.permissions.edit_reports){
-                                      toast.error(t("no_permission"))
-                                      return;
-                                    }
-                                    if (r.edit !== true)
-                                      setReports(prev =>
-                                        prev.map(report =>
-                                          report.id === r.id
-                                            ? { ...report, edit: e.target.checked }
-                                            : report
-                                        )
-                                      )
-                                    }
-                                  }
-                                />
-                              </label>
-                                )}
-                              
+                              <span className='button-w-bl' style={{margin: 'auto 0'}} onClick={() => {
+                                if (!user?.permissions.edit_reports){
+                                  toast.error(t("no_permission"))
+                                  return;
+                                }
+                                setReportToAdd({...r});
+                                setReportDepartmentId(dep.id);
+                                setShowAddReport(true);
+                              }}>{t("edit")}</span>
                             </div>
                             <div>
                               <div className="show">{r.name}</div>
-                              <div className="edit">
-                                <textarea value={r.name} className="input" onChange={(e: any) => {changeReports({...r, name: e.target.value})}} />
-                              </div>
                             </div>
                             <div>
                               <div className="show">{r.source}</div>
-                              <div className="edit">
-                                <select value={r.source} onChange={(e: any) => {changeReports({...r, source: e.target.value})}}>
-                                  {getReportsTypes().map((report_type: string) => (
-                                    <option key={`report_type_option_${report_type}`} value={report_type}>{report_type}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                            <div>
-                                <div className="show" style={{gap: '3px', display: 'flex', flexWrap: 'wrap', margin: 'auto 0', textAlign: "left", lineHeight: 1.2}}>
-                                  {r.once_per === 'day' && (<div style={{flexBasis: '100%', width: 'max-content'}}>{t("schedule_day")}</div>)}
-                                  {r.once_per !== 'day' && 
-                                    (<div style={{display: 'flex', gap: "6px", flexBasis: '100%'}}>
-                                        {r.once_per === 'week' && t("schedule_week", {
-                                          holder: holderText,
-                                          days: weekDaysText(Number(r.start_at_day || 0)),
-                                        })}
-                                        {r.once_per === 'month' && t("schedule_month", {
-                                          holder: holderText,
-                                          day: r.start_at_day ?? '',
-                                        })}
-                                    </div>)}
-                                  {r.once_per === 'week' && r.backup_holder_id && (r.backup_start_at_day ?? 0) !== 0 && (
-                                    (<div style={{display: 'flex', gap: "6px", flexBasis: '100%', width: '100%', textAlign: "left", fontWeight: 600}}>
-                                      {t("backup_schedule", {
-                                        name: allUsers.find((user_local: User) => user_local.id === r.backup_holder_id)?.name ?? "-",
-                                        days: weekDaysText(Number(r.backup_start_at_day || 0)),
-                                      })}
-                                    </div>)
-                                  )}
-                                </div>
-                                <div className="edit" style={{gap: '3px', display: 'flex', flexDirection: r.once_per === "week" ? 'column' : 'row'}} >
-                                  <select name={`once_per_${r.id}`} value={r.once_per || 1} onChange={(e: any) => {
-                                    if (e.target.value === 'week') {
-                                      changeReports({...r, once_per: e.target.value, start_at_day: '1'})
-                                    }
-                                    else {
-                                      changeReports({...r, once_per: e.target.value})
-                                    }
-                                  }} style={{paddingLeft: 7, height: 'max-content'}}>
-                                    <option value="day">{t("period_day")}</option>
-                                    <option value="week">{t("period_week")}</option>
-                                    <option value="month">{t("period_month")}</option>
-                                  </select>
-                                  {r.once_per === 'week' && (
-                                    <div style={{flexDirection: 'column'}}>
-                                      <div style={{display: 'flex', flexDirection: 'column', marginTop: '5px'}} className="flex input">
-                                        <div style={{display: 'flex', gap: '5px'}}>
-                                          <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>{t("main_holder")}</span>
-                                          <select
-                                            style={{width: '100%', margin: '5px 0'}}
-                                              value={r.default_holder_id ?? ''}
-                                              onChange={(e) => {
-                                                changeReports({
-                                                  ...r,
-                                                  default_holder_id: e.target.value,
-                                                });
-                                              }}
-                                            >
-                                              <option value="">-</option>
-
-                                              {leads
-                                                .filter((lead: User) => lead.department === dep.name)
-                                                .map((lead: User) => (
-                                                  <option key={lead.id} value={lead.id}>
-                                                    {lead.name}
-                                                  </option>
-                                                ))}
-                                          </select>
-                                        </div>
-                                        <div>
-                                          {weekDays.map((day: { full: string; small: string }, i: number) => {
-                                          const dayNumber = i + 1;
-                                          const dayBit = 1 << (dayNumber - 1);
-
-                                          return (
-                                            <label
-                                              key={`select_weekDay_${i}`}
-                                              className="week_day_select"
-                                            >
-                                              <span>{day.small}</span>
-
-                                              <input
-                                                type="checkbox"
-                                                name="select_weekDay"
-                                                checked={(Number(r.start_at_day || 0) & dayBit) !== 0}
-                                                onChange={(e) => {
-                                                  const currentMask = Number(r.start_at_day || 0);
-                                                    const backupMask = Number(r.backup_start_at_day || 0);
-
-                                                    const newMask = e.target.checked
-                                                      ? currentMask | dayBit
-                                                      : currentMask & ~dayBit;
-
-                                                    const newBackupMask = e.target.checked
-                                                      ? backupMask & ~dayBit
-                                                      : backupMask;
-
-                                                    changeReports({
-                                                      ...r,
-                                                      start_at_day: newMask.toString(),
-                                                      backup_start_at_day: newBackupMask.toString(),
-                                                    });
-                                                }}
-                                              />
-                                            </label>
-                                          );
-                                        })}
-                                        </div>
-                                      </div>
-                                      <div style={{display: 'flex', flexDirection: 'column', flexWrap: 'wrap', textAlign: 'left', marginTop: '3px'}} className="input">
-                                        <label style={{display: 'flex', flexDirection: "column"}}>
-                                          <div style={{display: 'flex', gap: '5px'}}>
-                                            <span style={{margin: 'auto 0', textWrapMode: 'nowrap'}}>{t("backup_holder")}</span>
-                                            <select
-                                              style={{margin: '5px 0', flex: 1}}
-                                              value={r.backup_holder_id ?? ''}
-                                              onChange={(e) => {
-                                                changeReports({
-                                                  ...r,
-                                                  backup_holder_id: e.target.value,
-                                                });
-                                              }}
-                                            >
-                                              <option value="">-</option>
-
-                                              {leads
-                                                .filter((lead: User) => lead.department === dep.name && lead.id !== r.default_holder_id)
-                                                .map((lead: User) => (
-                                                  <option key={lead.id} value={lead.id}>
-                                                    {lead.name}
-                                                  </option>
-                                                ))}
-                                            </select>
-                                          </div>
-                                        </label>
-                                        <div>
-                                          {weekDays.map((day: { full: string; small: string }, i: number) => {
-                                          const dayNumber = i + 1;
-                                          const dayBit = 1 << (dayNumber - 1);
-
-                                          return (
-                                            <label
-                                              key={`select_weekDay_${i}`}
-                                              className="week_day_select"
-                                            >
-                                              <span>{day.small}</span>
-
-                                              <input
-                                                type="checkbox"
-                                                name="select_weekDay"
-                                                checked={(Number(r.backup_start_at_day || 0) & dayBit) !== 0}
-                                                onChange={(e) => {
-                                                  const currentMask = Number(r.backup_start_at_day || 0);
-                                                  const mainMask = Number(r.start_at_day || 0);
-
-                                                  const newMask = e.target.checked
-                                                    ? currentMask | dayBit
-                                                    : currentMask & ~dayBit;
-                                                  const newMainMask = e.target.checked
-                                                    ? mainMask & ~dayBit
-                                                    : mainMask;
-
-                                                  changeReports({
-                                                    ...r,
-                                                    backup_start_at_day: newMask.toString(),
-                                                    start_at_day: newMainMask.toString(),
-                                                  });
-                                                }}
-                                              />
-                                            </label>
-                                          );
-                                        })}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {r.once_per === 'month' && (
-                                    <select onChange={(e) => {changeReports({...r, start_at_day: e.target.value})}} value={r.start_at_day || '1'}>
-                                      {Array.from({ length: 30 }, (_, i) => (<option key={crypto.randomUUID()} value={i + 1}>{i + 1}</option>))}
-                                    </select>
-                                  )}
-                                  {r.once_per === 'month' && t("day_word")}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="show">
-                                {r.day_time ? tr(`day_time_${r.day_time}`) : ''}
-                                {r.day_time !== 'ongoing' && r.check_before && (
-                                  <div>{t("before_time", { time: r.check_before })}</div>
-                                )}
-                              </div>
-                              <div className="edit">
-                                <select value={r.day_time} onChange={(e) => {changeReports({...r, day_time: e.target.value})}}>
-                                  <option value="opening">{t("day_time_opening")}</option>
-                                  <option value="midday">{t("day_time_midday")}</option>
-                                  <option value="closing">{t("day_time_closing")}</option>
-                                  <option value="ongoing">{t("day_time_ongoing")}</option>
-                                </select>
-                                {r.day_time !== 'ongoing' && (
-                                  <div style={{ flexDirection: 'column', gap: 3, marginTop: 5 }}>
-                                    {t("check_before")}
-                                    <select value={r.check_before ?? ''} onChange={(e) => {changeReports({...r, check_before: e.target.value})}}>
-                                      <option value="">-</option>
-                                      {CHECK_BEFORE_HOURS.map((h: string) => (
-                                        <option key={`check_before_${h}`} value={h}>{h}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                )}
-                              </div>
                             </div>
                             <div>
                               <div className="show">
                                 {r.metric ? (metricLabels[r.metric] ?? r.metric) : ''}
                                 {r.metric === 'Metric' && ` ${t("metric_range", { from: r.metric_range_from ?? '', to: r.metric_range_to ?? '' })}`}
                               </div>
-                              <div className="edit" style={{gap: '8px', display: 'flex', flexDirection: "column"}}>
-                                <select value={r.metric ?? 'No Metric'} onChange={(e) => {changeReports({...r, metric: e.target.value})}} style={{height: 'max-content', margin: 'auto 0'}}>
-                                  <option value="No Metric">{t("metric_none")}</option>
-                                  <option value="Count">{t("metric_count")}</option>
-                                  <option value="Metric">{t("metric_metric")}</option>
-                                  <option value="Yes/No">{t("metric_yes_no")}</option>
-                                  <option value="Free-text">{t("metric_free_text")}</option>
-                                  <option value="Image">{t("metric_image")}</option>
-                                </select>
-                                {r.metric === 'Metric' && (
-                                <div className="metric_range">
-                                  <label style={{display: 'flex', flexDirection: 'column', minWidth: 100}}>
-                                    <span>{t("from")}</span>
-                                    <input type='number' value={r.metric_range_from ?? 0} onChange={(e) => {changeReports({...r, metric_range_from: Number(e.target.value)})}} />
-                                  </label>
-                                  <label style={{display: 'flex', flexDirection: 'column', minWidth: 100}}>
-                                    <span>{t("to")}</span>
-                                    <input type='number' value={r.metric_range_to ?? 100} onChange={(e) => {changeReports({...r, metric_range_to: Number(e.target.value)})}} />
-                                  </label>
-
-                                </div>
-                              )}
-                              </div>
-                              
                             </div>
-                            <div>
-                              <div className="show" style={{width: '100%'}}>
-                                {leads.find(
-                                  (lead: User) => lead.id === r.default_holder_id
-                                )?.name || '-'}
-                              </div>
-
-                              <div className="edit" style={{width: '100%'}}>
-                                <select
-                                style={{width: '100%'}}
-                                  value={r.default_holder_id ?? ''}
-                                  onChange={(e) => {
-                                    changeReports({
-                                      ...r,
-                                      default_holder_id: e.target.value,
-                                    });
-                                  }}
-                                >
-                                  <option value="">-</option>
-
-                                  {leads
-                                    .filter((lead: User) => lead.department === dep.name)
-                                    .map((lead: User) => (
-                                      <option key={lead.id} value={lead.id}>
-                                        {lead.name}
-                                      </option>
-                                    ))}
-                                </select>
-                              </div>
+                            <div className="schedule-column">
+                              {renderScheduleFields(r, 'period', dep.id, false)}
+                            </div>
+                            <div className="schedule-column">
+                              {renderScheduleFields(r, 'time', dep.id, false)}
+                            </div>
+                            <div className="schedule-column">
+                              {renderScheduleFields(r, 'holder', dep.id, false)}
                             </div>
                             <div>
                               <div style={{margin: 'auto auto auto 0', height: 'min-content'}} className="button-r-sm" onClick={() => {

@@ -5,7 +5,7 @@ import { DBPermissions, User } from "./types";
 export async function getCurrentUser(): Promise<User | null> {
     const session = await auth();
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id && !session?.user?.email) {
         return null;
     }
     
@@ -21,12 +21,18 @@ export async function getCurrentUser(): Promise<User | null> {
             d.name AS department,
             d.id AS department_id,
             r.permissions,
-            w.company_id
-        FROM website_user w, department d, role r
-        WHERE LOWER(email) = LOWER(${session.user.email})
+            w.company_id,
+            c.timezone,
+            c.main_admin_id
+        FROM website_user w, department d, role r, company c
+        WHERE ((${Boolean(session.user.id)} AND w.id::text = ${session.user.id ?? ''})
+            OR (NOT ${Boolean(session.user.id)} AND LOWER(email) = LOWER(${session.user.email ?? ''})))
           AND archived = false
           AND d.id = w.department_id
           AND w.role_id = r.id
+          AND c.id = w.company_id
+          AND d.company_id = w.company_id
+          AND r.company_id = w.company_id
         LIMIT 1;
     `;
 

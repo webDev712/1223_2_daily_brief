@@ -180,15 +180,15 @@ div:not(:has(> [data-img="settings"])) + div.chat{
     display: none;
 }
 
-:has(> .sidebar){
-    overflow: auto;
-}
-
 .sidebar h1{
     display: none;
 }
 
 @media (max-width: 500px) {
+    :has(> .sidebar){
+        overflow: auto;
+    }
+
     .sidebar [data-img="burger"]{
         display: block !important;
         width: 50px !important;

@@ -31,12 +31,15 @@ export default function TeamsAndRoles() {
   const [showEditRoleForm, setShowEditRoleForm] = useState(false);
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null)
   const [showAddUser, setShowAddUser] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [userFormBusy, setUserFormBusy] = useState(false);
   const [showConfirmDeleteRole, setShowConfirmDeleteRole] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [reload, setReload] = useState(0);
 
   const permissions = getPermissions()
+  const canEditUsers = !!me_user && (me_user.id === me_user.main_admin_id || me_user.permissions.add_users);
 
 
   const archiveUser = (user: User | null) => {
@@ -78,7 +81,8 @@ export default function TeamsAndRoles() {
     })
   }
 
-  const addUser = () => {
+  const addUser = async () => {
+    if (userFormBusy) return;
     const user = {
       email: (document.getElementById('email') as HTMLInputElement)?.value || '',
       name: (document.getElementById('name') as HTMLInputElement)?.value || '',
@@ -87,26 +91,48 @@ export default function TeamsAndRoles() {
       phone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
       department_id: (document.getElementById('department') as HTMLInputElement)?.value || '',
     }
-    fetch("/api/user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(user),
-    }).then(async res => {
+    setUserFormBusy(true);
+    try {
+      const res = await fetch("/api/user", {
+        method: userToEdit ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userToEdit ? {...user, id: userToEdit.id, role_id: user.user_role} : user),
+      });
       if (res.status === 200) {
-        toast.success(t('toasts.addedUser', { name: user.name }))
+        toast.success(userToEdit ? t('toasts.userSaved') : t('toasts.addedUser', { name: user.name }))
         setReload(prev => prev + 1);
         setShowAddUser(false);
-        return;
+        setUserToEdit(null);
+      } else {
+        const body = await res.json();
+        toast.error(t(body.error_translation_key || 'toasts.errorSavingUser'));
       }
-      const body = await res.json();
-      if (body.error_translation_key) {
-        toast.error(t(body.error_translation_key));
-        return;
-      }
-    });
+    } catch {
+      toast.error(t('toasts.errorSavingUser'));
+    } finally {
+      setUserFormBusy(false);
+    }
 
+  };
+
+  const resendInvite = async () => {
+    if (!userToEdit || userFormBusy) return;
+    setUserFormBusy(true);
+    try {
+      const res = await fetch("/api/user", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({id: userToEdit.id, resend_invite: true}),
+      });
+      if (res.ok) toast.success(t('toasts.invitationSent'));
+      else toast.error(t('toasts.errorSendingInvitation'));
+    } catch {
+      toast.error(t('toasts.errorSendingInvitation'));
+    } finally {
+      setUserFormBusy(false);
+    }
   };
 
   const updateUser = (userToUpdate: User) => {
@@ -348,40 +374,43 @@ export default function TeamsAndRoles() {
               </div>
             </div>
           )}
-          {showAddUser && (
+          {(showAddUser || userToEdit) && (
             <div className='confirm add-user-form'>
               <div>
                 <form id='add-user-form' onSubmit={(e) => {
                     e.preventDefault();
                     addUser();
                   }}>
-                  <h1>{t('addUser.title')}</h1>
+                  <h1>{userToEdit ? t('editUser.title') : t('addUser.title')}</h1>
                   <div>
                     <label>
                       <div>{t('addUser.name')}</div>
-                      <input style={{textTransform: 'none'}} type="text" id='name' required />
+                      <input style={{textTransform: 'none'}} type="text" id='name' required defaultValue={userToEdit?.name} />
                     </label>
                     <label>
                       <div>{t('addUser.email')}</div>
-                      <input style={{textTransform: 'none'}} type="email" id='email' required />
+                      <input style={{textTransform: 'none'}} type="email" id='email' required defaultValue={userToEdit?.email} />
                     </label>
                     <label>
                       <div>{t('addUser.phone')}</div>
-                      <input onChange={(e) => e.target.value = generatePhoneNumber(e.target.value)} type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" required />
+                      <input onChange={(e) => e.target.value = generatePhoneNumber(e.target.value)} type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" required={!userToEdit} defaultValue={userToEdit?.phone} />
                     </label>
                     <label>
                       <div>{t('addUser.role')}</div>
-                      <select id='role' required >
+                      <select id='role' required defaultValue={userToEdit?.role_id} disabled={!!userToEdit && userToEdit.id === me_user?.id} >
                         {roles?.map(role => (<option key={`new_user_role_${role.id}`} value={role.id}>{capitalize(role.name)}</option>))}
                       </select>
                     </label>
                     <label>
                       <div>{t('addUser.employeeId')}</div>
-                      <input type="text" id='letter' pattern="[A-Za-z][A-Za-z]" required defaultValue={randomEmployeeID()} />
+                      <input type="text" id='letter' pattern={userToEdit ? "[A-Za-z]{1,2}" : "[A-Za-z][A-Za-z]"} required={!userToEdit} defaultValue={userToEdit ? userToEdit.lead_letter : randomEmployeeID()} />
                     </label>
                     <label>
                       <div>{t('addUser.department')}</div>
-                      <select id='department'>
+                      <select id='department' defaultValue={userToEdit?.department_id} disabled={!!userToEdit && userToEdit.id === me_user?.id}>
+                        {userToEdit?.department_id && !departments.some(dep => dep.id === userToEdit.department_id) && (
+                          <option value={userToEdit.department_id}>{userToEdit.department}</option>
+                        )}
                         {departments.map((dep: Department) => (
                           <option key={`department_${dep.id}`} value={dep.id}>{dep.name}</option>
                         ))}
@@ -391,8 +420,9 @@ export default function TeamsAndRoles() {
 
 
                   <div>
-                    <div className='button-w-bl' onClick={() => {setShowAddUser(false)}}>{t('common.cancel')}</div>
-                    <button className='button-d-bl' type='submit' form="add-user-form">{t('addUser.submit')}</button>
+                    <div className='button-w-bl' onClick={() => {setShowAddUser(false); setUserToEdit(null)}}>{t('common.cancel')}</div>
+                    {userToEdit && (<button className={userFormBusy || userToEdit.archived ? 'button-w-bl d' : 'button-w-bl'} type='button' disabled={userFormBusy || userToEdit.archived} onClick={resendInvite}>{t('editUser.resendInvite')}</button>)}
+                    <button className={userFormBusy ? 'button-d-bl d' : 'button-d-bl'} type='submit' form="add-user-form" disabled={userFormBusy}>{userToEdit ? t('common.save') : t('addUser.submit')}</button>
                   </div>
                 </form>
               </div>
@@ -516,32 +546,34 @@ export default function TeamsAndRoles() {
                   {user.user_role !== 'manager' ? (
                     <div>
                       <div>
-                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).length}</div>
+                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id || brief.duties?.some(d => d.user_id === user.id)).length}</div>
                         <span>{t('employee.briefs')}</span>
                       </div>
                       <div>
-                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).reduce((a: number, brief: SavedBrief) => brief.findings ? brief.findings?.length + a : a, 0)}</div>
+                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id || brief.duties?.some(d => d.user_id === user.id)).reduce((a: number, brief: SavedBrief) => brief.findings ? brief.findings?.length + a : a, 0)}</div>
                         <span>{t('employee.findings')}</span>
                       </div>
                       <div>
-                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id).reduce((a: number, brief: SavedBrief) => brief.tasks ? brief.tasks?.length + a : a, 0)}</div>
+                        <div>{briefs.filter((brief: SavedBrief) => brief.lead_id === user.id || brief.duties?.some(d => d.user_id === user.id)).reduce((a: number, brief: SavedBrief) => brief.tasks ? brief.tasks?.length + a : a, 0)}</div>
                         <span>{t('employee.tasks')}</span>
                       </div>
                     </div>
                   ) : (<div></div>)}
+                  <div style={{display: 'flex', gap: 10}}>
+                  {canEditUsers && (<div className='button-d-bl-sm' onClick={() => {setUserToEdit({...user}); setShowAddUser(false)}}>{t('common.edit')}</div>)}
                   {me_user && me_user.permissions.archive_give_access_users && user.archived !== true && (
-                    <div className='button-r-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
+                    <div className='button-r-sm' onClick={() => {
                       setUserToDelete(user);
                       setShowConfirmDelete(true)
                     }}>{t('confirm.archiveButton')}</div>
                   )}
                   {me_user && me_user.permissions.archive_give_access_users && user.archived === true && (
-                    <div className='button-d-bl-sm' style={{marginLeft: 'auto', marginTop: 15}} onClick={() => {
+                    <div className='button-d-bl-sm' onClick={() => {
                       setUserToDelete(user);
                       setShowConfirmGiveAccess(true)
                     }}>{t('confirm.giveAccessButton')}</div>
                   )}
-                  {(!me_user || !me_user.permissions.archive_give_access_users) && (<div></div>)}
+                  </div>
                 </div>
               )
             })}

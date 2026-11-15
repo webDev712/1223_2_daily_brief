@@ -35,6 +35,7 @@ export async function GET() {
             WHERE w.company_id = ${company_id}
                 AND r.company_id = ${company_id}
                 AND d.id = w.department_id
+                AND d.company_id = ${company_id}
                 AND r.id = w.role_id;`
         return NextResponse.json(rows);
     } catch (error) {
