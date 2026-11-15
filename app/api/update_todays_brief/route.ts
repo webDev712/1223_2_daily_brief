@@ -68,10 +68,6 @@ export async function POST(request: Request) {
                     if (action === "withdraw") {
                         await client.query("UPDATE saved_report SET holder_id = NULL, assignment_overridden = true WHERE id = $1", [r.id]);
                     } else {
-                        if (user.id !== user.main_admin_id && !user.permissions.reasign_reports
-                            && !beforeCheckTime(r.check_before, user.timezone)) {
-                            throw Object.assign(new Error("report_overdue"), { status: 409 });
-                        }
                         const text = body.text;
                         if (typeof text !== "string") throw Object.assign(new Error("invalid_value"), { status: 400 });
                         const metric = (r.metric ?? "No Metric").toLowerCase();

@@ -32,8 +32,6 @@ export default function DailyBrief() {
   const briefTime = new Intl.DateTimeFormat(locale, { timeZone: timezone, hour: 'numeric', minute: '2-digit' });
   const manager = !!user && (user.id === user.main_admin_id || user.permissions.reasign_reports === true
     || (user.permissions.see_all_briefs === true && user.permissions.update_brief === true));
-  const isBeforeTime = (time: string | undefined) =>
-    user?.id === user?.main_admin_id || user?.permissions.reasign_reports === true || beforeCheckTime(time, timezone, now);
   const readOnly = (b: SavedBrief) => !b.is_department_journal || b.freezed || b.date !== todayString;
   const noAccessEditShort = (b: SavedBrief) => readOnly(b) || !user
     || !b.duties.some(d => d.user_id === user.id && !d.ended_at) || (!manager && !user.permissions.update_brief);
@@ -970,8 +968,8 @@ export default function DailyBrief() {
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id === user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
-                            <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (isBeforeTime(r.check_before)  ? '' : ' red-background')} key={r.id}>
-                              <input className={savingReports.includes(r.id) || noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before)) ? 'd' : ''} disabled={savingReports.includes(r.id) || noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before))} type='checkbox' checked={r.checked} onChange={() => {
+                            <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now) ? '' : ' red-background')} key={r.id}>
+                              <input className={savingReports.includes(r.id) || noAccessReport(b, r) ? 'd' : ''} disabled={savingReports.includes(r.id) || noAccessReport(b, r)} type='checkbox' checked={r.checked} onChange={() => {
                                 const metric_lowercase = r.metric?.toLowerCase();
                                 if ((metric_lowercase === 'metric' || 
                                      metric_lowercase === 'count' ||
@@ -996,8 +994,8 @@ export default function DailyBrief() {
                                 <div className="flex" style={{ gap: 5, marginBottom: 5 }}>
                                   {r.metric ? (<div style={{ margin: 'auto 0' }}>{r.metric}</div>) : 'No Metric'}
                                   {(r.metric === 'Image') && r.checked !== true && (
-                                    <ImageUploader disabled={(r.checked ?? false) || noAccessReport(b, r) || !isBeforeTime(r.check_before)} send_url_to={(url) => {
-                                      if (!r.checked && !noAccessReport(b, r) && isBeforeTime(r.check_before)) {
+                                    <ImageUploader disabled={(r.checked ?? false) || noAccessReport(b, r)} send_url_to={(url) => {
+                                      if (!r.checked && !noAccessReport(b, r)) {
                                           updateReports(
                                               b,
                                               {
@@ -1014,13 +1012,13 @@ export default function DailyBrief() {
 
                                 {(r.metric === 'Metric' || r.metric === 'Count') && (
                                     <input
-                                        className={r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
+                                        className={r.checked || noAccessReport(b, r) ? 'input d' : 'input'}
                                         value={r.text ?? ''}
-                                        disabled={(r.checked ?? false) || noAccessReport(b, r) || !isBeforeTime(r.check_before)}
+                                        disabled={(r.checked ?? false) || noAccessReport(b, r)}
                                         type="number"
 
                                         onChange={(e) => {
-                                            if (!r.checked && !noAccessReport(b, r) && isBeforeTime(r.check_before)) {
+                                            if (!r.checked && !noAccessReport(b, r)) {
                                                 updateReports(
                                                     b,
                                                     {
@@ -1034,7 +1032,7 @@ export default function DailyBrief() {
                                         }}
 
                                         onBlur={(e) => {
-                                            if (r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before)) return;
+                                            if (r.checked || noAccessReport(b, r)) return;
 
                                             let value = e.target.value;
                                             let start_value = e.target.value;
@@ -1070,12 +1068,12 @@ export default function DailyBrief() {
                                 )}
                                 {(r.metric === 'Free-text') && (
                                   <textarea 
-                                        className={r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
+                                        className={r.checked || noAccessReport(b, r) ? 'input d' : 'input'}
                                         style={{ transition: 'none' }}
                                         defaultValue={r.text ?? ''}
-                                        disabled={!!r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before)}
+                                        disabled={!!r.checked || noAccessReport(b, r)}
                                         onBlur={(e) => {
-                                          if (r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before)) return;
+                                          if (r.checked || noAccessReport(b, r)) return;
                                           const text = e.currentTarget.value;
                                           if (text !== (r.text ?? '')) {
                                               updateReports(
@@ -1094,13 +1092,13 @@ export default function DailyBrief() {
                                 {(r.metric === 'Yes/No') && (
                                   <div className='flex' style={{ gap: 5, padding: '0 0 0 2px' }}>
                                     <input
-                                          className={r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before)  ? 'input d' : 'input'}
+                                          className={r.checked || noAccessReport(b, r) ? 'input d' : 'input'}
                                           checked={r.text === "Yes"}
-                                          disabled={!!r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before)}
+                                          disabled={!!r.checked || noAccessReport(b, r)}
                                           type="checkbox"
   
                                           onChange={(e) => {
-                                              if (!r.checked && !noAccessReport(b, r) && isBeforeTime(r.check_before)) {
+                                              if (!r.checked && !noAccessReport(b, r)) {
                                                   updateReports(
                                                       b,
                                                       {
@@ -1114,13 +1112,13 @@ export default function DailyBrief() {
                                           }} />
                                     <div style={{padding: '0 3px'}}>/</div>
                                     <input
-                                          className={r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before) ? 'input d' : 'input'}
+                                          className={r.checked || noAccessReport(b, r) ? 'input d' : 'input'}
                                           checked={r.text === "No"}
-                                          disabled={!!r.checked || noAccessReport(b, r) || !isBeforeTime(r.check_before)}
+                                          disabled={!!r.checked || noAccessReport(b, r)}
                                           type="checkbox"
   
                                           onChange={(e) => {
-                                              if (!r.checked && !noAccessReport(b, r) && isBeforeTime(r.check_before)) {
+                                              if (!r.checked && !noAccessReport(b, r)) {
                                                   updateReports(
                                                       b,
                                                       {
@@ -1138,7 +1136,7 @@ export default function DailyBrief() {
                                 
                                 {r.metric === 'Image' && r.text && isBlobLink(r.text) === true && 
                                   (<div style={{ position: 'relative' }}>
-                                    {r.checked !== true && !noAccessReport(b, r) && isBeforeTime(r.check_before) && (
+                                    {r.checked !== true && !noAccessReport(b, r) && (
                                       <div className="x" style={{ position: 'absolute', right: 5, top: 5 }} onClick={() => {
                                         updateReports(
                                               b,
@@ -1185,7 +1183,7 @@ export default function DailyBrief() {
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
-                            <div className={i === 0 ? 'report border-top reports-other-users-took' : 'report'} key={r.id}>
+                            <div className={(i === 0 ? 'report border-top reports-other-users-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now) ? '' : ' red-background')} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
                               <div></div>
                               <div>{r.name}</div>
