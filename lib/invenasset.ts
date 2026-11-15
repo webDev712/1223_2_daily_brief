@@ -50,7 +50,13 @@ export function decryptInvenasset(value: string, purpose: string) {
 
 export async function invenassetOwner() {
     const user = await getCurrentUser();
-    return user && user.id === user.main_admin_id ? user : null;
+    if (!user) return null;
+    const isManager = user.id === user.main_admin_id
+        || user.role?.toLowerCase() === "manager"
+        || user.permissions?.edit_app_settings === true
+        || user.permissions?.reasign_reports === true
+        || (user.permissions?.see_all_briefs === true && user.permissions?.update_brief === true);
+    return isManager ? user : null;
 }
 
 export async function requestInvenasset(body: Record<string, unknown>, token?: string) {

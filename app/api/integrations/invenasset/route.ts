@@ -75,8 +75,8 @@ export async function DELETE(request: NextRequest) {
             const client = await pool.connect();
             try {
                 await client.query({
-                    text: "DELETE FROM invenasset_connection WHERE company_id=$1 AND token_encrypted=$2 AND EXISTS (SELECT 1 FROM company WHERE id=$1 AND main_admin_id=$3)",
-                    values: [user.company_id, rows[0].token_encrypted, user.id], query_timeout: 10000,
+                    text: "DELETE FROM invenasset_connection WHERE company_id=$1 AND token_encrypted=$2",
+                    values: [user.company_id, rows[0].token_encrypted], query_timeout: 10000,
                 });
             } finally {
                 client.release();
