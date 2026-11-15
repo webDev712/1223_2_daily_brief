@@ -612,7 +612,8 @@
       "newActionPlaceholder": "New action...",
       "defaultUser": "User",
       "notification": "INFO: Added new action by this User to the Issue / Observation, you've added ({issue}...): {action}",
-      "mentionedNotification": "INFO: You were mentioned in an action: \"{action}...\" Open Action Tracker to see it."
+      "mentionedNotification": "INFO: You were mentioned in an action: \"{action}...\" Open Action Tracker to see it.",
+      "youAreActionOwner": "INFO: You was selected as an Issue / Observation owner \"{action}...\" Open Action Tracker to see it."
       },
     "confirm": {
       "deleteTitle": "Confirm Deleting this Issue / Observation?",

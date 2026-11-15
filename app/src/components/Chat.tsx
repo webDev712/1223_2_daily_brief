@@ -63,7 +63,7 @@ function parseBriefLink(text: string): { cleanText: string; url: string } | null
 }
 
 // Not a component, so it can't use hooks: the caller passes the already translated toast text.
-export const sendMessageGlobal = async (message: NewMessage, successMessage?: string) => {
+export const sendMessageGlobal = async (message: NewMessage, from_user: User, to_user: User | undefined, successMessage?: string) => {
     const chat_res = await fetch('/api/chat', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
@@ -73,7 +73,18 @@ export const sendMessageGlobal = async (message: NewMessage, successMessage?: st
         console.error('Error while sending message');
         return;
     }
-    if (successMessage) toast.success(successMessage)
+    if (successMessage) toast.success(successMessage);
+    if (!to_user) return;
+    const email_res = await fetch('/api/email', {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({
+            from_user_name: from_user.name,
+            to_user_email: to_user.email,
+            to_user_name: to_user.name,
+            message: message.text
+        })
+    });
 }
 
 const Chat = ({openChat, setOpenChat, class_name}: {
@@ -110,7 +121,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     const [loadingFalseNextChatReload, setLoadingFalseNextChatReload] = useState(false);
 
 
-    const sendMessage = async (message: NewMessage) => {
+    const sendMessage = async (message: NewMessage, from_user: User, to_user: User | undefined) => {
         const chat_res = await fetch('/api/chat', {
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
@@ -123,6 +134,17 @@ const Chat = ({openChat, setOpenChat, class_name}: {
         setMessageText('');
         setReloadChats(prev => prev + 1);
         setReloadMessages(prev => prev + 1);
+        if (!to_user) return;
+        await fetch('/api/email', {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({
+                from_user_name: from_user.name,
+                to_user_email: to_user.email,
+                to_user_name: to_user.name,
+                message: message.text
+            })
+        });
     }
 
     const updateMessage = async (message: Message) => {
@@ -574,7 +596,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                             from_user: seeUserMessageAs.id,
                                                             to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                             timestamp: new Date(),
-                                                        });
+                                                        },
+                                                        me_user,
+                                                        users.find((user: UserForChat) => user.id === selectedUserId));
                                                     }
                                                 }}/>
                                             <ImageUploader send_url_to={(url: string) => {
@@ -584,7 +608,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         from_user: seeUserMessageAs.id,
                                                         to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                         timestamp: new Date(),
-                                                    })
+                                                    },
+                                                    me_user,
+                                                    users.find((user: UserForChat) => user.id === selectedUserId))
                                                 }
                                             }}></ImageUploader>
                                             <FileUploader send_url_to={(url: string, file_name: string) => {
@@ -594,7 +620,10 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                         from_user: seeUserMessageAs.id,
                                                         to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                         timestamp: new Date(),
-                                                    })
+                                                    },
+                                                    me_user,
+                                                    users.find((user: UserForChat) => user.id === selectedUserId))
+
                                                 }
                                             }}></FileUploader>
 
@@ -604,7 +633,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                     from_user: seeUserMessageAs.id,
                                                     to_user: users.find((user: UserForChat) => user.id === selectedUserId )?.id ?? '',
                                                     timestamp: new Date(),
-                                                })
+                                                },
+                                                me_user,
+                                                users.find((user: UserForChat) => user.id === selectedUserId))
                                             }}
                                             >{t('messages.send')}</div>
                                         </div>

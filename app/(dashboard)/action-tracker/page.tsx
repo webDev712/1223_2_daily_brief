@@ -202,6 +202,18 @@ export default function ActionTracker () {
             setLoading(false);
             return false;
         }
+        if (!newActionTrackerRow.id && newActionTrackerRow.user_id !== user.id) {
+            sendMessageGlobal({
+                text: t('actionsList.youAreActionOwner', {
+                    action: newActionTrackerRow.text.slice(0,20),
+                }),
+                from_user: user.id,
+                to_user: newActionTrackerRow.user_id,
+                timestamp: new Date()
+            },
+            user,
+            users.find((a: User) => a.id === newActionTrackerRow.user_id))
+        }
         if (rowShowActions){
             setRowShowActions(newActionTrackerRow);
             setActionToAdd('');
@@ -216,7 +228,9 @@ export default function ActionTracker () {
                         from_user: user.id,
                         to_user: user_id,
                         timestamp: new Date()
-                    })
+                    },
+                    user,
+                    users.find((a: User) => a.id === user_id))
             })
             setMentionedUsers([]);
         }
@@ -791,6 +805,8 @@ export default function ActionTracker () {
                                                     to_user: rowShowActions.user_id,
                                                     timestamp: new Date()
                                                 },
+                                                user,
+                                                users.find((a: User) => a.id === rowShowActions.user_id),
                                                 'Issue / Observation owner is notified with new action!')
                                             }
                                             }}>{t('actionsList.addAction')}</div>

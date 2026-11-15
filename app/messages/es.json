@@ -612,7 +612,9 @@
       "newActionPlaceholder": "Nueva acción...",
       "defaultUser": "Usuario",
       "notification": "INFO: Este usuario agregó una nueva acción al problema / observación que registraste ({issue}...): {action}",
-      "mentionedNotification": "INFO: Te mencionaron en una acción: \"{action}\"... Abre Action Tracker para verlo."
+      "mentionedNotification": "INFO: Te mencionaron en una acción: \"{action}\"... Abre Action Tracker para verlo.",
+      "youAreActionOwner": "INFO: Fuiste seleccionado como responsable de un problema / observación \"{action}...\" Abre el Seguimiento de Acciones para verlo."
+
     },
     "confirm": {
       "deleteTitle": "¿Confirmas la eliminación de este problema / observación?",

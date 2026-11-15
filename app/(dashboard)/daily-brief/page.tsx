@@ -165,7 +165,9 @@ export default function DailyBrief() {
             from_user: user!.id,
             to_user: user_id,
             timestamp: new Date(),
-          });
+          },
+          user!,
+          leads.find((a: User) => a.id === user_id));
         });
       if (mentionedUsers.length > 0) toast.success('Mentioned users was notified!')
       setShowAddFinding(false);
