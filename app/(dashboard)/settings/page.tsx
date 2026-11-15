@@ -48,8 +48,16 @@ export default function Settings() {
   const [newDeparmentName, setNewDeparmentName] = useState('');
   const [shifts, setShifts] = useState<Shift[]>([]);
 
+  const isManager = !!user && (
+    company?.main_admin_id === user.id
+    || user.role?.toLowerCase() === 'manager'
+    || user.permissions.edit_app_settings === true
+    || user.permissions.reasign_reports === true
+    || (user.permissions.see_all_briefs === true && user.permissions.update_brief === true)
+  );
+
   useEffect(() => {
-    if (!user?.id || company?.main_admin_id !== user.id) return;
+    if (!user?.id || !isManager) return;
     const controller = new AbortController();
     async function loadConnection() {
       try {
@@ -63,13 +71,13 @@ export default function Settings() {
     }
     loadConnection();
     return () => controller.abort();
-  }, [user?.id, company?.main_admin_id, reload]);
+  }, [user?.id, isManager, reload]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const result = url.searchParams.get('invenasset');
     if (!['connected', 'cancelled', 'error'].includes(result || '')) return;
-    setSelectedSettings('company');
+    setSelectedSettings('data');
     if (result === 'connected') toast.success(t('invenasset.connected'));
     if (result === 'error') toast.error(t('invenasset.error'));
     url.searchParams.delete('invenasset');
@@ -192,7 +200,26 @@ export default function Settings() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({...company, smrt_api_key: smrtApiKey})
+      body: JSON.stringify(company)
+    })
+    if (!company_res.ok) {
+      toast.error(t('toast.companySaveError'));
+      setLoading(false)
+      return;
+    }
+    setReload(prev => prev + 1);
+  }
+
+  const saveIntegration = async () => {
+    const trimmed = smrtApiKey.trim();
+    if (!trimmed) return;
+    setLoading(true);
+    const company_res = await fetch('/api/company', {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ smrt_api_key: trimmed })
     })
     if (!company_res.ok) {
       toast.error(t('toast.companySaveError'));
@@ -438,7 +465,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
             <div>
               <div data-img="bell" className={selectedSettings === 'my' ? 'selected' : ''} onClick={() => {setSelectedSettings('my')}}>{t('tabs.myProfile')}</div>
               {company?.main_admin_id === user.id && (<div data-img="house" className={selectedSettings === 'company' ? 'selected' : ''} onClick={() => {setSelectedSettings('company')}}>{t('tabs.company')}</div>)}
-              {user.permissions.see_app_settings && (
+              {(user.permissions.see_app_settings || isManager) && (
                 <div data-img="shield" className={selectedSettings === 'data' ? 'selected' : ''} onClick={() => {setSelectedSettings('data')}}>{t('tabs.dataSecurity')}</div>
               )}
               {user.permissions.manage_configuration && (<div data-img="lists" className={selectedSettings === 'lists' ? 'selected' : ''} onClick={() => {setSelectedSettings('lists')}}>{t('tabs.lists')}</div>)}
@@ -538,32 +565,6 @@ const [shiftTo, setShiftTo] = useState('16:00');
                             <span>{t('company.createdAt')}</span>
                             <input type="text" value={format(new Date(company.created_at), 'MM-dd-yyyy')} disabled className='d' onChange={() => {}}/>
                           </label>
-                          <label>
-                            <span>{t('company.smrtApiKey')}</span>
-                            <input type="password" value={smrtApiKey} autoComplete="new-password" placeholder={t('company.smrtApiKeyPlaceholder')} onChange={(e) => {setSmrtApiKey(e.target.value); setAllowSave(true);}} />
-                          </label>
-                          <div className='invenasset-connection'>
-                            <div className='invenasset-info'>
-                              <div>InvenAsset</div>
-                              {invenasset?.connection && <div>{invenasset.connection.company_name}</div>}
-                              <p>{invenassetError ? t('invenasset.error')
-                                : !invenasset ? t('invenasset.loading')
-                                : !invenasset.configured ? t('invenasset.notConfigured')
-                                : invenasset.connection ? t(invenasset.connection.active ? 'invenasset.connected' : 'invenasset.inactive')
-                                : t('invenasset.description')}</p>
-                            </div>
-                            <div className='invenasset-actions'>
-                              {!invenasset?.connection?.active && (
-                                <button type='button' className='invenasset-connect' disabled={!invenasset?.configured || invenassetBusy || invenassetError} onClick={connectInvenasset}>
-                                  <img src='/invenasset-logo.svg' alt='' width={22} height={22} />
-                                  {t(invenasset?.connection ? 'invenasset.reconnect' : 'invenasset.connect')}
-                                </button>
-                              )}
-                              {invenasset?.connection && (
-                                <button type='button' className='button-w-r-sm' disabled={invenassetBusy} onClick={disconnectInvenasset}>{t('invenasset.disconnect')}</button>
-                              )}
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -577,6 +578,42 @@ const [shiftTo, setShiftTo] = useState('16:00');
               <div className='data'>
                 <h1>{t('data.title')}</h1>
                 <p>{t('data.description')}</p>
+                {isManager && (
+                  <div className='company-data'>
+                    <div>
+                      <div>{t('data.integration')}</div>
+                      <div className={smrtApiKey.trim() ? "button-d-bl-sm" : "button-d-bl-sm d"} onClick={() => {if (smrtApiKey.trim()) saveIntegration()}}>{t('common.saveChanges')}</div>
+                    </div>
+                    <div>
+                      <label>
+                        <span>{t('company.smrtApiKey')}</span>
+                        <input type="password" value={smrtApiKey} autoComplete="new-password" placeholder={t('company.smrtApiKeyPlaceholder')} onChange={(e) => setSmrtApiKey(e.target.value)} />
+                      </label>
+                      <div className='invenasset-connection'>
+                        <div className='invenasset-info'>
+                          <div>InvenAsset</div>
+                          {invenasset?.connection && <div>{invenasset.connection.company_name}</div>}
+                          <p>{invenassetError ? t('invenasset.error')
+                            : !invenasset ? t('invenasset.loading')
+                            : !invenasset.configured ? t('invenasset.notConfigured')
+                            : invenasset.connection ? t(invenasset.connection.active ? 'invenasset.connected' : 'invenasset.inactive')
+                            : t('invenasset.description')}</p>
+                        </div>
+                        <div className='invenasset-actions'>
+                          {!invenasset?.connection?.active && (
+                            <button type='button' className='invenasset-connect' disabled={!invenasset?.configured || invenassetBusy || invenassetError} onClick={connectInvenasset}>
+                              <img src='/invenasset-logo.svg' alt='' width={22} height={22} />
+                              {t(invenasset?.connection ? 'invenasset.reconnect' : 'invenasset.connect')}
+                            </button>
+                          )}
+                          {invenasset?.connection && (
+                            <button type='button' className='button-w-r-sm' disabled={invenassetBusy} onClick={disconnectInvenasset}>{t('invenasset.disconnect')}</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <div>{t('data.exportData')}</div>
                   <div>

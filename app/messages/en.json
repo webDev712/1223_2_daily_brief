@@ -716,6 +716,7 @@
     "data": {
       "title": "Data & Security",
       "description": "Manage data retention, exports, and security preferences.",
+      "integration": "INTEGRATION",
       "exportData": "EXPORT DATA",
       "exportAllBriefs": "Export all briefs",
       "exportAllBriefsDescription": "Download a full archive of all Route Department briefs",

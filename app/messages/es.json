@@ -717,6 +717,7 @@
     "data": {
       "title": "Datos y seguridad",
       "description": "Administra la retención de datos, las exportaciones y las preferencias de seguridad.",
+      "integration": "INTEGRACIÓN",
       "exportData": "EXPORTAR DATOS",
       "exportAllBriefs": "Exportar todos los briefs",
       "exportAllBriefsDescription": "Descarga un archivo completo de todos los briefs del departamento de Ruta",

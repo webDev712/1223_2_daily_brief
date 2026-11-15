@@ -78,6 +78,31 @@ export async function PATCH (request: NextRequest) {
             return NextResponse.json({ error: "Invalid SMRT API key" }, { status: 400 });
         }
 
+        if (name === undefined && main_admin_id === undefined && logo === undefined && plan_id === undefined && stripe_customer_id === undefined) {
+            const rows = await sql`
+                UPDATE company c
+                SET smrt_api_key = COALESCE(${smrtApiKey || null}, c.smrt_api_key)
+                FROM website_user w
+                JOIN role r ON r.id = w.role_id AND r.company_id = w.company_id
+                WHERE c.id = ${company_id}
+                    AND w.id = ${user_id}::uuid
+                    AND w.company_id = c.id
+                    AND w.archived = false
+                    AND (
+                        c.main_admin_id = w.id
+                        OR LOWER(r.name) = 'manager'
+                        OR COALESCE((r.permissions->>'edit_app_settings')::boolean, false)
+                        OR COALESCE((r.permissions->>'reasign_reports')::boolean, false)
+                        OR (COALESCE((r.permissions->>'see_all_briefs')::boolean, false) AND COALESCE((r.permissions->>'update_brief')::boolean, false))
+                    )
+                RETURNING c.id;
+            `
+            if (!rows.length) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
+            return NextResponse.json(rows);
+        }
+
         const rows = await sql`
             UPDATE company 
             SET name = ${name}, main_admin_id = ${main_admin_id}, logo = ${logo}, plan_id = ${plan_id}, stripe_customer_id = ${stripe_customer_id},

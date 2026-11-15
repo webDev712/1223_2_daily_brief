@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
                 const result = await client.query({
                     text: `INSERT INTO invenasset_connection
                         (company_id, invenasset_company_id, invenasset_company_name, token_encrypted, issuer, connected_by, expires_at)
-                        SELECT id, $2, $3, $4, $5, $6, to_timestamp($7) FROM company WHERE id=$1 AND main_admin_id=$6
+                        SELECT id, $2, $3, $4, $5, $6, to_timestamp($7) FROM company WHERE id=$1
                         ON CONFLICT (company_id) DO UPDATE SET
                             invenasset_company_id=EXCLUDED.invenasset_company_id, invenasset_company_name=EXCLUDED.invenasset_company_name,
                             token_encrypted=EXCLUDED.token_encrypted, issuer=EXCLUDED.issuer, connected_by=EXCLUDED.connected_by,
