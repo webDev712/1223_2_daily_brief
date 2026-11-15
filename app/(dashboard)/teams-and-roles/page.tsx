@@ -39,7 +39,7 @@ export default function TeamsAndRoles() {
   const [reload, setReload] = useState(0);
 
   const permissions = getPermissions()
-  const isOwner = !!me_user && me_user.id === me_user.main_admin_id;
+  const canEditUsers = !!me_user && (me_user.id === me_user.main_admin_id || me_user.permissions.add_users);
 
 
   const archiveUser = (user: User | null) => {
@@ -559,7 +559,7 @@ export default function TeamsAndRoles() {
                     </div>
                   ) : (<div></div>)}
                   <div style={{display: 'flex', gap: 10}}>
-                  {isOwner && (<div className='button-d-bl-sm' onClick={() => {setUserToEdit({...user}); setShowAddUser(false)}}>{t('common.edit')}</div>)}
+                  {canEditUsers && (<div className='button-d-bl-sm' onClick={() => {setUserToEdit({...user}); setShowAddUser(false)}}>{t('common.edit')}</div>)}
                   {me_user && me_user.permissions.archive_give_access_users && user.archived !== true && (
                     <div className='button-r-sm' onClick={() => {
                       setUserToDelete(user);
