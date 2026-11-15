@@ -77,7 +77,7 @@ export async function POST(request: Request) {
                 SELECT w.id, w.email, w.name
                 FROM website_user w JOIN company c ON c.id = w.company_id
                 WHERE w.id = ${body.id} AND w.company_id = ${company_id}
-                    AND c.main_admin_id = ${user_id}::uuid AND w.archived = false;
+                    AND (c.main_admin_id = ${user_id}::uuid OR ${permissions.add_users === true}) AND w.archived = false;
             `;
             if (!rows.length) {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -180,7 +180,7 @@ export async function PUT(request: Request) {
         const user_id = session.user.id;
         const company_id = session.user.company_id;
         const owner = await sql`SELECT id FROM company WHERE id = ${company_id} AND main_admin_id = ${user_id}::uuid`;
-        if (!owner.length) {
+        if (!owner.length && !session.user.permissions.add_users) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
         const { id, email, name, phone, lead_letter, role_id, department_id } = await request.json();
