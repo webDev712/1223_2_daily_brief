@@ -53,6 +53,11 @@
     "no_findings_yet": "No Findings yet",
     "no_tasks_yet": "No Tasks yet",
     "choose_status": "Choose Status",
+    "invenasset_equipment": "InvenAsset equipment",
+    "invenasset_choose_equipment": "Select equipment",
+    "invenasset_issue_type": "Type of issue",
+    "invenasset_open": "Requires repair",
+    "invenasset_resolved": "Resolved",
     "high": "High",
     "moderate": "Moderate",
     "info": "Info",
@@ -137,6 +142,8 @@
     "handoff_failed": "Could not hand off the brief. Refresh and check the recipient and shift.",
     "errors": {
       "handoff_pending": "You already have a handoff awaiting acceptance.",
+      "invenasset_not_connected": "Connect InvenAsset in Company Settings first.",
+      "invenasset_unavailable": "Could not reach InvenAsset. Check the connection and try again. The finding has not been saved.",
       "handoff_changed": "This handoff has already been processed or is no longer available. The brief will refresh.",
       "handoff_reports_changed": "The reports have changed. Review the refreshed list before accepting again.",
       "decline_reason_required": "Enter a reason for declining the handoff.",
@@ -409,10 +416,13 @@
       "addedUser": "Added user \"{name}\"",
       "userSaved": "User data saved successfully!",
       "errorSavingUser": "Error while saving user data. Try again later.",
+      "user_exists": "A user with this email already exists.",
       "selectPermission": "Select at least one permission.",
       "addedRole": "Added role \"{name}\" with {count, plural, one {# permission} other {# permissions}}",
       "editedRole": "Success! Now, role \"{name}\" has {count, plural, one {# permission} other {# permissions}}",
-      "userHasAccess": "Now User \"{name}\" has access!"
+      "userHasAccess": "Now User \"{name}\" has access!",
+      "invitationSent": "Invitation sent!",
+      "errorSendingInvitation": "Failed to send invitation. Try again later."
     },
     "common": {
       "cancel": "Cancel",
@@ -439,6 +449,10 @@
       "employeeId": "Employee ID (2 symbols XX)",
       "department": "Department",
       "submit": "Add new User"
+    },
+    "editUser": {
+      "title": "Edit User:",
+      "resendInvite": "Resend Invitation"
     },
     "roleForm": {
       "createTitle": "Create new Role:",
@@ -670,6 +684,18 @@
       "dangerZone": "Danger zone",
       "dangerDescription": "Permanently delete your profile and all associated data. This cannot be undone.",
       "archiveButton": "Archive my account"
+    },
+    "invenasset": {
+      "connect": "Connect to InvenAsset",
+      "reconnect": "Reconnect to InvenAsset",
+      "disconnect": "Disconnect",
+      "description": "Connect an InvenAsset company to send findings as equipment issues and receive their resolution status.",
+      "loading": "Checking connection…",
+      "notConfigured": "InvenAsset connection has not been enabled for this site yet.",
+      "connected": "InvenAsset company connected.",
+      "inactive": "Connection expired or access was revoked. Reconnect to continue.",
+      "disconnected": "InvenAsset disconnected.",
+      "error": "Could not complete the InvenAsset connection request. Please try again."
     },
     "company": {
       "title": "Company",
