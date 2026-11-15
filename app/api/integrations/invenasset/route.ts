@@ -1,17 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import sql, { pool } from "@/lib/db";
-import { decryptInvenasset, encryptInvenasset, invenassetConfig, invenassetRequestConfig, invenassetCookie, invenassetOwner, requestInvenasset } from "@/lib/invenasset";
+import { invenassetConfig, invenassetRequestConfig, invenassetCookie, invenassetOwner, requestInvenasset } from "@/lib/invenasset";
 
 export async function GET() {
     const user = await invenassetOwner();
     if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    let config;
-    try {
-        config = invenassetConfig();
-    } catch {
-        return NextResponse.json({ configured: false, connection: null }, { headers: { "Cache-Control": "no-store" } });
-    }
+    const config = invenassetConfig();
     try {
         const rows = await sql`SELECT invenasset_company_id, invenasset_company_name, token_encrypted, issuer, expires_at
             FROM invenasset_connection WHERE company_id=${user.company_id}`;
@@ -22,7 +17,7 @@ export async function GET() {
             return NextResponse.json({ configured: true, connection }, { headers: { "Cache-Control": "no-store" } });
         }
         const { response, data } = await requestInvenasset({ action: "status" },
-            decryptInvenasset(saved.token_encrypted, `connection:${user.company_id}`));
+            saved.token_encrypted);
         if (!response.ok && response.status !== 401 && response.status !== 403) throw new Error("unavailable");
         if (response.ok && data.connected === true && data.company?.id === saved.invenasset_company_id) {
             connection.active = true;
@@ -48,15 +43,15 @@ export async function POST(request: NextRequest) {
             code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256",
         }).toString();
         const response = NextResponse.json({ url: url.toString() }, { headers: { "Cache-Control": "no-store" } });
-        response.cookies.set(invenassetCookie, encryptInvenasset(JSON.stringify({
+        response.cookies.set(invenassetCookie, Buffer.from(JSON.stringify({
             state, verifier, userId: user.id, companyId: user.company_id, expires: Date.now() + 900000,
-        }), "authorization"), {
+        })).toString("base64url"), {
             httpOnly: true, secure: config.origin.startsWith("https://"), sameSite: "lax",
             path: "/api/integrations/invenasset", maxAge: 900,
         });
         return response;
     } catch {
-        return NextResponse.json({ error: "integration_not_configured" }, { status: 503 });
+        return NextResponse.json({ error: "integration_unavailable" }, { status: 503 });
     }
 }
 
@@ -70,7 +65,7 @@ export async function DELETE(request: NextRequest) {
         if (rows.length) {
             if (rows[0].issuer !== config.issuer) throw new Error("issuer_changed");
             const { response, data } = await requestInvenasset({ action: "revoke" },
-                decryptInvenasset(rows[0].token_encrypted, `connection:${user.company_id}`));
+                rows[0].token_encrypted);
             if (!response.ok || data.revoked !== true) throw new Error("revoke_failed");
             const client = await pool.connect();
             try {

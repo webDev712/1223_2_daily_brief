@@ -1,18 +1,8 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { getCurrentUser } from "@/lib/auth";
 import sql from "@/lib/db";
 
 export function invenassetConfig() {
-    const issuer = (process.env.INVENASSET_BASE_URL || "https://invenasset.com").replace(/\/$/, "");
-    const key = Buffer.from(process.env.INVENASSET_TOKEN_ENCRYPTION_KEY || "", "base64");
-    const origin = new URL(issuer);
-    const local = process.env.NODE_ENV === "development";
-    if (key.length !== 32
-        || origin.origin !== issuer
-        || (origin.protocol !== "https:" && !(local && origin.protocol === "http:" && ["localhost", "127.0.0.1"].includes(origin.hostname)))) {
-        throw new Error("integration_not_configured");
-    }
-    return { issuer, key };
+    return { issuer: "https://invenasset.com" };
 }
 
 export function invenassetRequestConfig(request: Request) {
@@ -27,25 +17,7 @@ export async function invenassetCompanyConnection(companyId: string) {
     if (!saved || saved.issuer !== invenassetConfig().issuer || new Date(saved.expires_at).getTime() <= Date.now()) {
         throw Object.assign(new Error("invenasset_not_connected"), {status: 409});
     }
-    return { companyId: saved.invenasset_company_id, token: decryptInvenasset(saved.token_encrypted, `connection:${companyId}`) };
-}
-
-export function encryptInvenasset(value: string, purpose: string) {
-    const { key } = invenassetConfig();
-    const iv = randomBytes(12);
-    const cipher = createCipheriv("aes-256-gcm", key, iv);
-    cipher.setAAD(Buffer.from(purpose));
-    const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
-    return Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString("base64url");
-}
-
-export function decryptInvenasset(value: string, purpose: string) {
-    const { key } = invenassetConfig();
-    const encrypted = Buffer.from(value, "base64url");
-    const decipher = createDecipheriv("aes-256-gcm", key, encrypted.subarray(0, 12));
-    decipher.setAAD(Buffer.from(purpose));
-    decipher.setAuthTag(encrypted.subarray(12, 28));
-    return Buffer.concat([decipher.update(encrypted.subarray(28)), decipher.final()]).toString("utf8");
+    return { companyId: saved.invenasset_company_id, token: saved.token_encrypted };
 }
 
 export async function invenassetOwner() {
