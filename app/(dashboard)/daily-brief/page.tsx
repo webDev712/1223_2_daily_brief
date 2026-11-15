@@ -45,6 +45,7 @@ export default function DailyBrief() {
     || (!manager && !(user.permissions.update_brief && (user.department_id === b.department_id || r.holder_id === user.id)));
   const [submitErrors, setSubmitErrors] = useState<{pending: Report[]; overdue: Report[]}>({pending: [], overdue: []});
   const requestQueue = useRef(Promise.resolve(true));
+  const [savingReports, setSavingReports] = useState<number[]>([]);
   const [showSubmit, setShowSubmit] = useState<{briefId: number; reportId: number} | null>(null)
   const [handoffConfirm, setHandoffConfirm] = useState<{
     briefId: string | number;
@@ -69,6 +70,11 @@ export default function DailyBrief() {
   const findingTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const changeBrief = (b: SavedBrief, action: string, values: Record<string, unknown> = {}) => {
+    const reportId = action === 'complete' || action === 'undo' ? Number(values.report_id) : null;
+    if (reportId !== null) {
+      if (savingReports.includes(reportId)) return Promise.resolve(false);
+      setSavingReports(previous => [...previous, reportId]);
+    }
     const request = requestQueue.current.then(async () => {
       savingRef.current = true;
       try {
@@ -105,6 +111,7 @@ export default function DailyBrief() {
         return false;
       } finally {
         savingRef.current = false;
+        if (reportId !== null) setSavingReports(previous => previous.filter(id => id !== reportId));
       }
     });
     requestQueue.current = request;
@@ -964,7 +971,7 @@ export default function DailyBrief() {
                         {reports_sorted.filter((r: Report) => r.holder_id === user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (isBeforeTime(r.check_before)  ? '' : ' red-background')} key={r.id}>
-                              <input className={noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before)) ? 'd' : ''} disabled={noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before))} type='checkbox' checked={r.checked} onChange={() => {
+                              <input className={savingReports.includes(r.id) || noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before)) ? 'd' : ''} disabled={savingReports.includes(r.id) || noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before))} type='checkbox' checked={r.checked} onChange={() => {
                                 const metric_lowercase = r.metric?.toLowerCase();
                                 if ((metric_lowercase === 'metric' || 
                                      metric_lowercase === 'count' ||

@@ -82,6 +82,7 @@ export default function TeamsAndRoles() {
   }
 
   const addUser = async () => {
+    if (userFormBusy) return;
     const user = {
       email: (document.getElementById('email') as HTMLInputElement)?.value || '',
       name: (document.getElementById('name') as HTMLInputElement)?.value || '',
@@ -117,7 +118,7 @@ export default function TeamsAndRoles() {
   };
 
   const resendInvite = async () => {
-    if (!userToEdit) return;
+    if (!userToEdit || userFormBusy) return;
     setUserFormBusy(true);
     try {
       const res = await fetch("/api/user", {
@@ -420,8 +421,8 @@ export default function TeamsAndRoles() {
 
                   <div>
                     <div className='button-w-bl' onClick={() => {setShowAddUser(false); setUserToEdit(null)}}>{t('common.cancel')}</div>
-                    {userToEdit && (<button className='button-w-bl' type='button' disabled={userFormBusy || userToEdit.archived} onClick={resendInvite}>{t('editUser.resendInvite')}</button>)}
-                    <button className='button-d-bl' type='submit' form="add-user-form" disabled={userFormBusy}>{userToEdit ? t('common.save') : t('addUser.submit')}</button>
+                    {userToEdit && (<button className={userFormBusy || userToEdit.archived ? 'button-w-bl d' : 'button-w-bl'} type='button' disabled={userFormBusy || userToEdit.archived} onClick={resendInvite}>{t('editUser.resendInvite')}</button>)}
+                    <button className={userFormBusy ? 'button-d-bl d' : 'button-d-bl'} type='submit' form="add-user-form" disabled={userFormBusy}>{userToEdit ? t('common.save') : t('addUser.submit')}</button>
                   </div>
                 </form>
               </div>
