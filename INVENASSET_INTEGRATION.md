@@ -18,7 +18,7 @@ The website receives a one-time `code`, its `state`, and `iss`. It checks the sa
 {"action":"exchange","code":"RETURNED_CODE","code_verifier":"SAVED_VERIFIER","redirect_uri":"EXACT_CALLBACK"}
 ```
 
-The response includes `access_token` (`ia_` + 64 hex characters), `token_type: "Bearer"`, `expires_at`, and `company: {id, name}`. Codes expire in two minutes and can be used once; tokens last 90 days. Store tokens only on the website's server. InvenAsset stores token hashes; Daily Brief stores encrypted tokens.
+The response includes `access_token` (`ia_` + 64 hex characters), `token_type: "Bearer"`, `expires_at`, and `company: {id, name}`. Codes expire in two minutes and can be used once; tokens last 90 days. Store tokens only on the website's server. InvenAsset stores token hashes; Daily Brief stores the issued API token directly in its existing connection table. The existing `token_encrypted` column name is retained without a schema change; its value is no longer encrypted. API tokens are never returned to the browser.
 
 Include `previous_token` when reconnecting. The old token is revoked. For the same InvenAsset company, existing Issue links move to the new token, and webhook URLs move to the new callback origin while retaining their paths.
 
@@ -48,7 +48,7 @@ Creation fields:
 }
 ```
 
-The webhook URL must share the callback's exact origin. The token determines the company. Equipment and assignees must belong to it. Repeating the same source ID with the same connection returns the existing Issue; creation calls are serialized for that source. The response includes `success`, `company_id`, and `request_id`.
+The webhook URL must use HTTPS and is not restricted to the original callback domain. Delivery requires a public IP and does not follow redirects. The token determines the company. Equipment and assignees must belong to it. Repeating the same source ID with the same connection returns the existing Issue; creation calls are serialized for that source. The response includes `success`, `company_id`, and `request_id`.
 
 Issue types are 11 Mechanical, 12 Electrical, 13 Hydraulic/Pneumatic, 14 Software/Control, 10 Other. Priorities are 1 Low, 2 Medium, 3 High, 4 Critical. Daily Brief maps Info/Moderate/High to 1/2/3. Integrated issue descriptions are stored as supplied without the native UI's AI translation call.
 
@@ -70,13 +70,13 @@ The Daily Brief endpoint is `/api/integrations/invenasset/webhook/COMPANY_UUID`.
 
 ## Daily Brief settings and behavior
 
-Callback and webhook URLs are derived automatically from the incoming Daily Brief request URL. No domain field is required. After moving to a different domain, reconnect InvenAsset from that domain.
+Callback and webhook URLs are derived automatically from the incoming Daily Brief request URL. No domain field is required. The token remains usable after a domain change, and new Issues use the current domain. Existing Issues retain their saved webhook addresses; reconnect from the new domain to move those addresses using the existing reconnection flow.
 
 In a brief, enable Send to Action Tracker and select category Invenasset. One server request loads equipment, issue types and InvenAsset assignees. Select equipment, type and optional assignee, then add the Finding. The local Finding and Action Tracker row are saved with the returned Issue ID. The selected assignee belongs to InvenAsset; it is not treated as a Daily Brief user ID. Other finding categories retain their existing behavior.
 
 The resolution result appears on reloading the brief or its normal data refresh. Connection alone does not create Issues or events.
 
-Daily Brief server environment: `INVENASSET_BASE_URL` (default `https://invenasset.com`) and `INVENASSET_TOKEN_ENCRYPTION_KEY` (stable random 32 bytes encoded as Base64). `INVENASSET_REDIRECT_URI` and the former client-secret variables are no longer used. Never expose the encryption key or tokens with NEXT_PUBLIC variables.
+Daily Brief always connects to `https://invenasset.com`. No InvenAsset environment variables, encryption keys, client IDs, or client secrets are required. Never expose API tokens with NEXT_PUBLIC variables. The temporary HttpOnly authorization cookie contains the state and PKCE verifier and is cleared after the callback; the API token stays on the server.
 
 ## Migrations and deployment
 

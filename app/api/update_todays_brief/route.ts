@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { beforeCheckTime, companyDate } from "@/lib/date";
 import { getBriefs, managesBriefs } from "@/lib/briefs";
 import { getActionLogCategories } from "@/lib/config";
-import { decryptInvenasset, invenassetConfig, requestInvenasset } from "@/lib/invenasset";
+import { invenassetConfig, requestInvenasset } from "@/lib/invenasset";
 
 export async function POST(request: Request) {
     const user = await getCurrentUser();
@@ -210,7 +210,7 @@ export async function POST(request: Request) {
                     if (category === "Invenasset") {
                         const connection = (await client.query("SELECT * FROM invenasset_connection WHERE company_id=$1", [user.company_id])).rows[0];
                         if (!connection || connection.issuer !== invenassetConfig().issuer || new Date(connection.expires_at).getTime() <= Date.now()) throw Object.assign(new Error("invenasset_not_connected"), {status: 409});
-                        const token = decryptInvenasset(connection.token_encrypted, `connection:${user.company_id}`);
+                        const token = connection.token_encrypted;
                         const {response, data} = await requestInvenasset({
                             action: "issue.create", source_id: String(f.id), description,
                             equipment: f.invenasset?.equipment, type: f.invenasset?.type,

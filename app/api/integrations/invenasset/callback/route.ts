@@ -1,24 +1,19 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import sql, { pool } from "@/lib/db";
-import { decryptInvenasset, encryptInvenasset, invenassetRequestConfig, invenassetCookie, invenassetOwner, requestInvenasset } from "@/lib/invenasset";
+import { invenassetRequestConfig, invenassetCookie, invenassetOwner, requestInvenasset } from "@/lib/invenasset";
 
 export async function GET(request: NextRequest) {
     const user = await invenassetOwner();
     if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    let config;
-    try {
-        config = invenassetRequestConfig(request);
-    } catch {
-        return NextResponse.json({ error: "integration_not_configured" }, { status: 503 });
-    }
+    const config = invenassetRequestConfig(request);
     const origin = config.origin;
     let status = "error";
     let issuedToken: string | null = null;
     try {
         const cookie = request.cookies.get(invenassetCookie)?.value;
         if (!user || !cookie) throw new Error("invalid_state");
-        const pending = JSON.parse(decryptInvenasset(cookie, "authorization"));
+        const pending = JSON.parse(Buffer.from(cookie, "base64url").toString("utf8"));
         const state = request.nextUrl.searchParams.get("state") || "";
         if (!/^[a-f0-9]{64}$/.test(state) || typeof pending.state !== "string" || pending.state.length !== state.length
             || !timingSafeEqual(Buffer.from(state), Buffer.from(pending.state))
@@ -31,7 +26,7 @@ export async function GET(request: NextRequest) {
             if (!/^[a-f0-9]{64}$/.test(code)) throw new Error("invalid_code");
             const saved = await sql`SELECT token_encrypted, issuer FROM invenasset_connection WHERE company_id=${user.company_id}`;
             const previousToken = saved.length && saved[0].issuer === config.issuer
-                ? decryptInvenasset(saved[0].token_encrypted, `connection:${user.company_id}`) : "";
+                ? saved[0].token_encrypted : "";
             const { response, data } = await requestInvenasset({
                 action: "exchange", code, code_verifier: pending.verifier,
                 redirect_uri: config.redirectUri,
@@ -43,7 +38,6 @@ export async function GET(request: NextRequest) {
                 throw new Error("exchange_failed");
             }
             issuedToken = data.access_token;
-            const encrypted = encryptInvenasset(data.access_token, `connection:${user.company_id}`);
             const client = await pool.connect();
             try {
                 const result = await client.query({
@@ -55,7 +49,7 @@ export async function GET(request: NextRequest) {
                             token_encrypted=EXCLUDED.token_encrypted, issuer=EXCLUDED.issuer, connected_by=EXCLUDED.connected_by,
                             connected_at=now(), expires_at=EXCLUDED.expires_at
                         RETURNING company_id`,
-                    values: [user.company_id, data.company.id, data.company.name, encrypted, config.issuer, user.id, data.expires_at],
+                    values: [user.company_id, data.company.id, data.company.name, data.access_token, config.issuer, user.id, data.expires_at],
                     query_timeout: 10000,
                 });
                 if (!result.rows.length) throw new Error("owner_changed");

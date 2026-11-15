@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { decryptInvenasset, invenassetConfig } from "@/lib/invenasset";
+import { invenassetConfig } from "@/lib/invenasset";
 
 export async function POST(request: NextRequest, {params}: {params: Promise<{companyId: string}>}) {
     const {companyId} = await params;
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, {params}: {params: Promise<{com
         const rows = await client.query({text: "SELECT * FROM invenasset_connection WHERE company_id=$1", values: [companyId], query_timeout: 10000});
         const saved = rows.rows[0];
         if (!saved || saved.issuer !== invenassetConfig().issuer || new Date(saved.expires_at).getTime() <= Date.now()) return NextResponse.json({error: "Unknown connection"}, {status: 401});
-        const token = decryptInvenasset(saved.token_encrypted, `connection:${companyId}`);
+        const token = saved.token_encrypted;
         const tokenHash = createHash("sha256").update(token).digest("hex");
         const expected = createHmac("sha256", tokenHash).update(raw).digest("hex");
         if (!/^[a-f0-9]{64}$/.test(signature) || !timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return NextResponse.json({error: "Invalid signature"}, {status: 401});
