@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useLayoutEffect } from 'react';
-import './css/Chat.css'
-import { useTranslations } from 'next-intl';
-import { useUser } from './UserProvider';
 import { Message, NewMessage, UserForChat, User } from '@/lib/types';
-import { format } from 'date-fns';
-import UserCircle from './UserCircle';
-import Loader from './Loader';
-import { toast } from 'sonner';
 import { Dispatch, SetStateAction } from "react";
+import { useTranslations } from 'next-intl';
 import ImageUploader from './ImageUploader';
-import isBlobLink from '@/lib/img';
 import FileUploader from './FileUploader';
+import { useUser } from './UserProvider';
+import UserCircle from './UserCircle';
+import isBlobLink from '@/lib/img';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import Loader from './Loader';
+import './css/Chat.css'
 
 
 function isImageUrl(url: string): boolean {
@@ -73,7 +73,7 @@ export const sendMessageGlobal = async (message: NewMessage, successMessage?: st
         console.error('Error while sending message');
         return;
     }
-    toast.success(successMessage ?? 'Issue / Observation owner is notified with new action!')
+    if (successMessage) toast.success(successMessage)
 }
 
 const Chat = ({openChat, setOpenChat, class_name}: {
@@ -107,7 +107,6 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     const [showSendMessageToAll, setShowSendMessageToAll] = useState(false);
 
     const [scrollChats, setScrollChats] = useState(0);
-    const [scrollMessages, setScrollMessages] = useState(false);
     const [loadingFalseNextChatReload, setLoadingFalseNextChatReload] = useState(false);
 
 
@@ -136,8 +135,6 @@ const Chat = ({openChat, setOpenChat, class_name}: {
             console.error('Error while sending message');
             return;
         }
-        // setReloadMessages(prev => prev + 1);
-        // setReloadChats(prev => prev + 1);
     }
 
     const sendMessageToGroup = async () => {
@@ -148,7 +145,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({
                 id: seeUserMessageAs.id, 
-                text: `NOTIFICATION: ${textareaElement.value || '-'}`, 
+                text: `INFO: ${textareaElement.value || '-'}`, 
                 timestamp: new Date(), 
                 users_ids: usersForSendMessageToGroup.map((user: UserForChat) => {if (user.sendMessageToGroupSelected) return user.id})
             })
@@ -212,12 +209,9 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                 )
             );
         }
-
-        setScrollMessages(true);
     };
     useLayoutEffect(() => {
         const container = messagesRef.current;
-
         if (!container || loading) return;
 
         const currentIds = new Set(
@@ -279,10 +273,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     }, [])
 
     useEffect(() => {
-        if (!selectedUserId) {
-            // setLoading(false);
-            return;
-        }
+        if (!selectedUserId) return; 
 
         let cancelled = false;
 
@@ -303,7 +294,6 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                 if (cancelled) return;
 
                 setMessages(data);
-                setScrollMessages(true);
             } catch (error) {
                 if (!cancelled) {
                     console.error('Error loading messages:', error);

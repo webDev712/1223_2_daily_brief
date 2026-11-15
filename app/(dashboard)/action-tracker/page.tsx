@@ -1,6 +1,6 @@
 'use client';
 
-import { act, useEffect, useState } from 'react';
+import { act, useEffect, useRef, useState } from 'react';
 import './page.css'
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { Action, DailyLogRow, Department, FiltersData, IdName, User } from '@/lib/types';
@@ -38,6 +38,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import ImageUploader from '@/app/src/components/ImageUploader';
 import Link from 'next/link';
+import MentionsHelper from '@/app/src/components/MentionsHelper';
 
 registerLocale('es', es);
 
@@ -165,7 +166,16 @@ export default function ActionTracker () {
     const [rowShowActions, setRowShowActions] = useState<DailyLogRow | null>(null);
 
     const [actionToAdd, setActionToAdd] = useState('');
+    const [findingCursor, setFindingCursor] = useState(0);
+    const [findingFocused, setFindingFocused] = useState(false);
+    const findingTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const [mentionedUsers, setMentionedUsers] = useState<string[]>([]);
+    const syncMentionedUsers = (text: string) => {
+    const remainingUsers = users.filter(user => text.includes(`@${user.name}`))
+        .map(user => user.id);
 
+        setMentionedUsers(remainingUsers);
+    };
 
     const sendActionTrackerRow = async (newActionTrackerRow: DailyLogRow | null) => {
         if (!newActionTrackerRow) {
@@ -179,7 +189,7 @@ export default function ActionTracker () {
             date: newActionTrackerRow.date.length > 10 ? formatDateWithoutTimezone(newActionTrackerRow.date) : newActionTrackerRow.date
         }
 
-
+        
         const action_tracker_res = await fetch('/api/daily_log', {
             method: "POST",
             headers: {
@@ -195,6 +205,20 @@ export default function ActionTracker () {
         if (rowShowActions){
             setRowShowActions(newActionTrackerRow);
             setActionToAdd('');
+        }
+        if (mentionedUsers.length > 0) {
+            mentionedUsers.map((user_id: string) => {
+                if (user_id !== user.id)
+                    sendMessageGlobal({
+                        text: t('actionsList.mentionedNotification', {
+                            action: newActionTrackerRow.text.slice(0,20),
+                        }),
+                        from_user: user.id,
+                        to_user: user_id,
+                        timestamp: new Date()
+                    })
+            })
+            setMentionedUsers([]);
         }
         setLoading(false);
         setShowAdd(false);
@@ -631,9 +655,62 @@ export default function ActionTracker () {
                                         )}
                                     </form>
                                     </div>
-                                    <label>
+                                    <label className="finding-description-wrapper">
                                         <div>{t('form.description')}</div>
-                                        <textarea placeholder={t('form.descriptionPlaceholder')} value={auditLogRowToAdd.text} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, text: e.target.value})}}></textarea>
+                                        <textarea
+                                            ref={findingTextareaRef}
+                                            placeholder={t('form.descriptionPlaceholder')}
+                                            value={auditLogRowToAdd.text}
+                                            onChange={(e) => {
+                                                setAuditLogRowToAdd(prev => ({
+                                                    ...prev,
+                                                    text: e.target.value
+                                                }));
+                                                setFindingCursor(e.target.selectionStart);
+                                                syncMentionedUsers(e.target.value);
+                                            }}
+                                            onClick={(e) => { setFindingCursor(e.currentTarget.selectionStart); }}
+                                            onKeyUp={(e) => { setFindingCursor(e.currentTarget.selectionStart); }}
+                                            onSelect={(e) => { setFindingCursor(e.currentTarget.selectionStart); }}
+                                            onFocus={() => setFindingFocused(true)}
+                                            onBlur={() => setFindingFocused(false)}
+                                        />
+                                        <MentionsHelper
+                                            users={users}
+                                            isFocused={findingFocused}
+                                            value={auditLogRowToAdd.text}
+                                            cursorPosition={findingCursor}
+                                            onSelect={(selectedUser, start, end) => {
+                                                const mention = `@${selectedUser.name} `;
+
+                                                const newText =
+                                                    auditLogRowToAdd.text.slice(0, start) +
+                                                    mention +
+                                                    auditLogRowToAdd.text.slice(end);
+
+                                                const newCursor = start + mention.length;
+
+                                                setAuditLogRowToAdd(prev => ({
+                                                    ...prev,
+                                                    text: newText
+                                                }));
+
+                                                setFindingCursor(newCursor);
+
+                                                requestAnimationFrame(() => {
+                                                    findingTextareaRef.current?.focus();
+                                                    findingTextareaRef.current?.setSelectionRange(
+                                                        newCursor,
+                                                        newCursor
+                                                    );
+                                                });
+                                                setMentionedUsers(prev =>
+                                                    prev.includes(selectedUser.id)
+                                                        ? prev
+                                                        : [...prev, selectedUser.id]
+                                                )
+                                            }}
+                                        />
                                     </label>
                                 <div>
                                     {auditLogRowToAdd.id && (<span className='button-w-r-sm delete' onClick={() => {setShowDelete(true)}}>{t('form.delete')}</span>)}
@@ -713,7 +790,8 @@ export default function ActionTracker () {
                                                     from_user: user.id,
                                                     to_user: rowShowActions.user_id,
                                                     timestamp: new Date()
-                                                })
+                                                },
+                                                'Issue / Observation owner is notified with new action!')
                                             }
                                             }}>{t('actionsList.addAction')}</div>
                                         <ImageUploader disabled={user.permissions.add_actions_to_io !== true} send_url_to={(url: string) => {

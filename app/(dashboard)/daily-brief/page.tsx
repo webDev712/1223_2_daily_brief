@@ -13,7 +13,7 @@ import SmallLoader from '@/app/src/components/SmallLoader';
 import { useSearchParams } from 'next/navigation';
 import { randomInt } from 'crypto';
 import capitalize from '@/lib/text';
-import UserCircle from '@/app/src/components/UserCircle';
+import UserCircle, { clearOfTheTo } from '@/app/src/components/UserCircle';
 import ImageUploader from '@/app/src/components/ImageUploader';
 import isBlobLink from '@/lib/img';
 import scrollToElement from '@/lib/html_document';
@@ -21,6 +21,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getActionLogCategories } from '@/lib/config';
 import { beforeCheckTime } from '@/lib/date';
 import { safeUUID } from '@/lib/uuid';
+import MentionsHelper from '@/app/src/components/MentionsHelper';
+import { sendMessageGlobal } from '@/app/src/components/Chat';
 
 
 export default function DailyBrief() {
@@ -60,6 +62,11 @@ export default function DailyBrief() {
   const [showAddCover, setShowAddCover] = useState(false)
   const [showCallout, setShowCallout] = useState(false)
   const [reportToCallout, setReportToCallout] = useState<Report>()
+  const [findingText, setFindingText] = useState('')
+  const [findingCursor, setFindingCursor] = useState(0)
+  const [findingFocused, setFindingFocused] = useState(false)
+  const [mentionedUsers, setMentionedUsers] = useState<string[]>([])
+  const findingTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const changeBrief = (b: SavedBrief, action: string, values: Record<string, unknown> = {}) => {
     const request = requestQueue.current.then(async () => {
@@ -145,6 +152,23 @@ export default function DailyBrief() {
   const addFinding = async (b: SavedBrief, finding: any) => {
     findingDraftId.current ??= safeUUID();
     if (await changeBrief(b, 'finding', {finding: {id: findingDraftId.current, ...finding}})) {
+      const notificationText = translation('mentionedNotification', {
+        action: finding.description.slice(0, 20),
+        date: b.date,
+        department: b.department_name
+      });
+
+      mentionedUsers
+        .filter(user_id => user_id !== user?.id)
+        .forEach(user_id => {
+          sendMessageGlobal({
+            text: notificationText,
+            from_user: user!.id,
+            to_user: user_id,
+            timestamp: new Date(),
+          });
+        });
+      if (mentionedUsers.length > 0) toast.success('Mentioned users was notified!')
       findingDraftId.current = null;
       setShowAddFinding(false);
       setSendFindingToTracker(false);
@@ -152,6 +176,10 @@ export default function DailyBrief() {
       setInvenassetEquipment('');
       setInvenassetType('11');
       setInvenassetAssignee('');
+      setFindingText('');
+      setFindingCursor(0);
+      setMentionedUsers([]);
+      setFindingFocused(false);
     }
   };
 
@@ -316,12 +344,14 @@ export default function DailyBrief() {
   const param_brief_id = searchParams.get('brief_id');
   const param_finding_id = searchParams.get('finding_id');
   const [activeBriefId, setActiveBriefId] = useState<string | null>(param_brief_id);
+  const [filters, setFilters] = useState({
+    user_id: '',
+    day_time: '',
+  })
   useEffect(() => {
     setActiveBriefId(param_brief_id);
   }, [param_brief_id]);
   
-  
-
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     if (!loading && param_finding_id && briefs.length > 0) {
@@ -443,9 +473,7 @@ export default function DailyBrief() {
     setShowAddFinding(true);
     setTimeout(() => {
       scrollToElement('add-finding');
-      if (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement) 
-        (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement).value = 
-      `Finding related to report "${r.name}":`
+      setFindingText(`Finding related to report "${r.name}":`)
     }, 300)
   }
   const departments_to_display = departments.filter(d => manager || user?.permissions.see_all_briefs
@@ -523,16 +551,13 @@ export default function DailyBrief() {
               <span>{translation('choose_department')}</span>
             </div>
             {departments_to_display.sort((a, b) => a.name.localeCompare(b.name)).map((d) => {
-              let colors = getColorsFromName(d.name);
+              let colors = getColorsFromName(clearOfTheTo(d.name));
               return (
                 <label className='lead' style={{
-                    backgroundColor: selectedDepartment === d.id ? colors.medium : colors.light,
+                    backgroundColor: selectedDepartment === d.id ? colors.dark : colors.light,
                     color: selectedDepartment === d.id ? "white" : "#a1a1a1"}} key={d.id}>
                   <input type='radio' name='lead' checked={selectedDepartment === d.id} onChange={() => {setActiveBriefId(null); setSelectedDepartment(d.id)}} />
-                  <span style={{
-                    backgroundColor: selectedDepartment === d.id ? colors.dark : colors.medium,
-                    color: "white"
-                    }}>{d.name.split(" ").map(word => word[0]).slice(0, 2).join('')}</span> {d.name}
+                  <UserCircle user_name={d.name} size={24}></UserCircle> {d.name}
                 </label>)
             })}
           </div>
@@ -893,12 +918,30 @@ export default function DailyBrief() {
                       })()}
                     </div>
                     <div className='reports'>
-                      <div>{translation('reports_of_department')} "{b.department_name}": <span>{b.reports.filter((r: Report) => r.checked === true).length} of {b.reports.length} {translation('reviewed')} ({translation('yours')} {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span></div>
+                      <div className='flex'>{translation('reports_of_department')} "{b.department_name}": <span>{b.reports.filter((r: Report) => r.checked === true && (filters.user_id === '' || filters.user_id === r.holder_id)).length} of {b.reports.filter((r: Report) => filters.user_id === '' || filters.user_id === r.holder_id).length} {translation('reviewed')} ({translation('yours')} {b.reports.filter((r: Report) => r.holder_id === user.id && r.checked).length} / {b.reports.filter((r: Report) => r.holder_id === user.id).length})</span>
+                      <div className='flex ms-auto gap-2 fs-8'>
+                        <select className='input' value={filters.user_id} onChange={(e) => {setFilters(prev => {return {...prev, user_id: e.target.value}})}}>
+                          <option value="">All Employees</option>
+                          {leads.sort((a: User, b: User) => a.name.localeCompare(b.name)).filter((a: User) => a.department_id === b.department_id || b.reports.find((report_local: Report) => report_local.holder_id === a.id)).map((user: User) => {
+                            if (user.archived !== true)
+                            return (
+                              <option key={`daily-brief-filters-sort-user-${user.id}`} value={user.id}>{user.name}</option>
+                            )})}
+                        </select>
+                        <select className='input' value={filters.day_time} onChange={(e) => {setFilters(prev => {return {...prev, day_time: e.target.value}})}}>
+                          <option value="">Any Day Time</option>
+                          <option value="Ongoing">Ongoing</option>
+                          <option value="Opening">Opening</option>
+                          <option value="Midday">Midday</option>
+                          <option value="Closing">Closing</option>
+                        </select>
+                      </div>
+                      </div>
                       <div>
                         <div className='progress-bar'>
                           <span style={{width: b.reports.length === 0 ? '100%' : b.reports.filter((r: any) => r.checked === true).length / b.reports.length * 100 + "%"}}></span>
                         </div>
-                        {reports_sorted.filter((r: Report) => !r.holder_id).map(
+                        {reports_sorted.filter((r: Report) => !r.holder_id && (filters.user_id === '') && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report reports-to-assign' : 'report'} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
@@ -918,7 +961,7 @@ export default function DailyBrief() {
 
                             </div>)
                         )}
-                        {reports_sorted.filter((r: Report) => r.holder_id === user.id).map(
+                        {reports_sorted.filter((r: Report) => r.holder_id === user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (isBeforeTime(r.check_before)  ? '' : ' red-background')} key={r.id}>
                               <input className={noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before)) ? 'd' : ''} disabled={noAccessReport(b, r) || (!r.checked && !isBeforeTime(r.check_before))} type='checkbox' checked={r.checked} onChange={() => {
@@ -1038,31 +1081,8 @@ export default function DailyBrief() {
                                                   true
                                               );
                                           }
-
                                         }} 
-                                        // onBlur={(e) => { updateReports( b, {...r, text: e.target.value}, r.checked, true ); }}
                                         ></textarea>
-                                  // <input
-                                  //       className={r.checked ? 'input d' : 'input'}
-                                  //       value={r.text ?? ''}
-                                  //       disabled={r.checked ?? false}
-                                  //       type="text"
-
-                                  //       onChange={(e) => {
-                                  //           if (!r.checked) {
-                                  //               updateReports(
-                                  //                   b,
-                                  //                   {
-                                  //                       ...r,
-                                  //                       text: e.target.value
-                                  //                   },
-                                  //                   r.checked,
-                                  //                   false
-                                  //               );
-                                  //           }
-                                  //       }} 
-                                  //       onBlur={() => { updateReports( b, {...r,}, r.checked, true ); }}
-                                  //       />
                                 )}
                                 {(r.metric === 'Yes/No') && (
                                   <div className='flex' style={{ gap: 5, padding: '0 0 0 2px' }}>
@@ -1156,7 +1176,7 @@ export default function DailyBrief() {
                               >{translation('withdraw')}</div>
                             </div>)
                         )}
-                        {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id).map(
+                        {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report border-top reports-other-users-took' : 'report'} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
@@ -1245,11 +1265,69 @@ export default function DailyBrief() {
                                 <option value='info'>{translation('info')}</option>
                               </select>
                             </div>
-                            <div>
-                              <span>{translation('write_description')}</span>
-                              <textarea disabled={(!manager && noAccessEdit(b)) || readOnly(b)} id={`new_f_name_${b.id}`} placeholder={translation('anything_the_next_lead_needs_to_know')} />
-                            </div>
-                            {sendFindingToTracker && (
+<div>
+  <span>{translation('write_description')}</span>
+  <div className="finding-description-wrapper">
+    <textarea
+      ref={findingTextareaRef}
+      disabled={(!manager && noAccessEdit(b)) || readOnly(b)}
+      id={`new_f_name_${b.id}`}
+      placeholder={translation('anything_the_next_lead_needs_to_know')}
+      value={findingText}
+      onChange={e => {
+        const newText = e.target.value;
+
+        setFindingText(newText);
+        setFindingCursor(e.target.selectionStart);
+
+        setMentionedUsers(
+          leads
+            .filter(u => !u.archived && newText.includes(`@${u.name}`))
+            .map(u => u.id)
+        );
+      }}
+      onClick={e => setFindingCursor(e.currentTarget.selectionStart)}
+      onKeyUp={e => setFindingCursor(e.currentTarget.selectionStart)}
+      onSelect={e => setFindingCursor(e.currentTarget.selectionStart)}
+      onFocus={() => setFindingFocused(true)}
+      onBlur={() => setFindingFocused(false)}
+    />
+
+    <MentionsHelper
+      users={leads.filter(u => !u.archived)}
+      isFocused={findingFocused}
+      value={findingText}
+      cursorPosition={findingCursor}
+      onSelect={(selectedUser, start, end) => {
+        const mention = `@${selectedUser.name} `;
+
+        const newText =
+          findingText.slice(0, start) +
+          mention +
+          findingText.slice(end);
+
+        const newCursor = start + mention.length;
+
+        setFindingText(newText);
+        setFindingCursor(newCursor);
+
+        setMentionedUsers(prev =>
+          prev.includes(selectedUser.id)
+            ? prev
+            : [...prev, selectedUser.id]
+        );
+
+        requestAnimationFrame(() => {
+          findingTextareaRef.current?.focus();
+          findingTextareaRef.current?.setSelectionRange(
+            newCursor,
+            newCursor
+          );
+        });
+      }}
+    />
+  </div>
+</div>                            {sendFindingToTracker && (
                               <>
                                 <div>
                                   <span>{translation('category')}</span>
@@ -1308,10 +1386,10 @@ export default function DailyBrief() {
                                 <span>{translation('send_to_action_tracker')}</span>
                                 <input type="checkbox" id="send-to-action-tracker" checked={sendFindingToTracker} onChange={(e) => setSendFindingToTracker(e.target.checked)} />
                               </label>
-                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false); findingDraftId.current = null; setFindingCategory(actionLogCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee('')}}>{translation('cancel')}</div>
+                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false); findingDraftId.current = null; setFindingCategory(actionLogCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee(''); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
                               <input className='button-d-bl-sm' disabled={(!manager && noAccessEdit(b)) || readOnly(b) || (sendFindingToTracker && findingCategory === 'Invenasset' && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment))} type="button" value={translation('add_finding')} onClick={() => { addFinding(b, {
                                     type: (document.getElementById(`new_f_type_${b.id}`) as HTMLSelectElement)?.value || '',
-                                    description: (document.getElementById(`new_f_name_${b.id}`) as HTMLTextAreaElement)?.value || '',
+                                    description: findingText,
                                     send_to_action_tracker: sendFindingToTracker,
                                     category: sendFindingToTracker ? findingCategory : undefined,
                                     assigned_to_user_id: sendFindingToTracker && findingCategory !== 'Invenasset' ? ((document.getElementById(`new_f_assignee_${b.id}`) as HTMLSelectElement)?.value || null) : undefined,
