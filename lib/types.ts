@@ -102,6 +102,13 @@ export interface Finding {
   category?: string;
   assigned_to_user_id?: string | null;
   action_tracker_id?: string | null;
+  invenasset?: {
+    company_id: number;
+    request_id: number;
+    equipment_name: string;
+    status: string;
+    resolved_at?: string;
+  };
 }
 
 export interface Project {

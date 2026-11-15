@@ -459,7 +459,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
     }, [chats, seeUserMessageAs.id]);
     return (
         <div className={class_name ? class_name : "chat"}>
-            <span onClick={() => setOpenChat(prev => !prev)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
+            <span onClick={() => setOpenChat(prev => !prev)} className={chats.filter((message: Message) => message.to_user === seeUserMessageAs.id && message.from_user !== seeUserMessageAs.id && message.read === false).length > 0 ? "unread" : ""}></span>
             {openChat && (
                 <div>
                     <div>

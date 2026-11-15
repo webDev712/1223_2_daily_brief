@@ -30,6 +30,12 @@ export default function Settings() {
   const [plans, setPlans] = useState<Plan[]>();
   const [companyName, setCompanyName] = useState<string>();
   const [smrtApiKey, setSmrtApiKey] = useState('');
+  const [invenasset, setInvenasset] = useState<{
+    configured: boolean;
+    connection: { company_name: string; active: boolean } | null;
+  } | null>(null);
+  const [invenassetBusy, setInvenassetBusy] = useState(false);
+  const [invenassetError, setInvenassetError] = useState(false);
   const [allowSave, setAllowSave] = useState(false);
   const [billings, setBillings] = useState<Billing[]>();
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -41,6 +47,61 @@ export default function Settings() {
   const [showAddShift, setShowAddShift] = useState(false);
   const [newDeparmentName, setNewDeparmentName] = useState('');
   const [shifts, setShifts] = useState<Shift[]>([]);
+
+  useEffect(() => {
+    if (!user?.id || company?.main_admin_id !== user.id) return;
+    const controller = new AbortController();
+    async function loadConnection() {
+      try {
+        const response = await fetch('/api/integrations/invenasset', { signal: controller.signal, cache: 'no-store' });
+        if (!response.ok) throw new Error('connection_unavailable');
+        setInvenasset(await response.json());
+        setInvenassetError(false);
+      } catch {
+        if (!controller.signal.aborted) setInvenassetError(true);
+      }
+    }
+    loadConnection();
+    return () => controller.abort();
+  }, [user?.id, company?.main_admin_id, reload]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const result = url.searchParams.get('invenasset');
+    if (!['connected', 'cancelled', 'error'].includes(result || '')) return;
+    setSelectedSettings('company');
+    if (result === 'connected') toast.success(t('invenasset.connected'));
+    if (result === 'error') toast.error(t('invenasset.error'));
+    url.searchParams.delete('invenasset');
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }, [t]);
+
+  const connectInvenasset = async () => {
+    setInvenassetBusy(true);
+    try {
+      const response = await fetch('/api/integrations/invenasset', { method: 'POST', signal: AbortSignal.timeout(20000) });
+      const result = await response.json();
+      if (!response.ok || !result.url) throw new Error('connection_failed');
+      window.location.assign(result.url);
+    } catch {
+      toast.error(t('invenasset.error'));
+      setInvenassetBusy(false);
+    }
+  }
+
+  const disconnectInvenasset = async () => {
+    setInvenassetBusy(true);
+    try {
+      const response = await fetch('/api/integrations/invenasset', { method: 'DELETE', signal: AbortSignal.timeout(20000) });
+      if (!response.ok) throw new Error('disconnect_failed');
+      setInvenasset({ configured: true, connection: null });
+      toast.success(t('invenasset.disconnected'));
+    } catch {
+      toast.error(t('invenasset.error'));
+    } finally {
+      setInvenassetBusy(false);
+    }
+  }
 
   const changeUser = (user: User) => {
     if (dataChanged === false) setDataChanged(true);
@@ -481,6 +542,28 @@ const [shiftTo, setShiftTo] = useState('16:00');
                             <span>{t('company.smrtApiKey')}</span>
                             <input type="password" value={smrtApiKey} autoComplete="new-password" placeholder={t('company.smrtApiKeyPlaceholder')} onChange={(e) => {setSmrtApiKey(e.target.value); setAllowSave(true);}} />
                           </label>
+                          <div className='invenasset-connection'>
+                            <div className='invenasset-info'>
+                              <div>InvenAsset</div>
+                              {invenasset?.connection && <div>{invenasset.connection.company_name}</div>}
+                              <p>{invenassetError ? t('invenasset.error')
+                                : !invenasset ? t('invenasset.loading')
+                                : !invenasset.configured ? t('invenasset.notConfigured')
+                                : invenasset.connection ? t(invenasset.connection.active ? 'invenasset.connected' : 'invenasset.inactive')
+                                : t('invenasset.description')}</p>
+                            </div>
+                            <div className='invenasset-actions'>
+                              {!invenasset?.connection?.active && (
+                                <button type='button' className='invenasset-connect' disabled={!invenasset?.configured || invenassetBusy || invenassetError} onClick={connectInvenasset}>
+                                  <img src='/invenasset-logo.svg' alt='' width={22} height={22} />
+                                  {t(invenasset?.connection ? 'invenasset.reconnect' : 'invenasset.connect')}
+                                </button>
+                              )}
+                              {invenasset?.connection && (
+                                <button type='button' className='button-w-r-sm' disabled={invenassetBusy} onClick={disconnectInvenasset}>{t('invenasset.disconnect')}</button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

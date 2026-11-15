@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
         const body = await request.json();
 
-        const {
+        let {
             email,
             name,
             user_role,
@@ -70,20 +70,34 @@ export async function POST(request: Request) {
             department_id
         } = body;
 
-        const existingUser = await sql`
-            SELECT id
-            FROM website_user
-            WHERE LOWER(email) = LOWER(${email})
-            LIMIT 1;
-        `;
+        let rows;
+        if (body.resend_invite === true) {
+            rows = await sql`
+                SELECT w.id, w.email, w.name
+                FROM website_user w JOIN company c ON c.id = w.company_id
+                WHERE w.id = ${body.id} AND w.company_id = ${company_id}
+                    AND c.main_admin_id = ${user_id}::uuid AND w.archived = false;
+            `;
+            if (!rows.length) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
+            email = rows[0].email;
+            name = rows[0].name;
+        } else {
+            const existingUser = await sql`
+                SELECT id
+                FROM website_user
+                WHERE LOWER(email) = LOWER(${email})
+                LIMIT 1;
+            `;
 
-        if (existingUser.length > 0) {
-            return NextResponse.json(
-                { error_translation_key: 'toasts.user_exists' },
-                { status: 409 }
-            );
-        }
-        const rows = await sql`
+            if (existingUser.length > 0) {
+                return NextResponse.json(
+                    { error_translation_key: 'toasts.user_exists' },
+                    { status: 409 }
+                );
+            }
+            rows = await sql`
             INSERT INTO website_user (
                 email,
                 name,
@@ -106,6 +120,7 @@ export async function POST(request: Request) {
             )
             RETURNING id;
         `;
+        }
 
         try {
         await transporter.sendMail({
@@ -343,6 +358,9 @@ export async function POST(request: Request) {
             console.log(`Welcome email sent to ${email}`);
         } catch (emailError) {
             console.error("Failed to send welcome email:", emailError);
+            if (body.resend_invite === true) {
+                return NextResponse.json({ error: "Failed to send invitation" }, { status: 502 });
+            }
         }
 
         return NextResponse.json({
@@ -361,6 +379,45 @@ export async function POST(request: Request) {
 }
 
 
+
+export async function PUT(request: Request) {
+    try {
+        const session = await auth();
+        if (!session?.user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        const user_id = session.user.id;
+        const company_id = session.user.company_id;
+        const owner = await sql`SELECT id FROM company WHERE id = ${company_id} AND main_admin_id = ${user_id}::uuid`;
+        if (!owner.length) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+        const { id, email, name, phone, lead_letter, role_id, department_id } = await request.json();
+        const existingUser = await sql`
+            SELECT id FROM website_user WHERE LOWER(email) = LOWER(${email}) AND id <> ${id} LIMIT 1;
+        `;
+        if (existingUser.length > 0) {
+            return NextResponse.json({ error_translation_key: 'toasts.user_exists' }, { status: 409 });
+        }
+        const rows = await sql`
+            UPDATE website_user w
+            SET email = ${email}, name = ${name}, phone = ${phone}, lead_letter = ${lead_letter},
+                role_id = ${role_id}, department_id = ${department_id}
+            WHERE w.id = ${id} AND w.company_id = ${company_id}
+                AND EXISTS (SELECT 1 FROM role WHERE id = ${role_id} AND company_id = ${company_id})
+                AND EXISTS (SELECT 1 FROM department WHERE id = ${department_id} AND company_id = ${company_id})
+                AND (w.id <> ${user_id}::uuid OR (w.role_id = ${role_id} AND w.department_id = ${department_id}))
+            RETURNING w.id;
+        `;
+        if (!rows.length) {
+            return NextResponse.json({ error: "Invalid user, role or department" }, { status: 400 });
+        }
+        return NextResponse.json({ success: true, id: rows[0].id });
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+}
 
 export async function PATCH(request: Request) {
     try{

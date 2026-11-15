@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { beforeCheckTime, companyDate } from "@/lib/date";
 import { getBriefs, managesBriefs } from "@/lib/briefs";
 import { getActionLogCategories } from "@/lib/config";
+import { decryptInvenasset, invenassetConfig, requestInvenasset } from "@/lib/invenasset";
 
 export async function POST(request: Request) {
     const user = await getCurrentUser();
@@ -179,17 +180,23 @@ export async function POST(request: Request) {
                 if (!f.id || !["info", "moderate", "high"].includes(f.type) || !description) {
                     throw Object.assign(new Error("invalid_value"), { status: 400 });
                 }
+                if ((b.findings ?? []).some((finding: any) => finding.id === String(f.id))) {
+                    await client.query("COMMIT");
+                    const briefs = await getBriefs(user, {id});
+                    return NextResponse.json({success: true, brief: briefs[0]});
+                }
                 const sendToTracker = f.send_to_action_tracker === true;
                 let category: string | undefined;
                 let assignedToUserId: string | null = null;
                 let actionTrackerId: string | null = null;
+                let invenasset: {company_id: number; request_id: number; equipment_name: string; status: string} | undefined;
                 if (sendToTracker) {
                     const validCategories = getActionLogCategories().map(c => c.name);
                     if (!validCategories.includes(f.category)) {
                         throw Object.assign(new Error("invalid_value"), { status: 400 });
                     }
                     category = f.category;
-                    if (f.assigned_to_user_id) {
+                    if (f.category !== "Invenasset" && f.assigned_to_user_id) {
                         const assignee = await client.query(
                             "SELECT id FROM website_user WHERE id = $1 AND company_id = $2 AND archived IS NOT TRUE",
                             [f.assigned_to_user_id, user.company_id]
@@ -200,6 +207,21 @@ export async function POST(request: Request) {
                         assignedToUserId = assignee.rows[0].id;
                     }
                     actionTrackerId = crypto.randomUUID();
+                    if (category === "Invenasset") {
+                        const connection = (await client.query("SELECT * FROM invenasset_connection WHERE company_id=$1", [user.company_id])).rows[0];
+                        if (!connection || connection.issuer !== invenassetConfig().issuer || new Date(connection.expires_at).getTime() <= Date.now()) throw Object.assign(new Error("invenasset_not_connected"), {status: 409});
+                        const token = decryptInvenasset(connection.token_encrypted, `connection:${user.company_id}`);
+                        const {response, data} = await requestInvenasset({
+                            action: "issue.create", source_id: String(f.id), description,
+                            equipment: f.invenasset?.equipment, type: f.invenasset?.type,
+                            priority: {info: 1, moderate: 2, high: 3}[f.type as "info" | "moderate" | "high"],
+                            assignees: f.invenasset?.assignee ? [Number(f.invenasset.assignee)] : [],
+                            webhook_url: new URL(`/api/integrations/invenasset/webhook/${user.company_id}`, request.url).toString(),
+                        }, token);
+                        if (!response.ok || !data.success || !Number.isInteger(data.request_id) || data.company_id !== connection.invenasset_company_id) throw Object.assign(new Error("invenasset_unavailable"), {status: 503});
+                        invenasset = {company_id: data.company_id, request_id: data.request_id,
+                            equipment_name: typeof f.invenasset?.equipment_name === "string" ? f.invenasset.equipment_name : "", status: "Open"};
+                    }
                 }
                 const finding = {
                     id: String(f.id),
@@ -207,6 +229,7 @@ export async function POST(request: Request) {
                     description,
                     created_at: new Date().toISOString(),
                     user_id: user.id,
+                    ...(invenasset ? {invenasset} : {}),
                     ...(sendToTracker ? {
                         category,
                         assigned_to_user_id: assignedToUserId,

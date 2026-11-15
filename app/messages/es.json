@@ -53,6 +53,11 @@
     "no_findings_yet": "Aún no hay hallazgos",
     "no_tasks_yet": "Aún no hay tareas",
     "choose_status": "Seleccionar estado",
+    "invenasset_equipment": "Equipo de InvenAsset",
+    "invenasset_choose_equipment": "Seleccionar equipo",
+    "invenasset_issue_type": "Tipo de problema",
+    "invenasset_open": "Requiere reparación",
+    "invenasset_resolved": "Resuelto",
     "high": "Alto",
     "moderate": "Moderado",
     "info": "Información",
@@ -136,6 +141,8 @@
     "start_failed": "No se pudo iniciar el informe. Actualiza y revisa la fecha y el turno seleccionado.",
     "handoff_failed": "No se pudo realizar el traspaso. Actualiza y revisa el destinatario y turno.",
     "errors": {
+      "invenasset_not_connected": "Conecte InvenAsset primero en Configuración de la empresa.",
+      "invenasset_unavailable": "No se pudo conectar con InvenAsset. Revise la conexión e inténtelo de nuevo. El hallazgo no se ha guardado.",
       "handoff_pending": "Ya tienes un traspaso pendiente de aceptación.",
       "handoff_changed": "Este traspaso ya se ha procesado o no está disponible. El brief se actualizará.",
       "handoff_reports_changed": "Los reportes han cambiado. Revisa la lista actualizada antes de volver a aceptar.",
@@ -410,11 +417,13 @@
       "addedUser": "Usuario \"{name}\" agregado",
       "userSaved": "¡Datos del usuario guardados correctamente!",
       "errorSavingUser": "Error al guardar los datos del usuario. Inténtalo de nuevo más tarde.",
+      "user_exists": "Ya existe un usuario con este correo electrónico.",
       "selectPermission": "Selecciona al menos un permiso.",
       "addedRole": "Rol \"{name}\" agregado con {count, plural, one {# permiso} other {# permisos}}",
       "editedRole": "¡Listo! Ahora el rol \"{name}\" tiene {count, plural, one {# permiso} other {# permisos}}",
       "userHasAccess": "¡Ahora el usuario \"{name}\" tiene acceso!",
-      "user_exists": "Ya existe un usuario con este correo electrónico."
+      "invitationSent": "¡Invitación enviada!",
+      "errorSendingInvitation": "No se pudo enviar la invitación. Inténtalo de nuevo más tarde."
     },
     "common": {
       "cancel": "Cancelar",
@@ -441,6 +450,10 @@
       "employeeId": "ID de empleado (2 letras XX)",
       "department": "Departamento",
       "submit": "Agregar nuevo usuario"
+    },
+    "editUser": {
+      "title": "Editar usuario:",
+      "resendInvite": "Reenviar invitación"
     },
     "roleForm": {
       "createTitle": "Crear nuevo rol:",
@@ -675,6 +688,18 @@
       "dangerZone": "Zona de peligro",
       "dangerDescription": "Elimina de forma permanente tu perfil y todos los datos asociados. Esta acción no se puede deshacer.",
       "archiveButton": "Archivar mi cuenta"
+    },
+    "invenasset": {
+      "connect": "Conectar con InvenAsset",
+      "reconnect": "Volver a conectar con InvenAsset",
+      "disconnect": "Desconectar",
+      "description": "Conecta una empresa de InvenAsset para enviar hallazgos como incidencias de equipos y recibir su estado de resolución.",
+      "loading": "Comprobando conexión…",
+      "notConfigured": "La conexión con InvenAsset aún no está habilitada para este sitio.",
+      "connected": "Empresa de InvenAsset conectada.",
+      "inactive": "La conexión ha caducado o se ha revocado el acceso. Vuelve a conectarte para continuar.",
+      "disconnected": "InvenAsset desconectado.",
+      "error": "No se pudo completar la solicitud de conexión con InvenAsset. Inténtalo de nuevo."
     },
     "company": {
       "title": "Empresa",

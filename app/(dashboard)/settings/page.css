@@ -158,6 +158,57 @@
     margin-top: 30px !important;
 }
 
+.settings .invenasset-connection{
+    grid-column: 1 / -1;
+    border-top: 1px solid #EAECF0;
+    padding-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.settings .invenasset-info{
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.settings .invenasset-connection p{
+    color: #667085;
+    font-size: 14px;
+    margin: 8px 0 0;
+}
+
+.settings .invenasset-actions,
+.settings .invenasset-connect{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.settings .invenasset-actions{
+    margin-left: auto;
+}
+
+.settings .invenasset-connect{
+    background: #FFFFFF;
+    border: 1px solid #D0D5DD;
+    border-radius: 10px;
+    color: #344054;
+    padding: 5px 14px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.settings .invenasset-actions button:disabled{
+    opacity: .5;
+    cursor: default !important;
+}
+
 .settings .company-data,
 .settings .my > div:nth-child(2){
     border: 2px solid #EAECF0;
