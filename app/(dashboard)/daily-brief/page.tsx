@@ -60,6 +60,7 @@ export default function DailyBrief() {
   const [savingCover, setSavingCover] = useState(false)
   const [showAddCover, setShowAddCover] = useState(false)
   const [showCallout, setShowCallout] = useState(false)
+  const [showVideoGuide, setShowVideoGuide] = useState(false)
   const [reportToCallout, setReportToCallout] = useState<Report>()
   const [findingText, setFindingText] = useState('')
   const [findingCursor, setFindingCursor] = useState(0)
@@ -543,6 +544,15 @@ export default function DailyBrief() {
     return true;
   }
 
+  useEffect(() => {
+    if (!showVideoGuide) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowVideoGuide(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showVideoGuide]);
+
   return (
     <div className="daily-brief">
       <div>
@@ -572,6 +582,24 @@ export default function DailyBrief() {
         {loading ?
          (<Loader></Loader>)
          : (<div className='briefs'>
+                {showVideoGuide && (
+                  <div className='confirm video-modal' onClick={() => setShowVideoGuide(false)}>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <div className='video-modal-header'>
+                        <h1>{translation('video_guide')}</h1>
+                        <div className='button-w-bl video-modal-close' onClick={() => setShowVideoGuide(false)}>{translation('close')}</div>
+                      </div>
+                      <div className='video-modal-frame'>
+                        <iframe
+                          src='https://www.youtube.com/embed/IKRbK0pwmCw?autoplay=1&rel=0'
+                          title={translation('video_guide')}
+                          allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {showSelectShift && (
                   <div className='confirm'>
                     <div>
@@ -623,7 +651,14 @@ export default function DailyBrief() {
                     <div className='shift-info'>
                       <div>
                         <h1>{b.department_name} {translation('brief')}, {b.date ? format(parse(b.date, "yyyy-MM-dd", new Date()), "MMMM d, yyyy") : translation('unknown_date')}{(!b.date || b.date < todayString || b.freezed) && <> ({translation(b.freezed ? 'frozen_submitted' : 'frozen_day_passed')})</>}</h1>
-                        <div className='button-w-bl' style={{marginLeft: "auto"}} onClick={() => {generateEmailHTML(b)}} >{translation('copy_for_email')}</div>
+                        <div className='button-w-bl video-guide-btn' style={{marginLeft: "auto"}} onClick={() => setShowVideoGuide(true)}>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle cx="8" cy="8" r="6.75" stroke="currentColor" strokeWidth="1.5"/>
+                            <path d="M6.5 5.3L11.1 8L6.5 10.7V5.3Z" fill="currentColor"/>
+                          </svg>
+                          <span>{translation('video_guide')}</span>
+                        </div>
+                        <div className='button-w-bl' onClick={() => {generateEmailHTML(b)}} >{translation('copy_for_email')}</div>
                         <div className='button-w-bl' onClick={() => {downloadPDF(b)}}>{translation('save_as_pdf')}</div>
                         {showSubmit?.briefId === b.id && (
                           <div className='confirm'>
