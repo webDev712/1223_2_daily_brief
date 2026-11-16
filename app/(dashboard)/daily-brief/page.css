@@ -1104,3 +1104,74 @@
     }
 
 }
+
+.daily-brief .video-guide-btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.daily-brief .confirm.video-modal{
+    background-color: #0a0c1080;
+}
+
+.daily-brief .confirm.video-modal > div{
+    width: min(92vw, calc((90vh - 96px) * 16 / 9));
+    max-width: 92vw;
+    max-height: 92vh;
+    overflow: hidden;
+    padding: 16px 20px 20px;
+    gap: 14px;
+    border-radius: 14px;
+}
+
+.daily-brief .confirm.video-modal .video-modal-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+}
+
+.daily-brief .confirm.video-modal .video-modal-header h1{
+    background-image: none;
+    padding-left: 0;
+    margin: 0;
+    font-size: 16px;
+    text-align: left;
+}
+
+.daily-brief .confirm.video-modal .video-modal-close{
+    padding: 6px 14px;
+    border-radius: 10px;
+    line-height: 1.2;
+}
+
+.daily-brief .confirm.video-modal .video-modal-frame{
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #000000;
+    display: block;
+}
+
+.daily-brief .confirm.video-modal .video-modal-frame iframe{
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+@media (max-width: 500px) {
+    .daily-brief .video-guide-btn{
+        justify-content: center;
+    }
+
+    .daily-brief .confirm.video-modal > div{
+        width: 94vw;
+        top: 50%;
+        padding: 12px;
+    }
+}
