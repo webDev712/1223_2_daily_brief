@@ -1,5 +1,8 @@
 import sql from './db';
+import { WORKDAY_CUTOFF_HOUR } from './date';
 import { ReportSchedule, User } from './types';
+
+const SQL_COMPANY_DATE = `((now() AT TIME ZONE c.timezone) - interval '${WORKDAY_CUTOFF_HOUR} hours')::date`;
 
 export function managesBriefs(user: User) {
     return user.id === user.main_admin_id || user.permissions.reasign_reports === true
@@ -104,7 +107,7 @@ export async function getBriefs(user: User, filters: {
         WHERE b.company_id = $1 AND ($2::integer IS NULL OR b.id = $2)
             AND ($3::date IS NULL OR b.date >= $3) AND ($4::date IS NULL OR b.date <= $4)
             AND ($5::uuid IS NULL OR b.department_id = $5)
-            AND ($6 OR b.department_id = $7 OR (b.date = (now() AT TIME ZONE c.timezone)::date
+            AND ($6 OR b.department_id = $7 OR (b.date = ${SQL_COMPANY_DATE}
                 AND b.is_department_journal AND (EXISTS (
                     SELECT 1 FROM brief_duty bd WHERE bd.saved_brief_id = b.id AND bd.user_id = $8
                 ) OR EXISTS (
@@ -137,7 +140,7 @@ export const departmentReportCandidates = `
         JOIN report_schedule s ON s.report_id = r.id AND s.company_id = r.company_id
         LEFT JOIN shift sh ON sh.id = s.shift_id AND sh.company_id = r.company_id
         WHERE b.company_id = $1 AND b.is_department_journal AND NOT b.freezed
-            AND b.date = (now() AT TIME ZONE c.timezone)::date
+            AND b.date = ${SQL_COMPANY_DATE}
             AND ($2::integer IS NULL OR r.id = $2) AND ($3::integer IS NULL OR b.id = $3)
             AND r.archived IS NOT TRUE
             AND (r.assigned_to->'all'->>'assigned' = 'true'
@@ -157,7 +160,7 @@ export const departmentCarryoverTasks = `
 
 export async function ensureDepartmentBrief(client: any, company_id: string, department_id: string, date: string) {
     const company = await client.query(
-        "SELECT id FROM company WHERE id = $1 AND $2::date = (now() AT TIME ZONE timezone)::date FOR UPDATE",
+        `SELECT id FROM company c WHERE id = $1 AND $2::date = ${SQL_COMPANY_DATE} FOR UPDATE`,
         [company_id, date]
     );
     if (!company.rows.length) throw Object.assign(new Error('invalid_start'), { status: 409 });
@@ -217,7 +220,7 @@ export async function syncDepartmentReports(client: any, company_id: string, rep
         UPDATE saved_report sr SET cancelled_at = COALESCE(sr.cancelled_at, now())
         FROM saved_brief b JOIN company c ON c.id = b.company_id
         WHERE sr.saved_brief_id = b.id AND sr.company_id = $1 AND b.company_id = $1
-            AND b.is_department_journal AND NOT b.freezed AND b.date = (now() AT TIME ZONE c.timezone)::date
+            AND b.is_department_journal AND NOT b.freezed AND b.date = ${SQL_COMPANY_DATE}
             AND ($2::integer IS NULL OR sr.report_id = $2) AND ($3::integer IS NULL OR b.id = $3)
             AND sr.checked IS NOT TRUE AND NOT EXISTS (
                 SELECT 1 FROM candidates r WHERE r.brief_id = b.id AND r.id = sr.report_id AND r.slot_key = sr.slot_key
@@ -228,7 +231,7 @@ export async function syncDepartmentReports(client: any, company_id: string, rep
             reports_reviewed = (SELECT count(*) FROM saved_report r WHERE r.saved_brief_id = b.id AND r.cancelled_at IS NULL AND r.checked),
             reports_all_count = (SELECT count(*) FROM saved_report r WHERE r.saved_brief_id = b.id AND r.cancelled_at IS NULL)
         FROM company c WHERE c.id = b.company_id AND b.company_id = $1 AND b.is_department_journal AND NOT b.freezed
-            AND b.date = (now() AT TIME ZONE c.timezone)::date AND ($2::integer IS NULL OR b.id = $2)
+            AND b.date = ${SQL_COMPANY_DATE} AND ($2::integer IS NULL OR b.id = $2)
             AND ($3::integer IS NULL OR EXISTS (SELECT 1 FROM saved_report r WHERE r.saved_brief_id = b.id AND r.report_id = $3))
     `, [company_id, brief_id, report_id]);
 }
