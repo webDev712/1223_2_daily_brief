@@ -2,17 +2,20 @@ import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 import sql from "@/lib/db"
 import { auth } from "@/auth";
-
+import dns from 'node:dns/promises';
 
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD,
     },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
 });
-
-import dns from 'node:dns/promises';
 
 export async function sendEmail(
     subject: string,
