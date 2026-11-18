@@ -16,8 +16,6 @@ type ReportDeadlineCheck = {
 
 async function checkReportsDeadline (request: Request) {
     const secret = process.env.CRON_SECRET;
-    console.log('secret')
-    console.log(secret)
     if (!secret) 
         return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured" }, { status: 500 });
     if (!isAuthorized(request, secret)) 
@@ -36,11 +34,9 @@ async function checkReportsDeadline (request: Request) {
                 - (NOW() AT TIME ZONE c.timezone)
             ) BETWEEN INTERVAL '0 minutes' AND INTERVAL '60 minutes';
         `;
-    console.log('savedReports')
-    console.log(savedReports)
     await Promise.all(
-        savedReports.map((report: ReportDeadlineCheck) => {
-            sendEmail(
+        savedReports.map(async (report: ReportDeadlineCheck) => {
+            await sendEmail(
                 `Upcoming report deadline: ${report.name}`,
                 `
                 <!DOCTYPE html>
