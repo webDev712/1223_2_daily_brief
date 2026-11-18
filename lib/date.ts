@@ -29,8 +29,18 @@ export function companyDate(timezone: string, now = new Date()) {
     return d.toISOString().slice(0, 10);
 }
 
-export function beforeCheckTime(time: string | undefined | null, timezone: string, now = new Date()) {
+export function beforeCheckTime(
+    time: string | undefined | null,
+    timezone: string,
+    now = new Date(),
+    briefDate?: string | null
+) {
     if (!time) return true;
+    if (briefDate) {
+        const refDate = companyDate(timezone, now);
+        if (refDate < briefDate) return true;
+        if (refDate > briefDate) return false;
+    }
     const [hour, period] = time.split(' ');
     const deadline = (Number(hour) % 12 + (period === 'PM' ? 12 : 0)) * 60;
     const { hour: currentHour, minute } = zonedWallClock(timezone, now);
