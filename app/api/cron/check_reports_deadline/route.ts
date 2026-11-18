@@ -23,7 +23,7 @@ async function checkReportsDeadline (request: Request) {
     if (!isAuthorized(request, secret)) 
         return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     
-    const savedReport = await sql`
+    const savedReports = await sql`
         SELECT c.timezone, sr.check_before, sr.name, u.name AS holder_name, u.email, u.department_id, sr.date
         FROM saved_report sr, company c, website_user u
         WHERE sr.date = (NOW() AT TIME ZONE c.timezone)::date
@@ -36,8 +36,10 @@ async function checkReportsDeadline (request: Request) {
                 - (NOW() AT TIME ZONE c.timezone)
             ) BETWEEN INTERVAL '0 minutes' AND INTERVAL '60 minutes';
         `;
+    console.log('savedReports')
+    console.log(savedReports)
     await Promise.all(
-        savedReport.map((report: ReportDeadlineCheck) => {
+        savedReports.map((report: ReportDeadlineCheck) => {
             sendEmail(
                 `Upcoming report deadline: ${report.name}`,
                 `
@@ -249,7 +251,7 @@ async function checkReportsDeadline (request: Request) {
             );
         })
     );
-    return NextResponse.json(JSON.stringify(savedReport));
+    return NextResponse.json(JSON.stringify(savedReports));
 }
 
 
