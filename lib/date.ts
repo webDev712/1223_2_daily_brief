@@ -1,6 +1,7 @@
 import { parse } from "date-fns";
 
 export const WORKDAY_CUTOFF_HOUR = 3;
+const DEADLINE_GRACE_MINUTES = 60;
 
 function zonedWallClock(timezone: string, now = new Date()) {
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -46,7 +47,9 @@ export function beforeCheckTime(
     const { hour: currentHour, minute } = zonedWallClock(timezone, now);
     const minutes = currentHour * 60 + minute;
     const cutoff = WORKDAY_CUTOFF_HOUR * 60;
-    return ((minutes - cutoff + 1440) % 1440) < ((deadline - cutoff + 1440) % 1440);
+    const minutesRel = (minutes - cutoff + 1440) % 1440;
+    const deadlineRel = (deadline - cutoff + 1440) % 1440;
+    return minutesRel < deadlineRel + DEADLINE_GRACE_MINUTES;
 }
 
 export default function formatDateWithoutTimezone(date: string) {
