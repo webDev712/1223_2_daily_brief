@@ -12,42 +12,179 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+import dns from 'node:dns/promises';
+
 export async function sendEmail(
     subject: string,
     html: string,
     email: string
 ) {
+    const log = (message: string, data?: any) => {
+        console.log(`[EMAIL DIAGNOSTICS] ${message}`, data ?? '');
+    };
+
+    const timeout = async <T>(
+        promise: Promise<T>,
+        ms: number,
+        stage: string
+    ): Promise<T> => {
+        let timer: ReturnType<typeof setTimeout>;
+
+        try {
+            return await Promise.race([
+                promise,
+                new Promise<never>((_, reject) => {
+                    timer = setTimeout(
+                        () => reject(new Error(`${stage}: TIMEOUT after ${ms}ms`)),
+                        ms
+                    );
+                })
+            ]);
+        } finally {
+            clearTimeout(timer!);
+        }
+    };
+
+    const diagnoseError = (error: any) => {
+        return {
+            name: error?.name,
+            message: error?.message,
+            code: error?.code,
+            command: error?.command,
+            response: error?.response,
+            responseCode: error?.responseCode,
+            errno: error?.errno,
+            syscall: error?.syscall,
+            hostname: error?.hostname,
+            stack: error?.stack
+        };
+    };
+
+    let stage = 'INITIALIZATION';
+
     try {
-        console.log('[EMAIL] Starting email sending...');
-        console.log('[EMAIL] GMAIL_USER:', process.env.GMAIL_USER);
-        console.log('[EMAIL] Recipient:', email);
+        log('========== START ==========');
 
-        // Проверяем SMTP-соединение
-        await transporter.verify();
-        console.log('[EMAIL] SMTP connection verified');
+        // 1. Environment variables
+        stage = 'ENVIRONMENT';
 
-        // Отправляем письмо
-        const info = await transporter.sendMail({
-            from: `"Daily Brief" <${process.env.GMAIL_USER}>`,
-            to: email,
-            subject: `Daily Brief | ${subject}`,
-            html
+        const user = process.env.GMAIL_USER;
+        const password = process.env.GMAIL_APP_PASSWORD;
+
+        log('Environment check', {
+            nodeVersion: process.version,
+            environment: process.env.VERCEL_ENV,
+            userExists: !!user,
+            passwordExists: !!password,
+            passwordLength: password?.replace(/\s/g, '').length,
+            recipient: email
         });
 
-        console.log('[EMAIL] Email sent successfully');
-        console.log('[EMAIL] Message ID:', info.messageId);
-        console.log('[EMAIL] Response:', info.response);
-        console.log('[EMAIL] Accepted:', info.accepted);
-        console.log('[EMAIL] Rejected:', info.rejected);
+        if (!user) throw new Error('GMAIL_USER is missing');
+        if (!password) throw new Error('GMAIL_APP_PASSWORD is missing');
 
-        return info;
+        if (!email || !email.includes('@')) {
+            throw new Error(`Invalid recipient: ${email}`);
+        }
 
-    } catch (error) {
-        console.error('[EMAIL] Sending failed:', error);
-        throw error;
+        // 2. DNS
+        stage = 'DNS';
+
+        const dnsResult = await timeout(
+            dns.resolve('smtp.gmail.com'),
+            10000,
+            stage
+        );
+
+        log('DNS resolved successfully', dnsResult);
+
+        // 3. SMTP transporter
+        stage = 'TRANSPORTER_CONFIGURATION';
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user,
+                pass: password.replace(/\s/g, '')
+            },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 30000,
+            logger: true,
+            debug: true
+        });
+
+        log('Transporter created');
+
+        // 4. SMTP connection + authentication
+        stage = 'SMTP_VERIFY';
+
+        log('Starting SMTP verification...');
+
+        const verified = await timeout(
+            transporter.verify(),
+            20000,
+            stage
+        );
+
+        log('SMTP VERIFIED', verified);
+
+        // 5. Send email
+        stage = 'SEND_MAIL';
+
+        log('Starting sendMail...');
+
+        const info = await timeout(
+            transporter.sendMail({
+                from: `"Daily Brief" <${user}>`,
+                to: email,
+                subject: `Daily Brief | ${subject}`,
+                html
+            }),
+            35000,
+            stage
+        );
+
+        log('EMAIL SEND RESULT', {
+            messageId: info.messageId,
+            response: info.response,
+            accepted: info.accepted,
+            rejected: info.rejected,
+            pending: info.pending
+        });
+
+        // 6. Result validation
+        if (info.rejected?.length) {
+            throw new Error(
+                `Gmail rejected recipients: ${info.rejected.join(', ')}`
+            );
+        }
+
+        log('========== SUCCESS ==========');
+
+        return {
+            success: true,
+            messageId: info.messageId,
+            accepted: info.accepted,
+            rejected: info.rejected
+        };
+
+    } catch (error: any) {
+        log('========== FAILURE ==========');
+
+        console.error('[EMAIL DIAGNOSTICS] Failed stage:', stage);
+        console.error(
+            '[EMAIL DIAGNOSTICS] Error details:',
+            diagnoseError(error)
+        );
+
+        return {
+            success: false,
+            stage,
+            error: diagnoseError(error)
+        };
     }
 }
-
 export async function POST(request: Request) {
     try {
         const session = await auth();
