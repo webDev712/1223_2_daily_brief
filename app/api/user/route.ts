@@ -65,9 +65,9 @@ export async function POST(request: Request) {
             email,
             name,
             user_role,
-            lead_letter,
+            lead_letter = "",
             archived = false,
-            phone = "+1 111 111 1111",
+            phone = "",
             department_id
         } = body;
 

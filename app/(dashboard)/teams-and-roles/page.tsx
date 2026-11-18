@@ -393,7 +393,7 @@ export default function TeamsAndRoles() {
                     </label>
                     <label>
                       <div>{t('addUser.phone')}</div>
-                      <input onChange={(e) => e.target.value = generatePhoneNumber(e.target.value)} type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" required={!userToEdit} defaultValue={userToEdit?.phone} />
+                      <input onChange={(e) => e.target.value = generatePhoneNumber(e.target.value)} type="phone" id='phone' pattern="^\+?[0-9\s\-()]{7,20}$" defaultValue={userToEdit?.phone} />
                     </label>
                     <label>
                       <div>{t('addUser.role')}</div>
@@ -403,7 +403,7 @@ export default function TeamsAndRoles() {
                     </label>
                     <label>
                       <div>{t('addUser.employeeId')}</div>
-                      <input type="text" id='letter' pattern={userToEdit ? "[A-Za-z]{1,2}" : "[A-Za-z][A-Za-z]"} required={!userToEdit} defaultValue={userToEdit ? userToEdit.lead_letter : randomEmployeeID()} />
+                      <input type="text" id='letter' pattern="[A-Za-z]{1,2}" defaultValue={userToEdit ? userToEdit.lead_letter : randomEmployeeID()} />
                     </label>
                     <label>
                       <div>{t('addUser.department')}</div>
@@ -541,7 +541,7 @@ export default function TeamsAndRoles() {
                   {/* TODO: create admin role */}
                   <div>
                     <div data-img="email">{user.email}</div>
-                    <div data-img="phone">{user.phone}</div>
+                    {user.phone?.trim() ? <div data-img="phone">{user.phone}</div> : null}
                   </div>
                   {user.user_role !== 'manager' ? (
                     <div>
