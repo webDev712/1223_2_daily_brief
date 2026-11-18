@@ -7,8 +7,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function isAuthorized(request: Request, secret: string): boolean {
-  const authHeader = request.headers.get("authorization") || "";
-  const expected = `Bearer ${secret}`;
+   const authHeader = request.headers.get("authorization") || "";
+    const expected = `Bearer ${secret}`;
+
+    console.log("Auth diagnostics:", {
+        headerExists: !!authHeader,
+        headerLength: Buffer.byteLength(authHeader),
+        expectedLength: Buffer.byteLength(expected),
+        exactMatch: authHeader === expected,
+        secretExists: !!secret
+    });
   const a = Buffer.from(authHeader);
   const b = Buffer.from(expected);
   console.log('expected')
