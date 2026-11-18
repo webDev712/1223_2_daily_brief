@@ -16,6 +16,8 @@ type ReportDeadlineCheck = {
 
 async function checkReportsDeadline (request: Request) {
     const secret = process.env.CRON_SECRET;
+    console.log('secret')
+    console.log(secret)
     if (!secret) 
         return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured" }, { status: 500 });
     if (!isAuthorized(request, secret)) 
