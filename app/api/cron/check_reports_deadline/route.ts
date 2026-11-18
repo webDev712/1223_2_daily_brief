@@ -247,7 +247,7 @@ async function checkReportsDeadline (request: Request) {
             );
         })
     );
-    return NextResponse.json(JSON.stringify(savedReports));
+    return NextResponse.json(JSON.stringify({reportWithDeadlinesSoon: savedReports.length}));
 }
 
 

@@ -11,8 +11,6 @@ export function isAuthorized(request: Request, secret: string): boolean {
   const expected = `Bearer ${secret}`;
   const a = Buffer.from(authHeader);
   const b = Buffer.from(expected);
-  console.log('expected')
-  console.log(expected)
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
 }
