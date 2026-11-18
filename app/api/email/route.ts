@@ -13,21 +13,26 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendEmail (subject: string, html: string, email: string) {
-    await transporter.sendMail({
-        from: `"Daily Brief" <${process.env.GMAIL_USER}>`,
-        to: email,
-        subject: `Daily Brief | ${subject}`,
-        html: html
-    });
-    transporter.verify((error, success) => {
-        if (error) {
-            console.error("GMAIL SMTP ERROR:", error);
-        } else {
-            console.log("GMAIL SMTP READY:", success);
-        }
-    });
+    try {
+        await transporter.sendMail({
+            from: `"Daily Brief" <${process.env.GMAIL_USER}>`,
+            to: email,
+            subject: `Daily Brief | ${subject}`,
+            html: html
+        });
+        transporter.verify((error, success) => {
+            if (error) {
+                console.error("GMAIL SMTP ERROR:", error);
+            } else {
+                console.log("GMAIL SMTP READY:", success);
+            }
+        });
+        console.log(`Email sent to ${email}`);
+    }
+    catch (error){
+        console.error(error)
+    }
 
-    console.log(`Email sent to ${email}`);
 }
 
 
