@@ -6,7 +6,7 @@ import { syncAllCompanies } from "@/lib/smrtSync.mjs";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isAuthorized(request: Request, secret: string): boolean {
+export function isAuthorized(request: Request, secret: string): boolean {
   const authHeader = request.headers.get("authorization") || "";
   const expected = `Bearer ${secret}`;
   const a = Buffer.from(authHeader);
