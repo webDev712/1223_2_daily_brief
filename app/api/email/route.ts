@@ -14,6 +14,10 @@ const transporter = nodemailer.createTransport({
 
 export async function sendEmail (subject: string, html: string, email: string) {
     try {
+        console.log('process.env.GMAIL_USER')
+        console.log(process.env.GMAIL_USER)
+        console.log('email')
+        console.log(email)
         await transporter.sendMail({
             from: `"Daily Brief" <${process.env.GMAIL_USER}>`,
             to: email,
