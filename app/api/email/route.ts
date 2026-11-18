@@ -12,33 +12,41 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-export async function sendEmail (subject: string, html: string, email: string) {
+export async function sendEmail(
+    subject: string,
+    html: string,
+    email: string
+) {
     try {
-        console.log('process.env.GMAIL_USER')
-        console.log(process.env.GMAIL_USER)
-        console.log('email')
-        console.log(email)
-        await transporter.sendMail({
+        console.log('[EMAIL] Starting email sending...');
+        console.log('[EMAIL] GMAIL_USER:', process.env.GMAIL_USER);
+        console.log('[EMAIL] Recipient:', email);
+
+        // Проверяем SMTP-соединение
+        await transporter.verify();
+        console.log('[EMAIL] SMTP connection verified');
+
+        // Отправляем письмо
+        const info = await transporter.sendMail({
             from: `"Daily Brief" <${process.env.GMAIL_USER}>`,
             to: email,
             subject: `Daily Brief | ${subject}`,
-            html: html
+            html
         });
-        transporter.verify((error, success) => {
-            if (error) {
-                console.error("GMAIL SMTP ERROR:", error);
-            } else {
-                console.log("GMAIL SMTP READY:", success);
-            }
-        });
-        console.log(`Email sent to ${email}`);
-    }
-    catch (error){
-        console.error(error)
-    }
 
+        console.log('[EMAIL] Email sent successfully');
+        console.log('[EMAIL] Message ID:', info.messageId);
+        console.log('[EMAIL] Response:', info.response);
+        console.log('[EMAIL] Accepted:', info.accepted);
+        console.log('[EMAIL] Rejected:', info.rejected);
+
+        return info;
+
+    } catch (error) {
+        console.error('[EMAIL] Sending failed:', error);
+        throw error;
+    }
 }
-
 
 export async function POST(request: Request) {
     try {
