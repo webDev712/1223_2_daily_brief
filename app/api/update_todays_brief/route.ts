@@ -285,8 +285,8 @@ export async function POST(request: Request) {
                         AND company_id = $2 AND cancelled_at IS NULL AND checked IS NOT TRUE ORDER BY id
                 `, [id, user.company_id]);
                 if (reports.rows.length) {
-                    const pending = reports.rows.filter((r: any) => beforeCheckTime(r.check_before, user.timezone));
-                    const overdue = reports.rows.filter((r: any) => !beforeCheckTime(r.check_before, user.timezone));
+                    const pending = reports.rows.filter((r: any) => beforeCheckTime(r.check_before, user.timezone, undefined, b.date));
+                    const overdue = reports.rows.filter((r: any) => !beforeCheckTime(r.check_before, user.timezone, undefined, b.date));
                     await client.query("ROLLBACK");
                     return NextResponse.json({ error: "day_incomplete", pending, overdue }, { status: 409 });
                 }

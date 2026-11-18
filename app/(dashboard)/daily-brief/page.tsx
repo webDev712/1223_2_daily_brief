@@ -1003,7 +1003,7 @@ export default function DailyBrief() {
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id === user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
-                            <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now) ? '' : ' red-background')} key={r.id}>
+                            <div className={(i === 0 ? 'report border-top reports-you-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now, b.date) ? '' : ' red-background')} key={r.id}>
                               <input className={savingReports.includes(r.id) || noAccessReport(b, r) ? 'd' : ''} disabled={savingReports.includes(r.id) || noAccessReport(b, r)} type='checkbox' checked={r.checked} onChange={() => {
                                 const metric_lowercase = r.metric?.toLowerCase();
                                 if ((metric_lowercase === 'metric' || 
@@ -1218,7 +1218,7 @@ export default function DailyBrief() {
                         )}
                         {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
-                            <div className={(i === 0 ? 'report border-top reports-other-users-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now) ? '' : ' red-background')} key={r.id}>
+                            <div className={(i === 0 ? 'report border-top reports-other-users-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now, b.date) ? '' : ' red-background')} key={r.id}>
                               {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
                               <div></div>
                               <div>{r.name}</div>
