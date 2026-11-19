@@ -50,6 +50,9 @@ export default function Dashboard() {
       }
 
       const data: SavedBrief[] = await res.json();
+      
+      console.log('SavedBrief')
+      console.log(data)
 
       const users_res = await fetch(`/api/users`);
       if (!users_res.ok) {
