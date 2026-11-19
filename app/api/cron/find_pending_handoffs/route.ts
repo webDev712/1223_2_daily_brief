@@ -77,6 +77,7 @@ async function checkHandoffPending(request: Request) {
                 WHERE u.company_id = ${handoff.company_id}
                     AND (
                         u.id IN (
+                            ${handoff.from_user_id},
                             ${handoff.to_user_id},
                             ${details.main_admin_id}
                         )
