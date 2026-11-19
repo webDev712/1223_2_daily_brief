@@ -85,8 +85,12 @@ async function checkHandoffPending(request: Request) {
                             u.user_role = 'manager'
                             AND u.department_id = ${details.department_id}
                         )
+                        OR (
+                            u.user_role = 'Manager'
+                            AND u.department_id = ${details.department_id}
+                        )
+
                     )
-                    AND u.id = '774b7e9b-7f20-4b49-9645-89463b8453a5';
             `;
 
             const message = `
