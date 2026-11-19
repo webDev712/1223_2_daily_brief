@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorized } from "../sync-ppoh/route";
 import sql from "@/lib/db";
+import { format } from "date-fns";
 
 type PendingHandoff = {
     id: number;
@@ -104,6 +105,8 @@ async function checkHandoffPending(request: Request) {
                 The handoff request has been pending for more than 30 minutes.
 
                 Please review the request and take appropriate action.
+
+                /daily-brief?date=${format(new Date(handoff.date), 'dd-MM-yyyy')}&department_id=${details.department_id}
             `.trim();
 
             await Promise.all(
