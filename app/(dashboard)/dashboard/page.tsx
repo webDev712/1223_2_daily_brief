@@ -1,17 +1,21 @@
 "use client";
 
-import { Finding, Report, SavedBrief, Task, User, Covered, Department } from "@/lib/types";
+import { Finding, Report, SavedBrief, Task, User, Covered, Department, Handoff } from "@/lib/types";
 import { useUser } from "../../src/components/UserProvider";
 import { useDate } from "../../src/components/DateContext";
+import UserCircle from "@/app/src/components/UserCircle";
+import scrollToElement from "@/lib/html_document";
 import Loader from "@/app/src/components/Loader";
+import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { format, parse } from "date-fns";
 import './page.css'
-import UserCircle from "@/app/src/components/UserCircle";
-import scrollToElement from "@/lib/html_document";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
-import randomInt from "@/lib/num";
+
+interface HandoffToDisplayNoAnswer extends Handoff {
+  department_name: string;
+  department_id: string;
+  brief_date: string;
+}
 
 
 export default function Dashboard() {
@@ -35,25 +39,36 @@ export default function Dashboard() {
   });
   const user = useUser();
   const [briefs, setBriefs] = useState<SavedBrief[]>([]);
-  const [briefsLoading, setBriefsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [handoffsNoAnswer, setHandoffsNoAnswer] = useState<HandoffToDisplayNoAnswer[]>([]);
   async function load() {
-      setBriefsLoading(true);
       const dateString = format(date, "yyyy-MM-dd");
 
       const res = await fetch(`/api/brief_history?date_from=${dateString}&date_to=${dateString}`);
 
       if (!res.ok) {
         console.error("Failed to load brief history");
-        setBriefsLoading(false);
         return;
       }
 
       const data: SavedBrief[] = await res.json();
+      console.log('SavedBrief[]');
+      console.log(data.filter((brief: SavedBrief) => brief.handoffs.length > 0));
       
-      console.log('SavedBrief')
-      console.log(data)
 
+      const trans: HandoffToDisplayNoAnswer[] = [];
+      const hoursToAddHandoffInList = 0.5;
+      const nowFromEpoch = new Date().getTime();
+      data.filter((brief: SavedBrief) => {
+        brief.handoffs.map((handoff: Handoff) => {
+          if (!handoff.responded_at && handoff.requested_at && ((new Date(handoff.requested_at).getTime() - nowFromEpoch) / 1000 * 60 * 60 < -hoursToAddHandoffInList))
+            trans.push({...handoff, department_name: brief.department_name, department_id: brief.department_id, brief_date: format(parse(brief.date, "yyyy-MM-dd", new Date()), 'dd-MM-yyyy')});
+        })
+      });
+
+      setHandoffsNoAnswer(trans);
+      console.log('handoffsNoAnswer');
+      console.log(trans);
       const users_res = await fetch(`/api/users`);
       if (!users_res.ok) {
         console.error("Failed to load leads");
@@ -61,8 +76,7 @@ export default function Dashboard() {
         return;
       }  
       let leads_data = await users_res.json();
-      leads_data = leads_data
-        .filter((a: User) => a.archived !== true)
+      leads_data = leads_data.filter((a: User) => a.archived !== true)
       setLeads(leads_data)
       
       const departments_res = await fetch(`/api/departments?date=${dateString}`);
@@ -144,7 +158,6 @@ export default function Dashboard() {
         - (a.freezed || !a.is_department_journal || a.duty_count > 0 ? 2 : a.reports?.length ? 1 : 0) || a.department_name.localeCompare(b.department_name));
 
       setBriefs(combined);
-      setBriefsLoading(false);
       setLoading(false);
     }
   useEffect(() => {
@@ -484,119 +497,151 @@ export default function Dashboard() {
                 <h3>{t("requires_attention")}</h3>
                 <p>{t("ordered_by_urgency")}</p>
               </div>
-              <div>{t("items_count", { count: attentionCount })}</div>
+              <div>{t("items_count", { count: attentionCount + handoffsNoAnswer.length })}</div>
             </div>
             {attentionCount === 0 && (<h3>{t("no_attention")}</h3>)}
             <div className="attention-container">
-             {briefs_filtered.map((b: SavedBrief) => {
-              const leadName = currentLeadName(b);
-              const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
-              return b.findings?.map((finding: Finding, finding_i: number) => {
-                const authorName = leads.find((u: User) => u.id === (finding as any).user_id)?.name || leadName;
-                if (finding.type === 'high') return (
-                  <div className="attention attention_finding" key={`${b.department_id}_${b.id}_attention_finding_${finding_i}`} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
+              {handoffsNoAnswer.map((handoff: HandoffToDisplayNoAnswer) => {
+                const href = `/daily-brief?date=${format(parse(handoff.brief_date, "dd-MM-yyyy", new Date()), "yyyy-MM-dd")}&department_id=${handoff.department_id}`;
+                return (
+                  <div className="attention attention_finding" key={crypto.randomUUID()} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
                     <div>
                       <div>
-                        <p>{t("high_priority_finding")}</p>
+                        <p>{t("pending_handoff")}</p>
                         <span className="high">{t("badge_high")}</span>
                       </div>
-                      <div>{finding.description}</div>
+                      <div className="flex" style={{gap: 5}}>
+                        <div>Handoff from</div>
+                        <div className="flex" style={{gap: 5}}>
+                          <UserCircle user_name={handoff.from_name} size={20} round={true}></UserCircle>
+                          <div>{handoff.from_name}</div>
+                        </div>
+                        <div className="flex">to</div>
+                        <div className="flex" style={{gap: 5}}>
+                          <UserCircle user_name={handoff.to_name} size={20} round={true}></UserCircle>
+                          <div>{handoff.to_name}</div>
+                        </div>
+                        <div className="flex">has not been answered for more than 30 minutes.</div>
+                      </div>
                     </div>
                     <div>
-                      <div>
-                        <UserCircle user_name={b.department_name} size={20}></UserCircle>
-                        <div>{b.department_name}</div>
+                      <div className="flex">
+                        <UserCircle user_name={handoff.department_name} size={20}></UserCircle>
+                        <div>{handoff.department_name}</div>
                       </div>
-                      <div>{[authorName, formatTime(finding.created_at)].filter(Boolean).join(", ")}</div>
                     </div>
                   </div>
                 )
-              })
-            })}
-            {briefs_filtered.flatMap((b: SavedBrief) => {
-              const leadName = currentLeadName(b);
-              const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
-              return (b.tasks || [])
-                .filter((task: Task) => !task.checked)
-                .map((task: Task, task_i: number) => (
-                  <div
-                    className="attention attention_task"
-                    key={`${b.department_id}_${b.id}_attention_task_${task_i}`}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => { window.location.href = href; }}
-                  >
-                    <div>
+              })}
+              {briefs_filtered.map((b: SavedBrief) => {
+                const leadName = currentLeadName(b);
+                const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
+                return b.findings?.map((finding: Finding, finding_i: number) => {
+                  const authorName = leads.find((u: User) => u.id === (finding as any).user_id)?.name || leadName;
+                  if (finding.type === 'high') return (
+                    <div className="attention attention_finding" key={`${b.department_id}_${b.id}_attention_finding_${finding_i}`} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
                       <div>
-                        <p>{t("pending_task")}</p>
-                        <span className="moderate">{t("badge_attention")}</span>
+                        <div>
+                          <p>{t("high_priority_finding")}</p>
+                          <span className="high">{t("badge_high")}</span>
+                        </div>
+                        <div>{finding.description}</div>
+                      </div>
+                      <div>
+                        <div>
+                          <UserCircle user_name={b.department_name} size={20}></UserCircle>
+                          <div>{b.department_name}</div>
+                        </div>
+                        <div>{[authorName, formatTime(finding.created_at)].filter(Boolean).join(", ")}</div>
+                      </div>
+                    </div>
+                  )
+                })
+              })}
+              {briefs_filtered.flatMap((b: SavedBrief) => {
+                const leadName = currentLeadName(b);
+                const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
+                return (b.tasks || [])
+                  .filter((task: Task) => !task.checked)
+                  .map((task: Task, task_i: number) => (
+                    <div
+                      className="attention attention_task"
+                      key={`${b.department_id}_${b.id}_attention_task_${task_i}`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => { window.location.href = href; }}
+                    >
+                      <div>
+                        <div>
+                          <p>{t("pending_task")}</p>
+                          <span className="moderate">{t("badge_attention")}</span>
+                        </div>
+
+                        <div>{task.text}</div>
                       </div>
 
-                      <div>{task.text}</div>
-                    </div>
-
-                    <div>
-                      <div className="flex">
-                        <UserCircle user_name={b.department_name} size={20} />
-                        <div>{b.department_name}</div>
-                      </div>
-                      {leadName && <div>{leadName}</div>}
-                    </div>
-                  </div>
-                ));
-            })}
-            {briefs_filtered.map((b: SavedBrief) => {
-              const reports_pending_length = b.reports.filter((report: Report) => report.checked === false).length;
-              const leadName = currentLeadName(b);
-              const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
-              if ((!b.is_department_journal || b.duty_count > 0) && reports_pending_length > 0) return (
-                  <div className="attention attention_report" key={`${b.department_id}_${b.id}_attention_reports`} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
-                    <div>
                       <div>
-                        <p>{t("incomplete_report_review")}</p>
-                        <span className="moderate">{t("badge_attention")}</span>
+                        <div className="flex">
+                          <UserCircle user_name={b.department_name} size={20} />
+                          <div>{b.department_name}</div>
+                        </div>
+                        {leadName && <div>{leadName}</div>}
                       </div>
-                      <div>{t("reports_not_reviewed", { count: reports_pending_length })}</div>
                     </div>
-                    <div>
+                  ));
+              })}
+              {briefs_filtered.map((b: SavedBrief) => {
+                const reports_pending_length = b.reports.filter((report: Report) => report.checked === false).length;
+                const leadName = currentLeadName(b);
+                const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
+                if ((!b.is_department_journal || b.duty_count > 0) && reports_pending_length > 0) return (
+                    <div className="attention attention_report" key={`${b.department_id}_${b.id}_attention_reports`} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
                       <div>
-                        <UserCircle user_name={b.department_name} size={20}></UserCircle>
-                        <div>{b.department_name}</div>
-                      </div>
-                      <div>{[leadName, t("left_count", { count: reports_pending_length })].filter(Boolean).join(", ")}</div>
-                    </div>
-                  </div>
-              )
-            })}
-            {briefs_filtered.map((b: SavedBrief) => {
-              const handoff = handoffPair(b, true);
-              const leadName = currentLeadName(b);
-              const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
-              if (handoff) return (
-                  <div className="attention attention_handoff" key={`${b.department_id}_${b.id}_attention_handoff`} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
-                    <div>
-                      <div>
-                        <p>{t("handed_off_brief")}</p>
-                        <span className="moderate">{t("badge_attention")}</span>
+                        <div>
+                          <p>{t("incomplete_report_review")}</p>
+                          <span className="moderate">{t("badge_attention")}</span>
+                        </div>
+                        <div>{t("reports_not_reviewed", { count: reports_pending_length })}</div>
                       </div>
                       <div>
-                        <div>{t("handed_off_from")}</div>
-                        <UserCircle user_name={handoff.from} size={20}></UserCircle>
-                        <div>{handoff.from}</div>
-                        <div>{t("to")}</div>
-                        <UserCircle user_name={handoff.to} size={20}></UserCircle>
-                        <div>{handoff.to}</div>
+                        <div>
+                          <UserCircle user_name={b.department_name} size={20}></UserCircle>
+                          <div>{b.department_name}</div>
+                        </div>
+                        <div>{[leadName, t("left_count", { count: reports_pending_length })].filter(Boolean).join(", ")}</div>
                       </div>
                     </div>
-                    <div>
+                )
+              })}
+              {briefs_filtered.map((b: SavedBrief) => {
+                const handoff = handoffPair(b, true);
+                const leadName = currentLeadName(b);
+                const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
+                if (handoff) return (
+                    <div className="attention attention_handoff" key={`${b.department_id}_${b.id}_attention_handoff`} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
                       <div>
-                        <UserCircle user_name={b.department_name} size={20}></UserCircle>
-                        <div>{b.department_name}</div>
+                        <div>
+                          <p>{t("handed_off_brief")}</p>
+                          <span className="moderate">{t("badge_attention")}</span>
+                        </div>
+                        <div>
+                          <div>{t("handed_off_from")}</div>
+                          <UserCircle user_name={handoff.from} size={20}></UserCircle>
+                          <div>{handoff.from}</div>
+                          <div>{t("to")}</div>
+                          <UserCircle user_name={handoff.to} size={20}></UserCircle>
+                          <div>{handoff.to}</div>
+                        </div>
                       </div>
-                      {leadName && <div>{leadName}</div>}
+                      <div>
+                        <div>
+                          <UserCircle user_name={b.department_name} size={20}></UserCircle>
+                          <div>{b.department_name}</div>
+                        </div>
+                        {leadName && <div>{leadName}</div>}
+                      </div>
                     </div>
-                  </div>
-              )
-            })}
+                )
+              })}
             </div>
           </div>
           <div style={{marginTop: 20}}>

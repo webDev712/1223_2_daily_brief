@@ -1,3 +1,17 @@
+export interface Handoff {
+  id: number;
+  from_user_id: string;
+  to_user_id: string;
+  from_name: string;
+  to_name: string;
+  from_shift_id?: number | null; 
+  from_shift_name?: string | null;
+  reason: string | null; 
+  notes: string | null;
+  requested_at?: string | null;
+  responded_at?: string | null;
+}
+
 export interface SavedBrief {
   id: number;
   department_id: string;
@@ -8,7 +22,7 @@ export interface SavedBrief {
   duty_count: number;
   shift_id: number | null;
   duties: { user_id: string; name: string; shift_id: number; shift: string; started_at: string; driving: boolean; ended_at: string | null; handed_to: string | null }[];
-  handoffs: { id: number; from_user_id: string; to_user_id: string; from_name: string; to_name: string; from_shift_id?: number | null; from_shift_name?: string | null; reason: string | null; notes: string | null }[];
+  handoffs: Handoff[];
   date: string;
   updated_at: string | null;
   driving: boolean;

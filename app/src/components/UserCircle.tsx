@@ -20,7 +20,7 @@ export function clearOfTheTo (text: string) {
 }
 
 
-export default function UserCircle ({user_name, size, onClick}: {user_name: string, size: number, onClick?: () => void}) {
+export default function UserCircle ({user_name, size, onClick, round = false}: {user_name: string, size: number, onClick?: () => void, round?: boolean}) {
     user_name = clearOfTheTo(user_name);
     const colors = getColorsFromName(user_name)
     let local_user_name = user_name.trim()
@@ -39,7 +39,7 @@ export default function UserCircle ({user_name, size, onClick}: {user_name: stri
                 height: size,
                 fontWeight: 700,
                 lineHeight: size + "px",
-                borderRadius: size * 0.32,
+                borderRadius: round ? size * 0.5 : size * 0.32,
                 fontSize: size * 0.45
             }}>{local_user_name.split(" ")[0] ? AB_name : ''}</div>
         </div>

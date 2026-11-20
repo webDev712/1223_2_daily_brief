@@ -334,50 +334,44 @@ const Chat = ({openChat, setOpenChat, class_name}: {
 
     useEffect(() => {
         const load = async () => {
-            console.log(0)
             const selected_user = users.find((user: UserForChat) => user.id === selectedUserId );
-                const chat_res = await fetch(`/api/chats?id=${seeUserMessageAs.id}`);
-            console.log(1)
+            const chat_res = await fetch(`/api/chats?id=${seeUserMessageAs.id}`);
 
-                if (!chat_res.ok) {
-                    console.log('Error while fetching chat');
-                    return;
-                }
-            console.log(2)
-
-                const chat_data = await chat_res.json();
-                const users_res = await fetch('/api/users');
-
-                if (!users_res.ok) {
-                    console.error('Error while fetching users');
-                    return;
-                }
-                let users_data = await users_res.json();
-                users_data = users_data
-                    .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id && filterUser.archived !== true)
-                    .sort((a: UserForChat, b: UserForChat) => {
-                        let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === seeUserMessageAs.id) || (message.from_user === a.id && message.to_user === seeUserMessageAs.id));
-                        let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === seeUserMessageAs.id) || (message.from_user === b.id && message.to_user === seeUserMessageAs.id));
-                        return (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) !== 0 ? 
-                                    (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) 
-                                    : a.name.localeCompare(b.name);
-                    })
-                if (selected_user) {
-                    users_data = users_data.map((user: UserForChat) => {
-                        return user.id === selected_user.id ? {...user, open: true} : user
-                    })
-                }
-            console.log(3)
-                setUsers(users_data);
-                setChats(chat_data);
-                console.log(`/api/chats?id=${seeUserMessageAs.id}`)
-                if (loadingFalseNextChatReload === true) {
-                    setLoading(false);
-                    setLoadingFalseNextChatReload(false);
-                }
-            console.log(4)
-                // setLoading(false);
+            if (!chat_res.ok) {
+                console.log('Error while fetching chat');
+                return;
             }
+
+            const chat_data = await chat_res.json();
+            const users_res = await fetch('/api/users');
+
+            if (!users_res.ok) {
+                console.error('Error while fetching users');
+                return;
+            }
+            let users_data = await users_res.json();
+            users_data = users_data
+                .filter((filterUser: UserForChat) => filterUser.id !== seeUserMessageAs.id && filterUser.archived !== true)
+                .sort((a: UserForChat, b: UserForChat) => {
+                    let a_chat = chat_data.find((message: Message) => (message.to_user === a.id && message.from_user === seeUserMessageAs.id) || (message.from_user === a.id && message.to_user === seeUserMessageAs.id));
+                    let b_chat = chat_data.find((message: Message) => (message.to_user === b.id && message.from_user === seeUserMessageAs.id) || (message.from_user === b.id && message.to_user === seeUserMessageAs.id));
+                    return (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) !== 0 ? 
+                                (b_chat?.timestamp? new Date(b_chat.timestamp).getTime() : 0) - (a_chat?.timestamp? new Date(a_chat.timestamp).getTime() : 0) 
+                                : a.name.localeCompare(b.name);
+                })
+            if (selected_user) {
+                users_data = users_data.map((user: UserForChat) => {
+                    return user.id === selected_user.id ? {...user, open: true} : user
+                })
+            }
+            setUsers(users_data);
+            setChats(chat_data);
+            if (loadingFalseNextChatReload === true) {
+                setLoading(false);
+                setLoadingFalseNextChatReload(false);
+            }
+            // setLoading(false);
+        }
         load();
     }, [reloadChats, seeUserMessageAs.id])
     const shouldAutoScrollRef = useRef(true);

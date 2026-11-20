@@ -270,7 +270,8 @@
     "badge_reports": "Reportes",
     "all_reports_reviewed": "Todos los reportes revisados ({count, plural, one {# reporte} other {# reportes}})",
     "reports_reviewed_count": "{count, plural, one {# reporte revisado} other {# reportes revisados}}",
-    "done_count": "{count} completados"
+    "done_count": "{count} completados",
+    "pending_handoff": "Traspaso pendiente"
   },
   "BriefHistory": {
     "total_briefs": "Total de informes",
