@@ -271,7 +271,10 @@
     "all_reports_reviewed": "Todos los reportes revisados ({count, plural, one {# reporte} other {# reportes}})",
     "reports_reviewed_count": "{count, plural, one {# reporte revisado} other {# reportes revisados}}",
     "done_count": "{count} completados",
-    "pending_handoff": "Traspaso pendiente"
+    "pending_handoff": "Traspaso pendiente",
+    "production_dashboard_notes": "Nota del Panel de Producción",
+    "employee": "Empleado",
+    "notes": "Notas"
   },
   "BriefHistory": {
     "total_briefs": "Total de informes",
@@ -517,7 +520,8 @@
       "deltaVsTarget": "Δ VS OBJETIVO",
       "efficiency": "EFICIENCIA",
       "notes": "NOTAS",
-      "notesPlaceholder": "Escribe tus notas aquí..."
+      "notesPlaceholder": "Escribe tus notas aquí...",
+      "mentionedNotification": "INFORMACIÓN: Te mencionaron en un registro del Panel de Producción.\n\nFECHA: {date}\nEMPLEADO: {employee}\nDEPARTAMENTO: {department}\n\nPIEZAS: {pieces}\nVALOR: {value}\nHORAS: {hours}\nPPOH: {ppoh}\nMETA PPOH: {targetPpoh}\nDIFERENCIA VS. META: {delta}\nEFICIENCIA: {efficiency}%\n\nNOTAS: {notes}"
     },
     "mobileLabels": {
       "pieces": "Piezas",

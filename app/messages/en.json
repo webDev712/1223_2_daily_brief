@@ -271,7 +271,10 @@
     "all_reports_reviewed": "All reports reviewed ({count, plural, one {# report} other {# reports}})",
     "reports_reviewed_count": "{count, plural, one {# report reviewed} other {# reports reviewed}}",
     "done_count": "{count} done",
-    "pending_handoff": "Pending Handoff"
+    "pending_handoff": "Pending Handoff",
+    "production_dashboard_notes": "Production Dashboard Note",
+    "employee": "Employee",
+    "notes": "Notes"
   },
   "BriefHistory": {
     "total_briefs": "Total Briefs",
@@ -517,7 +520,8 @@
       "deltaVsTarget": "Δ VS TARGET",
       "efficiency": "EFFICIENCY",
       "notes": "NOTES",
-      "notesPlaceholder": "Write your notes here..."
+      "notesPlaceholder": "Write your notes here...",
+      "mentionedNotification": "INFO: You were mentioned in a Production Dashboard entry.\n\nDATE: {date}\nEMPLOYEE: {employee}\nDEPARTMENT: {department}\n\nPIECES: {pieces}\nVALUE: {value}\nHOURS: {hours}\nPPOH: {ppoh}\nTARGET PPOH: {targetPpoh}\nDELTA VS. TARGET: {delta}\nEFFICIENCY: {efficiency}%\n\nNOTES: {notes}"
     },
     "mobileLabels": {
       "pieces": "Pieces",

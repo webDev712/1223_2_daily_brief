@@ -572,7 +572,7 @@ const Chat = ({openChat, setOpenChat, class_name}: {
                                                                         </div>
                                                                     </div>
                                                                 ) :
-                                                                (<div>{message.text}</div>)}
+                                                                (<div className="message-text">{message.text}</div>)}
                                                         <div>{format(new Date(message.timestamp), 'hh:mm aa, MM-dd-yyyy')}</div>
                                                     </div>
                                                 ))

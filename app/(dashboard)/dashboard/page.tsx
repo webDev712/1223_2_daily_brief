@@ -1,6 +1,6 @@
 "use client";
 
-import { Finding, Report, SavedBrief, Task, User, Covered, Department, Handoff } from "@/lib/types";
+import { Finding, Report, SavedBrief, Task, User, Covered, Department, Handoff, ProductionRow } from "@/lib/types";
 import { useUser } from "../../src/components/UserProvider";
 import { useDate } from "../../src/components/DateContext";
 import UserCircle from "@/app/src/components/UserCircle";
@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [briefs, setBriefs] = useState<SavedBrief[]>([]);
   const [loading, setLoading] = useState(true);
   const [handoffsNoAnswer, setHandoffsNoAnswer] = useState<HandoffToDisplayNoAnswer[]>([]);
+  const [productionDashboardRowWithNotes, setProductionDashboardRowWithNotes] = useState([])
   async function load() {
       const dateString = format(date, "yyyy-MM-dd");
 
@@ -52,8 +53,6 @@ export default function Dashboard() {
       }
 
       const data: SavedBrief[] = await res.json();
-      console.log('SavedBrief[]');
-      console.log(data.filter((brief: SavedBrief) => brief.handoffs.length > 0));
       
 
       const trans: HandoffToDisplayNoAnswer[] = [];
@@ -61,14 +60,13 @@ export default function Dashboard() {
       const nowFromEpoch = new Date().getTime();
       data.filter((brief: SavedBrief) => {
         brief.handoffs.map((handoff: Handoff) => {
-          if (!handoff.responded_at && handoff.requested_at && ((new Date(handoff.requested_at).getTime() - nowFromEpoch) / 1000 * 60 * 60 < -hoursToAddHandoffInList))
+          // Filtering only handoffs with no .responded_at and .requested_at more then hoursToAddHandoffInList from now
+          if (!handoff.responded_at && handoff.requested_at && ((new Date(handoff.requested_at).getTime() - nowFromEpoch) / 1000 / 60 / 60 < -hoursToAddHandoffInList))
             trans.push({...handoff, department_name: brief.department_name, department_id: brief.department_id, brief_date: format(parse(brief.date, "yyyy-MM-dd", new Date()), 'dd-MM-yyyy')});
         })
       });
 
       setHandoffsNoAnswer(trans);
-      console.log('handoffsNoAnswer');
-      console.log(trans);
       const users_res = await fetch(`/api/users`);
       if (!users_res.ok) {
         console.error("Failed to load leads");
@@ -157,6 +155,18 @@ export default function Dashboard() {
       }).sort((a, b) => (b.freezed || !b.is_department_journal || b.duty_count > 0 ? 2 : b.reports?.length ? 1 : 0)
         - (a.freezed || !a.is_department_journal || a.duty_count > 0 ? 2 : a.reports?.length ? 1 : 0) || a.department_name.localeCompare(b.department_name));
 
+      const ppoh_master_res = await fetch(`/api/ppohMaster?page=${1}&page_size=${1000000}&from_date=${format(date, 'yyyy-MM-dd')}&to_date=${format(date, 'yyyy-MM-dd')}`);
+      if (!ppoh_master_res.ok){
+          console.log('Failed to load ppoh_master');
+          setLoading(false);
+          return;
+      }
+      let ppoh_master_data = await ppoh_master_res.json();
+      ppoh_master_data.rows = ppoh_master_data.rows.filter((row: ProductionRow) => row.notes)
+      console.log('ppoh_master_data.rows');
+      console.log(ppoh_master_data.rows);
+      setProductionDashboardRowWithNotes(ppoh_master_data.rows)
+
       setBriefs(combined);
       setLoading(false);
     }
@@ -227,7 +237,7 @@ export default function Dashboard() {
       (b.findings?.filter((f: Finding) => f.type === "high").length ?? 0) +
       (b.tasks?.filter((t: Task) => !t.checked).length ?? 0) +
       ((!b.is_department_journal || b.duty_count > 0) && (b.reports?.filter((r: Report) => !r.checked).length ?? 0) > 0 ? 1 : 0) +
-      (handoffPair(b, true) ? 1 : 0),
+      (handoffPair(b, false) ? 1 : 0),
     0
   )
 
@@ -502,7 +512,7 @@ export default function Dashboard() {
             {attentionCount === 0 && (<h3>{t("no_attention")}</h3>)}
             <div className="attention-container">
               {handoffsNoAnswer.map((handoff: HandoffToDisplayNoAnswer) => {
-                const href = `/daily-brief?date=${format(parse(handoff.brief_date, "dd-MM-yyyy", new Date()), "yyyy-MM-dd")}&department_id=${handoff.department_id}`;
+                const href = `/daily-brief?date=${handoff.brief_date}&department_id=${handoff.department_id}`;
                 return (
                   <div className="attention attention_finding" key={crypto.randomUUID()} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
                     <div>
@@ -613,7 +623,7 @@ export default function Dashboard() {
                 )
               })}
               {briefs_filtered.map((b: SavedBrief) => {
-                const handoff = handoffPair(b, true);
+                const handoff = handoffPair(b, false);
                 const leadName = currentLeadName(b);
                 const href = `/daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), "d-M-yyyy")}&department_id=${b.department_id}`;
                 if (handoff) return (
@@ -640,6 +650,28 @@ export default function Dashboard() {
                         {leadName && <div>{leadName}</div>}
                       </div>
                     </div>
+                )
+              })}
+              {productionDashboardRowWithNotes.map((row: ProductionRow) => {
+                const href = `/production-dashboard?date=${row.date}&employee_id=${row.external_id}`;
+                return (
+                  <div className="attention attention_finding" key={crypto.randomUUID()} style={{ cursor: "pointer" }} onClick={() => { window.location.href = href; }}>
+                    <div>
+                      <div>
+                        <p>{t("production_dashboard_notes")}</p>
+                        <span className="info">{t("badge_info")}</span>
+                      </div>
+                      <div className="flex" style={{gap: 5}}>
+                        {t('employee')}: {row.employee_name}. {t('notes')}: {row.notes}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex">
+                        <UserCircle user_name={row.department || 'Production Dashboard'} size={20}></UserCircle>
+                        <div>{row.department || 'Production Dashboard'}</div>
+                      </div>
+                    </div>
+                  </div>
                 )
               })}
             </div>

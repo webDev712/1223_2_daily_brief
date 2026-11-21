@@ -647,7 +647,26 @@ export default function DailyBrief() {
                   : [{user_id: b.lead_id, name: b.lead_name, shift_id: b.shift_id, shift: b.shift, driving: b.driving, ended_at: null, handed_to: null}];
                 const drivers = duties.filter(d => !d.ended_at && d.driving && (manager || d.user_id === user.id));
                 const hasCoverage = Boolean(duties.some(d => !d.ended_at && d.driving) || (b.covered && b.covered.length > 0));
-                const reports_sorted = b.reports.sort((a: Report, b: Report) => ['opening', 'midday', 'closing', 'ongoing'].indexOf(a.day_time) - ['opening', 'midday', 'closing', 'ongoing'].indexOf(b.day_time));
+                const reports_sorted = b.reports.sort((a: Report, b: Report) => {
+                  const dayTimeOrder = ['opening', 'midday', 'closing', 'ongoing'];
+
+                  const dayTimeDiff = dayTimeOrder.indexOf(a.day_time) - dayTimeOrder.indexOf(b.day_time);
+
+                  if (dayTimeDiff !== 0) return dayTimeDiff;
+
+                  const toMinutes = (time: string) => {
+                      const [hour, modifier] = time.split(' ');
+                      let h = Number(hour);
+
+                      if (modifier === 'PM' && h !== 12) h += 12;
+                      if (modifier === 'AM' && h === 12) h = 0;
+
+                      return h * 60;
+                  };
+                  if (a.check_before && b.check_before)
+                    return toMinutes(a.check_before) - toMinutes(b.check_before);
+                  else return 0
+              });
                 return (
                   <div className='brief' id={`b-${b.id}`} key={`b-${b.id}`}>
                     <div className='shift-info'>
