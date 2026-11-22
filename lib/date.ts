@@ -1,21 +1,55 @@
 import { parse } from "date-fns";
 
-export function companyDate(timezone: string, now = new Date()) {
-    return new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'
-    }).format(now);
+export const WORKDAY_CUTOFF_HOUR = 3;
+const DEADLINE_GRACE_MINUTES = 60;
+
+function zonedWallClock(timezone: string, now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(now);
+    const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find(p => p.type === type)?.value);
+    return {
+        year: get('year'),
+        month: get('month'),
+        day: get('day'),
+        hour: get('hour') % 24,
+        minute: get('minute'),
+    };
 }
 
-export function beforeCheckTime(time: string | undefined | null, timezone: string, now = new Date()) {
+export function companyDate(timezone: string, now = new Date()) {
+    const { year, month, day, hour } = zonedWallClock(timezone, now);
+    const d = new Date(Date.UTC(year, month - 1, day));
+    if (hour < WORKDAY_CUTOFF_HOUR) d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+}
+
+export function beforeCheckTime(
+    time: string | undefined | null,
+    timezone: string,
+    now = new Date(),
+    briefDate?: string | null
+) {
     if (!time) return true;
+    if (briefDate) {
+        const refDate = companyDate(timezone, now);
+        if (refDate < briefDate) return true;
+        if (refDate > briefDate) return false;
+    }
     const [hour, period] = time.split(' ');
     const deadline = (Number(hour) % 12 + (period === 'PM' ? 12 : 0)) * 60;
-    const parts = new Intl.DateTimeFormat('en-GB', {
-        timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
-    }).formatToParts(now);
-    const minutes = Number(parts.find(p => p.type === 'hour')?.value) * 60
-        + Number(parts.find(p => p.type === 'minute')?.value);
-    return minutes < deadline;
+    const { hour: currentHour, minute } = zonedWallClock(timezone, now);
+    const minutes = currentHour * 60 + minute;
+    const cutoff = WORKDAY_CUTOFF_HOUR * 60;
+    const minutesRel = (minutes - cutoff + 1440) % 1440;
+    const deadlineRel = (deadline - cutoff + 1440) % 1440;
+    return minutesRel < deadlineRel + DEADLINE_GRACE_MINUTES;
 }
 
 export default function formatDateWithoutTimezone(date: string) {

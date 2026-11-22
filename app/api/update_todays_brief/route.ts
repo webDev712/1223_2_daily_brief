@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { beforeCheckTime, companyDate } from "@/lib/date";
 import { getBriefs, managesBriefs } from "@/lib/briefs";
 import { getActionLogCategories } from "@/lib/config";
-import { invenassetConfig, requestInvenasset } from "@/lib/invenasset";
+import { formatInvenassetSupplySummary, invenassetCompanyConnection, invenassetWebhookUrl, requestInvenasset, submitInvenassetSupplyRequest } from "@/lib/invenasset";
 
 export async function POST(request: Request) {
     const user = await getCurrentUser();
@@ -172,8 +172,12 @@ export async function POST(request: Request) {
                 `, [body.cover_id, id]);
             } else if (action === "finding") {
                 const f = body.finding ?? {};
-                const description = typeof f.description === "string" ? f.description.trim() : "";
-                if (!f.id || !["info", "moderate", "high"].includes(f.type) || !description) {
+                const isInvenassetSupply = f.invenasset?.target === "supply" || Array.isArray(f.invenasset?.items);
+                const rawDescription = typeof f.description === "string" ? f.description.trim() : "";
+                if (!rawDescription && !isInvenassetSupply) {
+                    throw Object.assign(new Error("finding_description_required"), { status: 400 });
+                }
+                if (!f.id || !["info", "moderate", "high"].includes(f.type)) {
                     throw Object.assign(new Error("invalid_value"), { status: 400 });
                 }
                 if ((b.findings ?? []).some((finding: any) => finding.id === String(f.id))) {
@@ -181,18 +185,20 @@ export async function POST(request: Request) {
                     const briefs = await getBriefs(user, {id});
                     return NextResponse.json({success: true, brief: briefs[0]});
                 }
-                const sendToTracker = f.send_to_action_tracker === true;
+                const sendToTracker = f.send_to_action_tracker === true || isInvenassetSupply;
                 let category: string | undefined;
                 let assignedToUserId: string | null = null;
                 let actionTrackerId: string | null = null;
-                let invenasset: {company_id: number; request_id: number; equipment_name: string; status: string} | undefined;
+                let description = rawDescription;
+                let actionText = rawDescription;
+                let invenasset: Record<string, any> | undefined;
                 if (sendToTracker) {
                     const validCategories = getActionLogCategories().map(c => c.name);
-                    if (!validCategories.includes(f.category)) {
+                    if (!isInvenassetSupply && !validCategories.includes(f.category)) {
                         throw Object.assign(new Error("invalid_value"), { status: 400 });
                     }
-                    category = f.category;
-                    if (f.category !== "Invenasset" && f.assigned_to_user_id) {
+                    category = isInvenassetSupply ? (validCategories.includes("Invenasset") ? "Invenasset" : f.category) : f.category;
+                    if (f.assigned_to_user_id && !isInvenassetSupply) {
                         const assignee = await client.query(
                             "SELECT id FROM website_user WHERE id = $1 AND company_id = $2 AND archived IS NOT TRUE",
                             [f.assigned_to_user_id, user.company_id]
@@ -203,18 +209,35 @@ export async function POST(request: Request) {
                         assignedToUserId = assignee.rows[0].id;
                     }
                     actionTrackerId = crypto.randomUUID();
-                    if (category === "Invenasset") {
-                        const connection = (await client.query("SELECT * FROM invenasset_connection WHERE company_id=$1", [user.company_id])).rows[0];
-                        if (!connection || connection.issuer !== invenassetConfig().issuer || new Date(connection.expires_at).getTime() <= Date.now()) throw Object.assign(new Error("invenasset_not_connected"), {status: 409});
-                        const token = connection.token_encrypted;
+                    if (isInvenassetSupply) {
+                        const connection = await invenassetCompanyConnection(user.company_id);
+                        const supplyData = await submitInvenassetSupplyRequest({
+                            companyId: user.company_id,
+                            token: connection.token,
+                            invenassetCompanyId: connection.companyId,
+                            requestUrl: request.url,
+                            sourceId: String(f.id),
+                            warehouseId: Number(f.invenasset?.warehouse_id),
+                            warehouseName: typeof f.invenasset?.warehouse_name === "string" ? f.invenasset.warehouse_name : "",
+                            priority: {info: 1, moderate: 2, high: 3}[f.type as "info" | "moderate" | "high"],
+                            note: rawDescription,
+                            requesterName: user.name ?? "",
+                            requesterEmail: user.email ?? "",
+                            items: Array.isArray(f.invenasset?.items) ? f.invenasset.items : [],
+                        });
+                        invenasset = supplyData;
+                        description = rawDescription || formatInvenassetSupplySummary(supplyData.warehouse_name, supplyData.requests);
+                        actionText = formatInvenassetSupplySummary(supplyData.warehouse_name, supplyData.requests, rawDescription);
+                    } else if (category === "Invenasset" || f.invenasset?.equipment != null) {
+                        const connection = await invenassetCompanyConnection(user.company_id);
                         const {response, data} = await requestInvenasset({
                             action: "issue.create", source_id: String(f.id), description,
                             equipment: f.invenasset?.equipment, type: f.invenasset?.type,
                             priority: {info: 1, moderate: 2, high: 3}[f.type as "info" | "moderate" | "high"],
                             assignees: f.invenasset?.assignee ? [Number(f.invenasset.assignee)] : [],
-                            webhook_url: new URL(`/api/integrations/invenasset/webhook/${user.company_id}`, request.url).toString(),
-                        }, token);
-                        if (!response.ok || !data.success || !Number.isInteger(data.request_id) || data.company_id !== connection.invenasset_company_id) throw Object.assign(new Error("invenasset_unavailable"), {status: 503});
+                            webhook_url: invenassetWebhookUrl(request.url, user.company_id),
+                        }, connection.token);
+                        if (!response.ok || !data.success || !Number.isInteger(data.request_id) || data.company_id !== connection.companyId) throw Object.assign(new Error("invenasset_unavailable"), {status: 503});
                         invenasset = {company_id: data.company_id, request_id: data.request_id,
                             equipment_name: typeof f.invenasset?.equipment_name === "string" ? f.invenasset.equipment_name : "", status: "Open"};
                     }
@@ -260,7 +283,7 @@ export async function POST(request: Request) {
                         dutyShift,
                         category,
                         severityMap[f.type],
-                        description,
+                        actionText,
                         user.company_id,
                         id,
                         finding.id
@@ -285,8 +308,8 @@ export async function POST(request: Request) {
                         AND company_id = $2 AND cancelled_at IS NULL AND checked IS NOT TRUE ORDER BY id
                 `, [id, user.company_id]);
                 if (reports.rows.length) {
-                    const pending = reports.rows.filter((r: any) => beforeCheckTime(r.check_before, user.timezone));
-                    const overdue = reports.rows.filter((r: any) => !beforeCheckTime(r.check_before, user.timezone));
+                    const pending = reports.rows.filter((r: any) => beforeCheckTime(r.check_before, user.timezone, undefined, b.date));
+                    const overdue = reports.rows.filter((r: any) => !beforeCheckTime(r.check_before, user.timezone, undefined, b.date));
                     await client.query("ROLLBACK");
                     return NextResponse.json({ error: "day_incomplete", pending, overdue }, { status: 409 });
                 }

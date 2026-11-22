@@ -42,6 +42,7 @@ export interface SavedBrief {
   covered: Covered[];
   created_at?: string;
   started_at?: string | null;
+  closed_handoff?: { from_name: string; to_name: string; transferred_by: string | null; transferred_at: string } | null;
 }
 
 type Assignment = {
@@ -106,6 +107,17 @@ export interface Report {
   shift_name?: string | null;
 }
 
+export interface InvenassetSupplyItem {
+  request_id: number;
+  product_id: number;
+  product_name: string;
+  custom_id?: string;
+  qty: number;
+  unit?: string;
+  status: string;
+  ordered_at?: string;
+}
+
 export interface Finding {
   id: string;
   text: string;
@@ -118,8 +130,12 @@ export interface Finding {
   action_tracker_id?: string | null;
   invenasset?: {
     company_id: number;
-    request_id: number;
-    equipment_name: string;
+    request_id?: number;
+    equipment_name?: string;
+    target?: 'equipment' | 'supply';
+    warehouse_id?: number;
+    warehouse_name?: string;
+    requests?: InvenassetSupplyItem[];
     status: string;
     resolved_at?: string;
   };
@@ -148,8 +164,8 @@ export interface User {
   lead_letter: string,
   phone: string,
   archived: boolean,
-  department: string,
-  department_id?: string,
+  department: string | null,
+  department_id?: string | null,
   permissions: DBPermissions,
   selectedAnotherRole: boolean,
   selectedAnotherDepartment: boolean,
@@ -318,6 +334,7 @@ export interface Company {
   stripe_customer_id: string,
   created_at: string,
   // colors: string,
+  invenasset_connected?: boolean,
 }
 
 export interface CompanyToDisplay extends Company {

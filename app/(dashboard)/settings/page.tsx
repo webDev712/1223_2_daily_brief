@@ -168,7 +168,7 @@ export default function Settings() {
   }, [reload])
   const saveUser = () => {
     setLoading(true)
-    fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, archived: false})}).then(res => {
+    fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, department: user?.department_id ?? null, archived: false})}).then(res => {
       if (res.status === 200) {
         setReload(prev => prev + 1)
         toast.success(t('toast.userSaved'))
@@ -183,7 +183,7 @@ export default function Settings() {
   const [selectedSettings, setSelectedSettings] = useState('my')
   const archiveUserAccount = (user: User | null | undefined) => {
     if (!user) return;
-    fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, archived: true})}).then(res => {
+    fetch('/api/user', {method: 'PATCH', headers: {"Content-Type": "application/json"}, body: JSON.stringify({...user, department: user.department_id ?? null, archived: true})}).then(res => {
       if (res.status === 200) {
         toast.success(t('toast.accountArchived'));
         setTimeout(() => { window.location.href = "/landing" }, 5000)
@@ -519,7 +519,7 @@ const [shiftTo, setShiftTo] = useState('16:00');
                     </label>
                     <label>
                       <span>{t('profile.department')}</span>
-                      <input type="text" className='d' value={user.department} onChange={() => {}} disabled/>
+                      <input type="text" className='d' value={user.department ?? ''} onChange={() => {}} disabled/>
                     </label>
                   </div>
                 </div>

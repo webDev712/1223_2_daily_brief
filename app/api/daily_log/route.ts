@@ -3,6 +3,8 @@ import sql from "@/lib/db";
 import { IdName } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 import { managesBriefs } from "@/lib/briefs";
+import { getActionLogCategories } from "@/lib/config";
+import { formatInvenassetSupplySummary, invenassetCompanyConnection, invenassetWebhookUrl, requestInvenasset, submitInvenassetSupplyRequest } from "@/lib/invenasset";
 
 export async function GET(request: NextRequest) {
     try{
@@ -83,7 +85,17 @@ export async function GET(request: NextRequest) {
                 WHEN 'In progress' THEN 2
                 WHEN 'Resolved' THEN 3
                 ELSE 4
-            END, dl.date DESC, d_name ASC, u_name ASC
+            END, dl.date::date DESC, CASE dl.severity
+                WHEN 'High' THEN 1
+                WHEN 'Med' THEN 2
+                WHEN 'Low' THEN 3
+                ELSE 4
+            END, (
+                SELECT NULLIF(item->>'created_at', '')::timestamptz
+                FROM jsonb_array_elements(CASE WHEN jsonb_typeof(sb.findings) = 'array' THEN sb.findings ELSE '[]'::jsonb END) item
+                WHERE item->>'id' = dl.finding_id
+                LIMIT 1
+            ) DESC NULLS LAST, dl.ctid DESC, d_name ASC, u_name ASC
             LIMIT $12
             OFFSET $13
         `, [...filterParams, page_size, (page - 1) * page_size]);
@@ -165,6 +177,7 @@ export async function POST(request: NextRequest) {
         const company_id = user.company_id;
 
         const body = await request.json();
+        const hasExistingId = typeof body.id === "string" && body.id.length > 0;
         const {
             id = crypto.randomUUID(),
             date,
@@ -177,8 +190,81 @@ export async function POST(request: NextRequest) {
             text,
             status,
             actions,
-            date_resolved = null
+            date_resolved = null,
+            invenasset
         } = body;
+
+        let finalCategory = category;
+        let finalAssignedToUserId = assigned_to_user_id || null;
+        let finalText = typeof text === "string" ? text : "";
+        const isInvenassetSupply = !hasExistingId && (invenasset?.target === "supply" || Array.isArray(invenasset?.items));
+        const isInvenassetIssue = !hasExistingId && !isInvenassetSupply && invenasset?.equipment != null;
+        if (isInvenassetSupply || isInvenassetIssue) {
+            if (!managesBriefs(user) && !user.permissions.update_brief && !user.permissions.edit_action_tracker) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
+            const validCategories = getActionLogCategories().map(c => c.name);
+            finalCategory = validCategories.includes("Invenasset") ? "Invenasset" : category;
+            const priorityMap: Record<string, number> = { Low: 1, Med: 2, High: 3 };
+            const priority = priorityMap[String(severity)] ?? 1;
+            let connection: { companyId: number; token: string };
+            try {
+                connection = await invenassetCompanyConnection(company_id);
+            } catch (error: any) {
+                return NextResponse.json({ error: error.status === 409 ? "invenasset_not_connected" : "invenasset_unavailable" }, { status: error.status ?? 503 });
+            }
+            if (isInvenassetSupply) {
+                finalAssignedToUserId = null;
+                try {
+                    const supplyData = await submitInvenassetSupplyRequest({
+                        companyId: company_id,
+                        token: connection.token,
+                        invenassetCompanyId: connection.companyId,
+                        requestUrl: request.url,
+                        sourceId: String(id),
+                        warehouseId: Number(invenasset?.warehouse_id),
+                        warehouseName: typeof invenasset?.warehouse_name === "string" ? invenasset.warehouse_name : "",
+                        priority,
+                        note: finalText.trim(),
+                        requesterName: user.name ?? "",
+                        requesterEmail: user.email ?? "",
+                        items: Array.isArray(invenasset?.items) ? invenasset.items : [],
+                    });
+                    finalText = formatInvenassetSupplySummary(supplyData.warehouse_name, supplyData.requests, finalText.trim());
+                } catch (error: any) {
+                    const status = typeof error?.status === "number" ? error.status : 503;
+                    return NextResponse.json({ error: error?.message || "invenasset_unavailable" }, { status });
+                }
+            } else {
+                const description = finalText.trim();
+                const equipment = Number(invenasset.equipment);
+                const issueType = Number(invenasset.type);
+                if (!description || !Number.isInteger(equipment) || equipment <= 0 || !Number.isInteger(issueType) || issueType <= 0) {
+                    return NextResponse.json({ error: "invalid_value" }, { status: 400 });
+                }
+                if (finalAssignedToUserId) {
+                    const assigneeRows = await sql`
+                        SELECT id FROM website_user WHERE id = ${finalAssignedToUserId} AND company_id = ${company_id} AND archived IS NOT TRUE
+                    `;
+                    if (!assigneeRows.length) {
+                        return NextResponse.json({ error: "invalid_value" }, { status: 400 });
+                    }
+                }
+                const { response, data } = await requestInvenasset({
+                    action: "issue.create",
+                    source_id: String(id),
+                    description,
+                    equipment,
+                    type: issueType,
+                    priority,
+                    assignees: invenasset.assignee ? [Number(invenasset.assignee)] : [],
+                    webhook_url: invenassetWebhookUrl(request.url, company_id),
+                }, connection.token);
+                if (!response.ok || !data.success || !Number.isInteger(data.request_id) || data.company_id !== connection.companyId) {
+                    return NextResponse.json({ error: "invenasset_unavailable" }, { status: 503 });
+                }
+            }
+        }
         
         await sql`
             INSERT INTO daily_log (
@@ -200,12 +286,12 @@ export async function POST(request: NextRequest) {
                 ${id},
                 ${date},
                 ${user_id || user.id},
-                ${assigned_to_user_id || null},
+                ${finalAssignedToUserId},
                 ${department_id},
                 ${shift},
-                ${category},
+                ${finalCategory},
                 ${severity},
-                ${text},
+                ${finalText},
                 ${status},
                 ${JSON.stringify(actions ?? [])},
                 ${(status === 'Resolved' || date_resolved !== null) ? date_resolved : null},
@@ -215,12 +301,12 @@ export async function POST(request: NextRequest) {
             DO UPDATE SET
                 date = ${date},
                 user_id = CASE WHEN daily_log.finding_id IS NOT NULL THEN daily_log.user_id ELSE ${user_id || user.id} END,
-                assigned_to_user_id = ${assigned_to_user_id || null},
+                assigned_to_user_id = ${finalAssignedToUserId},
                 department_id = ${department_id},
                 shift = ${shift},
-                category = ${category},
+                category = ${finalCategory},
                 severity = ${severity},
-                text = ${text},
+                text = ${finalText},
                 status = ${date_resolved !== null ? 'Resolved' : status},
                 actions = ${JSON.stringify(actions ?? [])},
                 date_resolved = ${status === 'Resolved' || date_resolved !== null ? date_resolved : null}
