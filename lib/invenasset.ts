@@ -47,4 +47,86 @@ export async function requestInvenasset(body: Record<string, unknown>, token?: s
     return { response, data: await response.json() };
 }
 
+export function invenassetWebhookUrl(requestUrl: string, companyId: string) {
+    const url = new URL(`/api/integrations/invenasset/webhook/${companyId}`, requestUrl);
+    if (url.protocol === "http:" && process.env.NODE_ENV === "development") {
+        url.protocol = "https:";
+    }
+    return url.toString();
+}
+
+export interface SupplyCreatePayloadItem {
+    product_id: number;
+    qty: number;
+}
+
+export function formatInvenassetSupplySummary(
+    warehouseName: string,
+    requests: { product_name: string; qty: number; unit?: string }[],
+    note?: string
+) {
+    const parts = requests.map(r => `${r.product_name} (${r.qty}${r.unit ? ` ${r.unit}` : ""})`);
+    const base = warehouseName ? `${warehouseName}: ${parts.join(", ")}` : parts.join(", ");
+    const cleanNote = typeof note === "string" ? note.trim() : "";
+    return cleanNote ? `${base} — ${cleanNote}` : base;
+}
+
+export async function submitInvenassetSupplyRequest(params: {
+    companyId: string;
+    token: string;
+    invenassetCompanyId: number;
+    requestUrl: string;
+    sourceId: string;
+    warehouseId: number;
+    warehouseName: string;
+    priority: number;
+    note?: string;
+    requesterName?: string;
+    requesterEmail?: string;
+    items: SupplyCreatePayloadItem[];
+}) {
+    const cleanItems = params.items
+        .map(it => ({ product_id: Number(it.product_id), qty: Number(it.qty) }))
+        .filter(it => Number.isInteger(it.product_id) && it.product_id > 0 && Number.isFinite(it.qty) && it.qty > 0);
+
+    if (!Number.isInteger(params.warehouseId) || params.warehouseId <= 0 || !cleanItems.length) {
+        throw Object.assign(new Error("invalid_value"), { status: 400 });
+    }
+
+    const { response, data } = await requestInvenasset({
+        action: "supply.create",
+        source_id: params.sourceId,
+        warehouse_id: params.warehouseId,
+        priority: params.priority,
+        note: typeof params.note === "string" ? params.note.trim() : "",
+        requester_name: params.requesterName ?? "",
+        requester_email: params.requesterEmail ?? "",
+        items: cleanItems,
+        webhook_url: invenassetWebhookUrl(params.requestUrl, params.companyId),
+    }, params.token);
+
+    if (!response.ok || !data.success || !Array.isArray(data.requests) || data.company_id !== params.invenassetCompanyId) {
+        throw Object.assign(new Error("invenasset_unavailable"), { status: 503 });
+    }
+
+    const requests = data.requests.map((r: any) => ({
+        request_id: Number(r.request_id),
+        product_id: Number(r.product_id),
+        product_name: String(r.product_name || ""),
+        custom_id: typeof r.custom_id === "string" ? r.custom_id : "",
+        qty: Number(r.qty),
+        unit: typeof r.unit === "string" && r.unit.trim() ? r.unit.trim() : "pcs",
+        status: "Requested",
+    }));
+
+    return {
+        company_id: Number(data.company_id),
+        target: "supply" as const,
+        warehouse_id: params.warehouseId,
+        warehouse_name: params.warehouseName,
+        status: "Requested",
+        requests,
+    };
+}
+
 export const invenassetCookie = "daily_brief_invenasset_flow";

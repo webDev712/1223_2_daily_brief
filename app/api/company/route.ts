@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { extractGraphqlFromJwt } from "@/lib/smrtSync.mjs";
 import sql from "@/lib/db";
+import { invenassetConfig } from "@/lib/invenasset";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET () {
@@ -30,7 +31,13 @@ export async function GET () {
                 c.created_at,
                 c.colors,
                 u.name AS admin_name,
-                p.name AS plan_name
+                p.name AS plan_name,
+                EXISTS (
+                    SELECT 1 FROM invenasset_connection ic
+                    WHERE ic.company_id = c.id
+                        AND ic.issuer = ${invenassetConfig().issuer}
+                        AND ic.expires_at > NOW()
+                ) AS invenasset_connected
             FROM company c, website_user u, plan p
             WHERE c.id = ${company_id}
                 AND c.main_admin_id = u.id

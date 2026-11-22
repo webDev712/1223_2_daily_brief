@@ -23,6 +23,11 @@ import { beforeCheckTime } from '@/lib/date';
 import { safeUUID } from '@/lib/uuid';
 import MentionsHelper from '@/app/src/components/MentionsHelper';
 import { sendMessageGlobal } from '@/app/src/components/Chat';
+import InvenassetSupplyPicker, {
+  InvenassetSupplyDraftItem,
+  InvenassetSupplyProductOption,
+  InvenassetSupplyWarehouseOption,
+} from '@/app/src/components/InvenassetSupplyPicker';
 
 
 export default function DailyBrief() {
@@ -178,10 +183,13 @@ export default function DailyBrief() {
       findingDraftId.current = null;
       setShowAddFinding(false);
       setSendFindingToTracker(false);
-      setFindingCategory(actionLogCategories[0]?.name ?? '');
+      setInvenassetTarget('');
+      setFindingCategory(visibleFindingCategories[0]?.name ?? '');
       setInvenassetEquipment('');
       setInvenassetType('11');
       setInvenassetAssignee('');
+      setInvenassetSupplyItems([]);
+      setInvenassetSupplyError('');
       setFindingText('');
       setFindingCursor(0);
       setMentionedUsers([]);
@@ -300,21 +308,34 @@ export default function DailyBrief() {
 
   const [showAddFinding, setShowAddFinding] = useState(false)
   const [sendFindingToTracker, setSendFindingToTracker] = useState(false)
+  const [invenassetTarget, setInvenassetTarget] = useState<'' | 'equipment' | 'supply'>('')
   const actionLogCategories = getActionLogCategories().sort((a: IdName, b: IdName) => a.name.localeCompare(b.name));
+  const visibleFindingCategories = actionLogCategories.filter(c => c.name !== 'Invenasset');
   const findingDraftId = useRef<string | null>(null);
-  const [findingCategory, setFindingCategory] = useState(actionLogCategories[0]?.name ?? '');
+  const [findingCategory, setFindingCategory] = useState(visibleFindingCategories[0]?.name ?? '');
+  const [invenassetConnected, setInvenassetConnected] = useState(false);
   const [invenassetOptions, setInvenassetOptions] = useState<{
     equipments: {id: number; name: string; custom_id: string; warehouse: string}[];
     issue_types: {id: number; name: string; name_es: string}[];
-    assignees: {id: number; name: string}[];
+    assignees: {id: number; name: string; daily_brief_user_id?: string | null; matched?: boolean}[];
   } | null>(null);
   const [invenassetLoading, setInvenassetLoading] = useState(false);
   const [invenassetError, setInvenassetError] = useState('');
   const [invenassetEquipment, setInvenassetEquipment] = useState('');
   const [invenassetType, setInvenassetType] = useState('11');
   const [invenassetAssignee, setInvenassetAssignee] = useState('');
+  const [invenassetSupplyOptions, setInvenassetSupplyOptions] = useState<{
+    warehouses: InvenassetSupplyWarehouseOption[];
+    products: InvenassetSupplyProductOption[];
+  } | null>(null);
+  const [invenassetSupplyLoading, setInvenassetSupplyLoading] = useState(false);
+  const [invenassetSupplyError, setInvenassetSupplyError] = useState('');
+  const [invenassetSupplyWarehouse, setInvenassetSupplyWarehouse] = useState('');
+  const [invenassetSupplyItems, setInvenassetSupplyItems] = useState<InvenassetSupplyDraftItem[]>([]);
+  const isInvenassetEquipment = invenassetConnected && invenassetTarget === 'equipment';
+  const isInvenassetSupply = invenassetConnected && invenassetTarget === 'supply';
   useEffect(() => {
-    if (!showAddFinding || !sendFindingToTracker || findingCategory !== 'Invenasset') return;
+    if (!showAddFinding || !isInvenassetEquipment) return;
     const controller = new AbortController();
     setInvenassetLoading(true);
     setInvenassetError('');
@@ -326,11 +347,42 @@ export default function DailyBrief() {
       }).catch(error => {
         if (!controller.signal.aborted) {
           setInvenassetOptions(null);
-          setInvenassetError(error.message === 'invenasset_not_connected' ? 'invenasset_not_connected' : 'invenasset_unavailable');
+          if (error.message === 'invenasset_not_connected') {
+            setInvenassetConnected(false);
+            setInvenassetTarget('');
+          } else {
+            setInvenassetError('invenasset_unavailable');
+          }
         }
       }).finally(() => {if (!controller.signal.aborted) setInvenassetLoading(false)});
     return () => controller.abort();
-  }, [showAddFinding, sendFindingToTracker, findingCategory]);
+  }, [showAddFinding, isInvenassetEquipment]);
+  useEffect(() => {
+    if (!showAddFinding || !isInvenassetSupply) return;
+    const controller = new AbortController();
+    setInvenassetSupplyLoading(true);
+    setInvenassetSupplyError('');
+    fetch('/api/integrations/invenasset/options?target=supply', {signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]), cache: 'no-store'})
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        setInvenassetSupplyOptions(data);
+        if (Array.isArray(data.warehouses) && data.warehouses.length > 0) {
+          setInvenassetSupplyWarehouse(prev => prev && data.warehouses.some((w: InvenassetSupplyWarehouseOption) => String(w.id) === prev) ? prev : String(data.warehouses[0].id));
+        }
+      }).catch(error => {
+        if (!controller.signal.aborted) {
+          setInvenassetSupplyOptions(null);
+          if (error.message === 'invenasset_not_connected') {
+            setInvenassetConnected(false);
+            setInvenassetTarget('');
+          } else {
+            setInvenassetSupplyError('invenasset_unavailable');
+          }
+        }
+      }).finally(() => {if (!controller.signal.aborted) setInvenassetSupplyLoading(false)});
+    return () => controller.abort();
+  }, [showAddFinding, isInvenassetSupply]);
   const [showAddTask, setShowAddTask] = useState(false)
   const [shifts, setShifts] = useState<Shift[]>([])
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
@@ -376,6 +428,7 @@ export default function DailyBrief() {
         const company_res = await fetch("/api/company");
         const company_data = await company_res.json();
         setCompany(company_data[0]);
+        setInvenassetConnected(company_data[0]?.invenasset_connected === true);
         const departments_res = await fetch(`/api/departments?date=${dateString}`);
         const departments_data = (await departments_res.json()).filter((d: Department) => d.is_main);
         setDepartments(departments_data);
@@ -916,45 +969,58 @@ export default function DailyBrief() {
                       </div>
                       {(() => {
                         const myHandoffs = !readOnly(b) ? b.handoffs.filter(h => h.to_user_id === user.id) : [];
+                        const closedHandoffBanner = !readOnly(b) && b.closed_handoff && !duties.some(d => d.user_id === user.id && !d.ended_at) ? (
+                          <div style={{margin: '0 20px 16px', padding: '12px 16px', borderRadius: 8, backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', color: '#92400E', fontSize: 14, fontWeight: 500}}>
+                            {b.closed_handoff.transferred_by
+                              ? translation('shift_closed_by_manager', {by: b.closed_handoff.transferred_by, to: b.closed_handoff.to_name})
+                              : translation('shift_closed_handoff', {to: b.closed_handoff.to_name})}
+                          </div>
+                        ) : null;
                         if (myHandoffs.length > 0) {
                           return (
-                            <div style={{padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 10}}>
-                              {myHandoffs.map(h => {
-                                const senderReports = b.reports.filter(r => r.holder_id === h.from_user_id);
-                                const senderDone = senderReports.filter(r => r.checked).length;
-                                const defaultShift = String(h.from_shift_id ?? duties.find(d => d.user_id === h.from_user_id)?.shift_id ?? "");
-                                return (
-                                  <div key={h.id} style={{display: 'flex', flexDirection: 'column', gap: 10}}>
-                                    <div style={{fontSize: 14, fontWeight: 500, color: '#101828'}}>
-                                      {translation('handoff_review', {name: h.from_name, done: senderDone, taken: senderReports.length})}
+                            <>
+                              {closedHandoffBanner}
+                              <div style={{padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 10}}>
+                                {myHandoffs.map(h => {
+                                  const senderReports = b.reports.filter(r => r.holder_id === h.from_user_id);
+                                  const senderDone = senderReports.filter(r => r.checked).length;
+                                  const defaultShift = String(h.from_shift_id ?? duties.find(d => d.user_id === h.from_user_id)?.shift_id ?? "");
+                                  return (
+                                    <div key={h.id} style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                                      <div style={{fontSize: 14, fontWeight: 500, color: '#101828'}}>
+                                        {translation('handoff_review', {name: h.from_name, done: senderDone, taken: senderReports.length})}
+                                      </div>
+                                      {h.reason && <div style={{fontSize: 13, color: '#667085'}}><strong>{translation('reason')}: </strong>{h.reason}</div>}
+                                      {h.notes && <div style={{fontSize: 13, color: '#667085', whiteSpace: 'pre-wrap'}}><strong>{translation('notes')}: </strong>{h.notes}</div>}
+                                      <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10}}>
+                                        <div className='button-d-bl' onClick={() => {
+                                          setPendingHandoff({brief: b, handoff: h});
+                                          setSelectedShift(defaultShift);
+                                          setShowSelectShift(true);
+                                        }}>{translation('accept_handoff')}</div>
+                                        <div className='button-w-bl' onClick={() => {
+                                          setDecliningHandoff({brief: b, handoff: h});
+                                          setDeclineReason("");
+                                        }}>{translation('decline_handoff')}</div>
+                                      </div>
                                     </div>
-                                    {h.reason && <div style={{fontSize: 13, color: '#667085'}}><strong>{translation('reason')}: </strong>{h.reason}</div>}
-                                    {h.notes && <div style={{fontSize: 13, color: '#667085', whiteSpace: 'pre-wrap'}}><strong>{translation('notes')}: </strong>{h.notes}</div>}
-                                    <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10}}>
-                                      <div className='button-d-bl' onClick={() => {
-                                        setPendingHandoff({brief: b, handoff: h});
-                                        setSelectedShift(defaultShift);
-                                        setShowSelectShift(true);
-                                      }}>{translation('accept_handoff')}</div>
-                                      <div className='button-w-bl' onClick={() => {
-                                        setDecliningHandoff({brief: b, handoff: h});
-                                        setDeclineReason("");
-                                      }}>{translation('decline_handoff')}</div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                                  );
+                                })}
+                              </div>
+                            </>
                           );
                         }
                         if (canStart && !duties.some(d => d.user_id === user.id && !d.ended_at)) {
                           return (
-                            <div style={{padding: '0 20px 20px', display: 'flex', justifyContent: 'flex-end'}}>
-                              <div className='button-d-bl' onClick={() => {setPendingHandoff(null); setSelectedShift(""); setShowSelectShift(true)}}>{translation('start_duty')}</div>
-                            </div>
+                            <>
+                              {closedHandoffBanner}
+                              <div style={{padding: '0 20px 20px', display: 'flex', justifyContent: 'flex-end'}}>
+                                <div className='button-d-bl' onClick={() => {setPendingHandoff(null); setSelectedShift(""); setShowSelectShift(true)}}>{translation('start_duty')}</div>
+                              </div>
+                            </>
                           );
                         }
-                        return null;
+                        return closedHandoffBanner;
                       })()}
                     </div>
                     <div className='reports'>
@@ -1282,16 +1348,45 @@ export default function DailyBrief() {
                           const userLabel = authorName && assigneeName && assigneeName !== authorName
                             ? `${authorName} → ${assigneeName}`
                             : (authorName || assigneeName || '');
+                          const supplyRequests = f.invenasset?.target === 'supply' && Array.isArray(f.invenasset.requests)
+                            ? f.invenasset.requests
+                            : [];
+                          const supplyAutoSummary = f.invenasset?.target === 'supply'
+                            ? `${f.invenasset.warehouse_name ? `${f.invenasset.warehouse_name}: ` : ''}${supplyRequests.map(rq => `${rq.product_name} (${rq.qty}${rq.unit ? ` ${rq.unit}` : ''})`).join(', ')}`
+                            : '';
+                          const showFindingText = !f.invenasset || f.invenasset.target !== 'supply'
+                            || (Boolean(f.description?.trim()) && f.description.trim() !== supplyAutoSummary.trim());
                           return (
                             <div key={`finding_div_${f.id}`} id={`finding_div_${f.id}`} className={`finding ${f.type}-container`}>
-                              <div>
+                              <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
                                 <div className={f.type}>{f.type}</div>
-                                <div>{f.description}</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  {showFindingText && <div>{f.description}</div>}
+                                  {f.invenasset && (
+                                    f.invenasset.target === 'supply' ? (
+                                      <>
+                                        <div style={{ fontSize: 12, color: '#6B7280' }}>
+                                          InvenAsset · {translation('invenasset_target_supply')}
+                                          {f.invenasset.warehouse_name ? ` · ${f.invenasset.warehouse_name}` : ''}
+                                          {' · '}
+                                          {translation(f.invenasset.status === 'Ordered' ? 'invenasset_supply_ordered' : 'invenasset_supply_requested')}
+                                          {f.invenasset.resolved_at && ` · ${new Date(f.invenasset.resolved_at).toLocaleString(locale, {timeZone: timezone})}`}
+                                        </div>
+                                        {supplyRequests.map(rq => (
+                                          <div key={rq.request_id} style={{ fontSize: 13, color: '#374151' }}>
+                                            • {rq.product_name} — {rq.qty} {(rq.unit || '').trim() || 'pcs'}
+                                          </div>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      <div style={{ fontSize: 12, color: '#6B7280' }}>
+                                        InvenAsset · {f.invenasset.equipment_name} · {translation(f.invenasset.status === 'Resolved' ? 'invenasset_resolved' : 'invenasset_open')}
+                                        {f.invenasset.resolved_at && ` · ${new Date(f.invenasset.resolved_at).toLocaleString(locale, {timeZone: timezone})}`}
+                                      </div>
+                                    )
+                                  )}
+                                </div>
                               </div>
-                              {f.invenasset && <div>
-                                InvenAsset · {f.invenasset.equipment_name} · {translation(f.invenasset.status === 'Resolved' ? 'invenasset_resolved' : 'invenasset_open')}
-                                {f.invenasset.resolved_at && ` · ${new Date(f.invenasset.resolved_at).toLocaleString(locale, {timeZone: timezone})}`}
-                              </div>}
                               <div>{[userLabel, f.created_at && briefTime.format(new Date(f.created_at))].filter(Boolean).join(', ')}</div>
                             </div>
                           );
@@ -1305,8 +1400,24 @@ export default function DailyBrief() {
                                 <option value='info'>{translation('info')}</option>
                               </select>
                             </div>
+                            {invenassetConnected && <div>
+                              <span>{translation('invenasset_target')}</span>
+                              <select
+                                disabled={(!manager && noAccessEdit(b)) || readOnly(b)}
+                                value={invenassetTarget}
+                                onChange={e => {
+                                  const next = e.target.value as '' | 'equipment' | 'supply';
+                                  setInvenassetTarget(next);
+                                  if (next === 'equipment' || next === 'supply') setSendFindingToTracker(true);
+                                }}
+                              >
+                                <option value="">{translation('invenasset_target_none')}</option>
+                                <option value="equipment">{translation('invenasset_target_equipment')}</option>
+                                <option value="supply">{translation('invenasset_target_supply')}</option>
+                              </select>
+                            </div>}
 <div>
-  <span>{translation('write_description')}</span>
+  <span>{isInvenassetSupply ? translation('invenasset_supply_note') : translation('write_description')}</span>
   <div className="finding-description-wrapper">
     <textarea
       ref={findingTextareaRef}
@@ -1369,41 +1480,60 @@ export default function DailyBrief() {
   </div>
 </div>                            {sendFindingToTracker && (
                               <>
-                                <div>
+                                {!isInvenassetEquipment && !isInvenassetSupply && <div>
                                   <span>{translation('category')}</span>
                                   <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} id={`new_f_category_${b.id}`} value={findingCategory} onChange={e => setFindingCategory(e.target.value)}>
-                                    {actionLogCategories.map((c: IdName) => (
+                                    {visibleFindingCategories.map((c: IdName) => (
                                       <option key={c.id} value={c.name}>{c.name}</option>
                                     ))}
                                   </select>
-                                </div>
-                                {findingCategory === 'Invenasset' && <>
+                                </div>}
+                                {isInvenassetSupply && (
+                                  <div>
+                                    {invenassetSupplyLoading && <SmallLoader />}
+                                    {invenassetSupplyError && <div>{translation('errors.' + invenassetSupplyError)}</div>}
+                                    {!invenassetSupplyLoading && invenassetSupplyOptions && !invenassetSupplyError && (
+                                      <InvenassetSupplyPicker
+                                        warehouses={invenassetSupplyOptions.warehouses || []}
+                                        products={invenassetSupplyOptions.products || []}
+                                        warehouseId={invenassetSupplyWarehouse}
+                                        onWarehouseChange={setInvenassetSupplyWarehouse}
+                                        items={invenassetSupplyItems}
+                                        onItemsChange={setInvenassetSupplyItems}
+                                        disabled={(!manager && noAccessEdit(b)) || readOnly(b)}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                                {isInvenassetEquipment && <>
                                   {invenassetLoading && <SmallLoader />}
                                   {invenassetError && <div>{translation('errors.' + invenassetError)}</div>}
                                   {!invenassetLoading && invenassetOptions && !invenassetError && <>
-                                    <div>
-                                      <span>{translation('invenasset_equipment')}</span>
-                                      <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} value={invenassetEquipment} onChange={e => setInvenassetEquipment(e.target.value)}>
-                                        <option value="">{translation('invenasset_choose_equipment')}</option>
-                                        {invenassetOptions.equipments.map(e => <option key={e.id} value={e.id}>{[e.name, e.custom_id, e.warehouse].filter(Boolean).join(' · ')}</option>)}
-                                      </select>
+                                    <div style={{ flexDirection: 'row', gap: 10 }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                        <span style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 5 }}>{translation('invenasset_equipment')}</span>
+                                        <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} value={invenassetEquipment} onChange={e => setInvenassetEquipment(e.target.value)}>
+                                          <option value="">{translation('invenasset_choose_equipment')}</option>
+                                          {invenassetOptions.equipments.map(e => <option key={e.id} value={e.id}>{[e.name, e.custom_id, e.warehouse].filter(Boolean).join(' · ')}</option>)}
+                                        </select>
+                                      </div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                        <span style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 5 }}>{translation('invenasset_issue_type')}</span>
+                                        <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} value={invenassetType} onChange={e => setInvenassetType(e.target.value)}>
+                                          {invenassetOptions.issue_types.map(t => <option key={t.id} value={t.id}>{locale === 'es' ? t.name_es : t.name}</option>)}
+                                        </select>
+                                      </div>
                                     </div>
                                     <div>
-                                      <span>{translation('invenasset_issue_type')}</span>
-                                      <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} value={invenassetType} onChange={e => setInvenassetType(e.target.value)}>
-                                        {invenassetOptions.issue_types.map(t => <option key={t.id} value={t.id}>{locale === 'es' ? t.name_es : t.name}</option>)}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <span>{translation('assignee')}</span>
+                                      <span>{translation('assignee')}{invenassetOptions.assignees.find(a => String(a.id) === invenassetAssignee)?.matched ? ` · ✓ ${translation('invenasset_matched_user')}` : ''}</span>
                                       <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} value={invenassetAssignee} onChange={e => setInvenassetAssignee(e.target.value)}>
                                         <option value="">{translation('dont_assign')}</option>
-                                        {invenassetOptions.assignees.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                        {invenassetOptions.assignees.map(a => <option key={a.id} value={a.id}>{a.matched ? `✓ ${a.name}` : a.name}</option>)}
                                       </select>
                                     </div>
                                   </>}
                                 </>}
-                                {findingCategory !== 'Invenasset' && <div>
+                                {!isInvenassetEquipment && !isInvenassetSupply && <div>
                                   <span>{translation('assignee')}</span>
                                   <select disabled={(!manager && noAccessEdit(b)) || readOnly(b)} id={`new_f_assignee_${b.id}`} defaultValue={user.id}>
                                     <option value="">{translation('dont_assign')}</option>
@@ -1414,7 +1544,7 @@ export default function DailyBrief() {
                                     </optgroup>
                                     <optgroup label={translation('other_employees')}>
                                       {leads.filter(u => !u.archived && u.department_id !== b.department_id).map(u => (
-                                        <option key={u.id} value={u.id}>{u.name} - {u.department}</option>
+                                        <option key={u.id} value={u.id}>{u.department ? `${u.name} - ${u.department}` : u.name}</option>
                                       ))}
                                     </optgroup>
                                   </select>
@@ -1424,19 +1554,32 @@ export default function DailyBrief() {
                             <div>
                               <label className='send-to-action-tracker'>
                                 <span>{translation('send_to_action_tracker')}</span>
-                                <input type="checkbox" id="send-to-action-tracker" checked={sendFindingToTracker} onChange={(e) => setSendFindingToTracker(e.target.checked)} />
+                                <input type="checkbox" id="send-to-action-tracker" checked={sendFindingToTracker} onChange={(e) => { setSendFindingToTracker(e.target.checked); if (!e.target.checked) setInvenassetTarget(''); }} />
                               </label>
-                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false); findingDraftId.current = null; setFindingCategory(actionLogCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee(''); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
-                              <input className='button-d-bl-sm' disabled={(!manager && noAccessEdit(b)) || readOnly(b) || (sendFindingToTracker && findingCategory === 'Invenasset' && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment))} type="button" value={translation('add_finding')} onClick={() => { addFinding(b, {
+                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false); setInvenassetTarget(''); findingDraftId.current = null; setFindingCategory(visibleFindingCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee(''); setInvenassetSupplyItems([]); setInvenassetSupplyError(''); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
+                              <input className='button-d-bl-sm' disabled={(!manager && noAccessEdit(b)) || readOnly(b) || (isInvenassetEquipment && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment)) || (isInvenassetSupply && (invenassetSupplyLoading || !!invenassetSupplyError || !invenassetSupplyOptions || !invenassetSupplyWarehouse || !invenassetSupplyItems.some(it => it.product_id > 0 && (Number(it.qty) || 0) > 0)))} type="button" value={translation('add_finding')} onClick={() => {
+                                  const selectedInvenassetAssignee = invenassetOptions?.assignees.find(a => String(a.id) === invenassetAssignee);
+                                  addFinding(b, {
                                     type: (document.getElementById(`new_f_type_${b.id}`) as HTMLSelectElement)?.value || '',
                                     description: findingText,
                                     send_to_action_tracker: sendFindingToTracker,
-                                    category: sendFindingToTracker ? findingCategory : undefined,
-                                    assigned_to_user_id: sendFindingToTracker && findingCategory !== 'Invenasset' ? ((document.getElementById(`new_f_assignee_${b.id}`) as HTMLSelectElement)?.value || null) : undefined,
-                                    invenasset: sendFindingToTracker && findingCategory === 'Invenasset' ? {
+                                    category: sendFindingToTracker ? ((isInvenassetEquipment || isInvenassetSupply) ? 'Invenasset' : findingCategory) : undefined,
+                                    assigned_to_user_id: sendFindingToTracker && !isInvenassetSupply
+                                      ? (isInvenassetEquipment
+                                        ? (selectedInvenassetAssignee?.daily_brief_user_id ?? null)
+                                        : ((document.getElementById(`new_f_assignee_${b.id}`) as HTMLSelectElement)?.value || null))
+                                      : undefined,
+                                    invenasset: isInvenassetEquipment ? {
                                       equipment: Number(invenassetEquipment), type: Number(invenassetType), assignee: invenassetAssignee,
                                       equipment_name: invenassetOptions?.equipments.find(e => e.id === Number(invenassetEquipment))?.name,
-                                    } : undefined,
+                                    } : (isInvenassetSupply ? {
+                                      target: 'supply',
+                                      warehouse_id: Number(invenassetSupplyWarehouse),
+                                      warehouse_name: invenassetSupplyOptions?.warehouses.find(w => String(w.id) === invenassetSupplyWarehouse)?.name || '',
+                                      items: invenassetSupplyItems
+                                        .map(it => ({ product_id: it.product_id, qty: Number(it.qty) }))
+                                        .filter(it => it.product_id > 0 && it.qty > 0),
+                                    } : undefined),
                                   });
                                 }}/>
                             </div>

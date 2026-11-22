@@ -98,6 +98,15 @@ export async function POST(request: Request) {
                     { status: 409 }
                 );
             }
+            const normalizedDepartmentId = typeof department_id === "string" ? department_id.trim() || null : department_id ?? null;
+            if (normalizedDepartmentId) {
+                const validDepartment = await sql`
+                    SELECT id FROM department WHERE id = ${normalizedDepartmentId} AND company_id = ${company_id} LIMIT 1;
+                `;
+                if (!validDepartment.length) {
+                    return NextResponse.json({ error: "Invalid department" }, { status: 400 });
+                }
+            }
             rows = await sql`
             INSERT INTO website_user (
                 email,
@@ -116,7 +125,7 @@ export async function POST(request: Request) {
                 ${lead_letter},
                 ${archived},
                 ${phone},
-                ${department_id},
+                ${normalizedDepartmentId},
                 ${company_id}
             )
             RETURNING id;
@@ -184,6 +193,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
         const { id, email, name, phone, lead_letter, role_id, department_id } = await request.json();
+        const normalizedDepartmentId = typeof department_id === "string" ? department_id.trim() || null : department_id ?? null;
         const existingUser = await sql`
             SELECT id FROM website_user WHERE LOWER(email) = LOWER(${email}) AND id <> ${id} LIMIT 1;
         `;
@@ -193,11 +203,11 @@ export async function PUT(request: Request) {
         const rows = await sql`
             UPDATE website_user w
             SET email = ${email}, name = ${name}, phone = ${phone}, lead_letter = ${lead_letter},
-                role_id = ${role_id}, department_id = ${department_id}
+                role_id = ${role_id}, department_id = ${normalizedDepartmentId}
             WHERE w.id = ${id} AND w.company_id = ${company_id}
                 AND EXISTS (SELECT 1 FROM role WHERE id = ${role_id} AND company_id = ${company_id})
-                AND EXISTS (SELECT 1 FROM department WHERE id = ${department_id} AND company_id = ${company_id})
-                AND (w.id <> ${user_id}::uuid OR (w.role_id = ${role_id} AND w.department_id = ${department_id}))
+                AND (${normalizedDepartmentId}::uuid IS NULL OR EXISTS (SELECT 1 FROM department WHERE id = ${normalizedDepartmentId}::uuid AND company_id = ${company_id}))
+                AND (${owner.length > 0} OR w.id <> ${user_id}::uuid OR (w.role_id = ${role_id} AND w.department_id IS NOT DISTINCT FROM ${normalizedDepartmentId}::uuid))
             RETURNING w.id;
         `;
         if (!rows.length) {
@@ -235,11 +245,14 @@ export async function PATCH(request: Request) {
             lead_letter,
             archived,
             role_id,
-            department
+            department,
+            department_id
         } = body;
+        const rawDepartment = department !== undefined ? department : department_id;
+        const normalizedDepartmentId = typeof rawDepartment === "string" ? rawDepartment.trim() || null : rawDepartment ?? null;
         await sql`
             UPDATE website_user
-            SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}, department_id = ${department}
+            SET email = ${email}, name = ${name}, lead_letter = ${lead_letter}, archived = ${archived}, role_id = ${role_id}, department_id = ${normalizedDepartmentId}
             WHERE id = ${id} AND company_id = ${company_id};
         `
         return NextResponse.json({

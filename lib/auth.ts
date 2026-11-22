@@ -24,15 +24,13 @@ export async function getCurrentUser(): Promise<User | null> {
             w.company_id,
             c.timezone,
             c.main_admin_id
-        FROM website_user w, department d, role r, company c
+        FROM website_user w
+        JOIN role r ON r.id = w.role_id AND r.company_id = w.company_id
+        JOIN company c ON c.id = w.company_id
+        LEFT JOIN department d ON d.id = w.department_id AND d.company_id = w.company_id
         WHERE ((${Boolean(session.user.id)} AND w.id::text = ${session.user.id ?? ''})
             OR (NOT ${Boolean(session.user.id)} AND LOWER(email) = LOWER(${session.user.email ?? ''})))
           AND archived = false
-          AND d.id = w.department_id
-          AND w.role_id = r.id
-          AND c.id = w.company_id
-          AND d.company_id = w.company_id
-          AND r.company_id = w.company_id
         LIMIT 1;
     `;
 

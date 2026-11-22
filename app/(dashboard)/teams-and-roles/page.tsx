@@ -39,7 +39,8 @@ export default function TeamsAndRoles() {
   const [reload, setReload] = useState(0);
 
   const permissions = getPermissions()
-  const canEditUsers = !!me_user && (me_user.id === me_user.main_admin_id || me_user.permissions.add_users);
+  const isOwner = !!me_user && me_user.id === me_user.main_admin_id;
+  const canEditUsers = isOwner || !!me_user?.permissions.add_users;
 
 
   const archiveUser = (user: User | null) => {
@@ -49,7 +50,7 @@ export default function TeamsAndRoles() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id, archived: true}),
+      body: JSON.stringify({...user, department: user.department_id ?? null, archived: true}),
     }).then(res => {
       if (res.status === 200) {
         toast.success(t('toasts.archivedUser', { name: user.name }))
@@ -138,8 +139,8 @@ export default function TeamsAndRoles() {
   const updateUser = (userToUpdate: User) => {
     if (userToUpdate.role_id !== roles?.find((el: Role) => el.name === userToUpdate.user_role)?.id) userToUpdate.selectedAnotherRole = true;
     else userToUpdate.selectedAnotherRole = false;
-    if (userToUpdate.newDepartment) {
-      if (userToUpdate.newDepartment !== userToUpdate.department){
+    if (userToUpdate.newDepartment !== undefined) {
+      if (userToUpdate.newDepartment !== (userToUpdate.department_id ?? '')){
         userToUpdate.selectedAnotherDepartment = true;
         userToUpdate.department = userToUpdate.newDepartment;
       }
@@ -234,7 +235,7 @@ export default function TeamsAndRoles() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id, archived: false}),
+      body: JSON.stringify({...user, department: user.department_id ?? null, archived: false}),
     }).then(res => {
       if (res.status === 200) {
         toast.success(t('toasts.userHasAccess', { name: user.name }))
@@ -397,7 +398,7 @@ export default function TeamsAndRoles() {
                     </label>
                     <label>
                       <div>{t('addUser.role')}</div>
-                      <select id='role' required defaultValue={userToEdit?.role_id} disabled={!!userToEdit && userToEdit.id === me_user?.id} >
+                      <select id='role' required defaultValue={userToEdit?.role_id} disabled={!!userToEdit && userToEdit.id === me_user?.id && !isOwner} >
                         {roles?.map(role => (<option key={`new_user_role_${role.id}`} value={role.id}>{capitalize(role.name)}</option>))}
                       </select>
                     </label>
@@ -407,7 +408,8 @@ export default function TeamsAndRoles() {
                     </label>
                     <label>
                       <div>{t('addUser.department')}</div>
-                      <select id='department' defaultValue={userToEdit?.department_id} disabled={!!userToEdit && userToEdit.id === me_user?.id}>
+                      <select id='department' defaultValue={userToEdit?.department_id ?? ''} disabled={!!userToEdit && userToEdit.id === me_user?.id && !isOwner}>
+                        <option value="">{t('addUser.noDepartment')}</option>
                         {userToEdit?.department_id && !departments.some(dep => dep.id === userToEdit.department_id) && (
                           <option value={userToEdit.department_id}>{userToEdit.department}</option>
                         )}
@@ -514,15 +516,19 @@ export default function TeamsAndRoles() {
                     <div>
                       <div>{user.name}</div>
                       <div>
-                        <select defaultValue={roles?.find((el: Role) => el.name === user.user_role)?.id} onChange={(e) => {updateUser({...user, role_id: e.target.value})}} disabled={me_user?.id === user.id ? true : false} className={me_user?.id === user.id ? 'd' : ''}>
+                        <select defaultValue={roles?.find((el: Role) => el.name === user.user_role)?.id} onChange={(e) => {updateUser({...user, role_id: e.target.value})}} disabled={me_user?.id === user.id && !isOwner} className={me_user?.id === user.id && !isOwner ? 'd' : ''}>
                           {roles?.map((role) => (
                             <option key={`update_role_${user.id}_${role.id}`} value={role.id}>{role.name}</option>
                           ))}
                         </select>
-                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser({...user, department: departments.find((dep: Department) => dep.name === user.department)?.id || ""})}}>{t('common.save')}</div>)}
+                        {user.selectedAnotherRole === true && (<div className='button-d-bl-sm' onClick={() => {saveUser({...user, department: user.selectedAnotherDepartment ? (user.department || '') : (user.department_id ?? '')})}}>{t('common.save')}</div>)}
                       </div>
                       <div>
-                        <select onChange={(e) => {updateUser({...user, newDepartment: e.target.value})}} defaultValue={departments.find((dep: Department) => dep.name === user.department)?.id} disabled={me_user?.id === user.id ? true : false} className={me_user?.id === user.id ? 'd' : ''} >
+                        <select onChange={(e) => {updateUser({...user, newDepartment: e.target.value})}} defaultValue={user.department_id ?? ''} disabled={me_user?.id === user.id && !isOwner} className={me_user?.id === user.id && !isOwner ? 'd' : ''} >
+                          <option value="">{t('addUser.noDepartment')}</option>
+                          {user.department_id && !departments.some((dep: Department) => dep.id === user.department_id) && (
+                            <option value={user.department_id}>{user.department}</option>
+                          )}
                           {departments.map((department: Department) => {
                             return (
                               <option key={`update_department_${user.id}_${department.id}`} value={department.id}>{department.name}</option>
