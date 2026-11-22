@@ -4,7 +4,7 @@ import { IdName } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 import { managesBriefs } from "@/lib/briefs";
 import { getActionLogCategories } from "@/lib/config";
-import { formatInvenassetSupplySummary, invenassetCompanyConnection, invenassetWebhookUrl, requestInvenasset, submitInvenassetSupplyRequest } from "@/lib/invenasset";
+import { formatInvenassetSupplySummary, invenassetCompanyConnection, invenassetWebhookUrl, reconcileInvenassetDailyLogs, requestInvenasset, submitInvenassetSupplyRequest } from "@/lib/invenasset";
 
 export async function GET(request: NextRequest) {
     try{
@@ -61,44 +61,50 @@ export async function GET(request: NextRequest) {
                 AND ($9::boolean OR dl.department_id = $10::uuid OR dl.user_id = $11::uuid OR dl.assigned_to_user_id = $11::uuid)
         `;
 
-        const rows_count = await sql(`
-            SELECT COUNT(*)
-            FROM daily_log dl
-            JOIN department d ON d.id = dl.department_id
-            JOIN website_user u ON u.id = dl.user_id
-            ${whereClause}
-        `, filterParams);
+        const queryList = () => Promise.all([
+            sql(`
+                SELECT COUNT(*)
+                FROM daily_log dl
+                JOIN department d ON d.id = dl.department_id
+                JOIN website_user u ON u.id = dl.user_id
+                ${whereClause}
+            `, filterParams),
+            sql(`
+                SELECT dl.*, d.name AS d_name, u.name AS u_name,
+                    au.name AS assigned_to_name,
+                    COALESCE(sb.date::text, dl.date::date::text) AS brief_date,
+                    COALESCE(sb.department_id, dl.department_id) AS brief_department_id
+                FROM daily_log dl
+                JOIN department d ON d.id = dl.department_id
+                JOIN website_user u ON u.id = dl.user_id
+                LEFT JOIN website_user au ON au.id = dl.assigned_to_user_id AND au.company_id = dl.company_id
+                LEFT JOIN saved_brief sb ON sb.id = dl.saved_brief_id AND sb.company_id = dl.company_id
+                ${whereClause}
+                ORDER BY CASE dl.status
+                    WHEN 'Unset' THEN 1
+                    WHEN 'In progress' THEN 2
+                    WHEN 'Resolved' THEN 3
+                    ELSE 4
+                END, dl.date::date DESC, CASE dl.severity
+                    WHEN 'High' THEN 1
+                    WHEN 'Med' THEN 2
+                    WHEN 'Low' THEN 3
+                    ELSE 4
+                END, (
+                    SELECT NULLIF(item->>'created_at', '')::timestamptz
+                    FROM jsonb_array_elements(CASE WHEN jsonb_typeof(sb.findings) = 'array' THEN sb.findings ELSE '[]'::jsonb END) item
+                    WHERE item->>'id' = dl.finding_id
+                    LIMIT 1
+                ) DESC NULLS LAST, dl.ctid DESC, d_name ASC, u_name ASC
+                LIMIT $12
+                OFFSET $13
+            `, [...filterParams, page_size, (page - 1) * page_size])
+        ]);
 
-        const rows = await sql(`
-            SELECT dl.*, d.name AS d_name, u.name AS u_name,
-                au.name AS assigned_to_name,
-                COALESCE(sb.date::text, dl.date::date::text) AS brief_date,
-                COALESCE(sb.department_id, dl.department_id) AS brief_department_id
-            FROM daily_log dl
-            JOIN department d ON d.id = dl.department_id
-            JOIN website_user u ON u.id = dl.user_id
-            LEFT JOIN website_user au ON au.id = dl.assigned_to_user_id AND au.company_id = dl.company_id
-            LEFT JOIN saved_brief sb ON sb.id = dl.saved_brief_id AND sb.company_id = dl.company_id
-            ${whereClause}
-            ORDER BY CASE dl.status
-                WHEN 'Unset' THEN 1
-                WHEN 'In progress' THEN 2
-                WHEN 'Resolved' THEN 3
-                ELSE 4
-            END, dl.date::date DESC, CASE dl.severity
-                WHEN 'High' THEN 1
-                WHEN 'Med' THEN 2
-                WHEN 'Low' THEN 3
-                ELSE 4
-            END, (
-                SELECT NULLIF(item->>'created_at', '')::timestamptz
-                FROM jsonb_array_elements(CASE WHEN jsonb_typeof(sb.findings) = 'array' THEN sb.findings ELSE '[]'::jsonb END) item
-                WHERE item->>'id' = dl.finding_id
-                LIMIT 1
-            ) DESC NULLS LAST, dl.ctid DESC, d_name ASC, u_name ASC
-            LIMIT $12
-            OFFSET $13
-        `, [...filterParams, page_size, (page - 1) * page_size]);
+        let [rows_count, rows] = await queryList();
+        if (await reconcileInvenassetDailyLogs(company_id, rows)) {
+            [rows_count, rows] = await queryList();
+        }
         
         const statuses = <string[]>[];
         const employees = <IdName[]>[];

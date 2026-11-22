@@ -63,6 +63,7 @@ export default function DailyBrief() {
   } | null>(null);
   const savingRef = useRef(false);
   const [savingCover, setSavingCover] = useState(false)
+  const [savingFinding, setSavingFinding] = useState(false)
   const [showAddCover, setShowAddCover] = useState(false)
   const [showCallout, setShowCallout] = useState(false)
   const [showVideoGuide, setShowVideoGuide] = useState(false)
@@ -161,8 +162,12 @@ export default function DailyBrief() {
   };
 
   const addFinding = async (b: SavedBrief, finding: any) => {
+    if (savingFinding) return;
+    setSavingFinding(true);
     findingDraftId.current ??= safeUUID();
-    if (await changeBrief(b, 'finding', {finding: {id: findingDraftId.current, ...finding}})) {
+    const ok = await changeBrief(b, 'finding', {finding: {id: findingDraftId.current, ...finding}});
+    setSavingFinding(false);
+    if (ok) {
       const notificationText = translation('mentionedNotification', {
         action: finding.description.slice(0, 20),
         date: b.date,
@@ -1575,34 +1580,49 @@ export default function DailyBrief() {
                             <div>
                               <label className='send-to-action-tracker'>
                                 <span>{translation('send_to_action_tracker')}</span>
-                                <input type="checkbox" id="send-to-action-tracker" checked={sendFindingToTracker} onChange={(e) => { setSendFindingToTracker(e.target.checked); if (!e.target.checked) setInvenassetTarget(''); }} />
+                                <input type="checkbox" id="send-to-action-tracker" disabled={savingFinding} checked={sendFindingToTracker} onChange={(e) => { setSendFindingToTracker(e.target.checked); if (!e.target.checked) setInvenassetTarget(''); }} />
                               </label>
-                              <div className='cancel' onClick={() => {setShowAddFinding(false); setSendFindingToTracker(false); setInvenassetTarget(''); findingDraftId.current = null; setFindingCategory(visibleFindingCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee(''); setInvenassetSupplyItems([]); setInvenassetSupplyError(''); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
-                              <input className='button-d-bl-sm' disabled={(!manager && noAccessEdit(b)) || readOnly(b) || (isInvenassetEquipment && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment)) || (isInvenassetSupply && (invenassetSupplyLoading || !!invenassetSupplyError || !invenassetSupplyOptions || !invenassetSupplyWarehouse || !invenassetSupplyItems.some(it => it.product_id > 0 && (Number(it.qty) || 0) > 0)))} type="button" value={translation('add_finding')} onClick={() => {
-                                  const selectedInvenassetAssignee = invenassetOptions?.assignees.find(a => String(a.id) === invenassetAssignee);
-                                  addFinding(b, {
-                                    type: (document.getElementById(`new_f_type_${b.id}`) as HTMLSelectElement)?.value || '',
-                                    description: findingText,
-                                    send_to_action_tracker: sendFindingToTracker,
-                                    category: sendFindingToTracker ? ((isInvenassetEquipment || isInvenassetSupply) ? 'Invenasset' : findingCategory) : undefined,
-                                    assigned_to_user_id: sendFindingToTracker && !isInvenassetSupply
-                                      ? (isInvenassetEquipment
-                                        ? (selectedInvenassetAssignee?.daily_brief_user_id ?? null)
-                                        : ((document.getElementById(`new_f_assignee_${b.id}`) as HTMLSelectElement)?.value || null))
-                                      : undefined,
-                                    invenasset: isInvenassetEquipment ? {
-                                      equipment: Number(invenassetEquipment), type: Number(invenassetType), assignee: invenassetAssignee,
-                                      equipment_name: invenassetOptions?.equipments.find(e => e.id === Number(invenassetEquipment))?.name,
-                                    } : (isInvenassetSupply ? {
-                                      target: 'supply',
-                                      warehouse_id: Number(invenassetSupplyWarehouse),
-                                      warehouse_name: invenassetSupplyOptions?.warehouses.find(w => String(w.id) === invenassetSupplyWarehouse)?.name || '',
-                                      items: invenassetSupplyItems
-                                        .map(it => ({ product_id: it.product_id, qty: Number(it.qty) }))
-                                        .filter(it => it.product_id > 0 && it.qty > 0),
-                                    } : undefined),
-                                  });
-                                }}/>
+                              <div className={savingFinding ? 'cancel d' : 'cancel'} onClick={() => {if (savingFinding) return; setShowAddFinding(false); setSendFindingToTracker(false); setInvenassetTarget(''); findingDraftId.current = null; setFindingCategory(visibleFindingCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee(''); setInvenassetSupplyItems([]); setInvenassetSupplyError(''); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
+                              {(() => {
+                                const isAddFindingDisabled = savingFinding || (!manager && noAccessEdit(b)) || readOnly(b) || (isInvenassetEquipment && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment)) || (isInvenassetSupply && (invenassetSupplyLoading || !!invenassetSupplyError || !invenassetSupplyOptions || !invenassetSupplyWarehouse || !invenassetSupplyItems.some(it => it.product_id > 0 && (Number(it.qty) || 0) > 0)));
+                                return (
+                                  <button
+                                    type="button"
+                                    className={isAddFindingDisabled ? 'button-d-bl-sm d' : 'button-d-bl-sm'}
+                                    disabled={isAddFindingDisabled}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                    onClick={() => {
+                                      if (isAddFindingDisabled) return;
+                                      const selectedInvenassetAssignee = invenassetOptions?.assignees.find(a => String(a.id) === invenassetAssignee);
+                                      addFinding(b, {
+                                        type: (document.getElementById(`new_f_type_${b.id}`) as HTMLSelectElement)?.value || '',
+                                        description: findingText,
+                                        send_to_action_tracker: sendFindingToTracker,
+                                        category: sendFindingToTracker ? ((isInvenassetEquipment || isInvenassetSupply) ? 'Invenasset' : findingCategory) : undefined,
+                                        assigned_to_user_id: sendFindingToTracker && !isInvenassetSupply
+                                          ? (isInvenassetEquipment
+                                            ? (selectedInvenassetAssignee?.daily_brief_user_id ?? null)
+                                            : ((document.getElementById(`new_f_assignee_${b.id}`) as HTMLSelectElement)?.value || null))
+                                          : undefined,
+                                        invenasset: isInvenassetEquipment ? {
+                                          equipment: Number(invenassetEquipment), type: Number(invenassetType), assignee: invenassetAssignee,
+                                          equipment_name: invenassetOptions?.equipments.find(e => e.id === Number(invenassetEquipment))?.name,
+                                        } : (isInvenassetSupply ? {
+                                          target: 'supply',
+                                          warehouse_id: Number(invenassetSupplyWarehouse),
+                                          warehouse_name: invenassetSupplyOptions?.warehouses.find(w => String(w.id) === invenassetSupplyWarehouse)?.name || '',
+                                          items: invenassetSupplyItems
+                                            .map(it => ({ product_id: it.product_id, qty: Number(it.qty) }))
+                                            .filter(it => it.product_id > 0 && it.qty > 0),
+                                        } : undefined),
+                                      });
+                                    }}
+                                  >
+                                    {savingFinding && <span className="spinner-border" role="status" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                                    {translation('add_finding')}
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </div>}
                         </div>
