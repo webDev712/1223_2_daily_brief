@@ -1103,6 +1103,17 @@
         content: "-- Reports assigned to you --"
     }
 
+    .daily-brief .confirm.select-shift > div > div:last-child{
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .daily-brief .confirm.select-shift > div > div:last-child > div{
+        width: 100% !important;
+        min-width: 100%;
+        text-align: center;
+        padding: 5px;
+    }
 }
 
 .daily-brief .video-guide-btn{
@@ -1163,6 +1174,31 @@
     border: 0;
     display: block;
 }
+
+.daily-brief .confirm.add-shift h1 {
+    background-image: none;
+    text-align: center;
+    padding: 0;
+    width: 100%;
+}
+
+
+.daily-brief .confirm.add-shift > div > :nth-child(2) {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-left: 0 !important;
+    font-weight: 400;
+}
+
+.daily-brief .confirm.add-shift > div > :nth-child(2) > div{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: rgb(33, 37, 41);
+}
+
 
 @media (max-width: 500px) {
     .daily-brief .video-guide-btn{

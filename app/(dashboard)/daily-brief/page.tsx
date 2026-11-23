@@ -28,6 +28,8 @@ import InvenassetSupplyPicker, {
   InvenassetSupplyProductOption,
   InvenassetSupplyWarehouseOption,
 } from '@/app/src/components/InvenassetSupplyPicker';
+import formatTime12Hour from '@/lib/time';
+import { sortShifts } from '../settings/page';
 
 
 export default function DailyBrief() {
@@ -409,6 +411,34 @@ export default function DailyBrief() {
   const param_brief_id = searchParams.get('brief_id');
   const param_finding_id = searchParams.get('finding_id');
   const [activeBriefId, setActiveBriefId] = useState<string | null>(param_brief_id);
+  const [showAddShift, setShowAddShift] = useState(false);
+  const [shiftFrom, setShiftFrom] = useState('08:00');
+  const [shiftTo, setShiftTo] = useState('16:00');
+  
+
+  const addShift = async () => {
+    setLoading(true);
+      const shift_res = await fetch('/api/shift', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({name: `${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}`})
+    })
+    if (!shift_res.ok) {
+      console.log("Error while sending shift data.");
+      setLoading(false)
+      return;
+    }
+    const data: {shift: Shift} = await shift_res.json();
+    setShifts(prev => sortShifts([...prev, data.shift]));
+    setShowAddShift(false);
+    setReload(prev => prev + 1);
+    
+    toast.success(translation('shiftAdded', { name: `${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}` }))
+    
+    setLoading(false);
+  }
   const [filters, setFilters] = useState({
     user_id: '',
     day_time: '',
@@ -529,7 +559,7 @@ export default function DailyBrief() {
           return;
         }
         let shifts = await shifts_res.json()
-        setShifts(shifts)
+        setShifts(sortShifts(shifts))
       }
 
       load();
@@ -661,18 +691,19 @@ export default function DailyBrief() {
                   </div>
                 )}
                 {showSelectShift && (
-                  <div className='confirm'>
+                  <div className='confirm select-shift'>
                     <div>
                       <h1>{translation('select_your_shift_first')}</h1>
                       <p>{translation('selecting_shift_is')}</p>
                       <select className='shift-select input' value={selectedShift} onChange={(e) => {setSelectedShift(e.target.value)}}>
-                        <option value="">-</option>
+                        <option value="">Select Shift</option>
                         {shifts.map((s: Shift) => {
                           return (<option key={s.id} value={s.id}>{s.name}</option>)
                         })}
                       </select>
                       <div>
                         <div className='button-w-bl' onClick={() => {setShowSelectShift(false); setPendingHandoff(null)}}>{translation('cancel')}</div>
+                        <div className="button-w-bl" onClick={() => {setShowAddShift(true)}}>{translation('add_shift')}</div>
                         <div className={selectedShift === "" ? 'button-d-bl d' : 'button-d-bl'} onClick={() => {if (selectedShift !== "") { if (pendingHandoff) handoffBrief(pendingHandoff.brief, 'accept', pendingHandoff.handoff, Number(selectedShift)); else startMyBrief(); }}}>{translation('confirm')}</div>
                       </div>
                     </div>
@@ -1679,7 +1710,56 @@ export default function DailyBrief() {
                               });
                             }}/>
 
-                          </div>)}
+                          </div>
+                        )}
+                        {showAddShift && (
+                          <div className="confirm add-shift">
+                            <div>
+                              <h1>{translation('addTitle')}</h1>
+
+                              <div>
+                                <div>
+                                  <span>{translation('from')}</span>
+                                  <input
+                                    type="time"
+                                    className="input"
+                                    value={shiftFrom}
+                                    onChange={(e) => setShiftFrom(e.target.value)}
+                                    required
+                                  />
+                                </div>
+
+                                <div>
+                                  <span>{translation('to')}</span>
+                                  <input
+                                    type="time"
+                                    className="input"
+                                    value={shiftTo}
+                                    onChange={(e) => setShiftTo(e.target.value)}
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <div
+                                  className="button-w-bl"
+                                  onClick={() => setShowAddShift(false)}
+                                >
+                                  {translation('cancel')}
+                                </div>
+
+                                <div
+                                  className="button-d-bl"
+                                  onClick={() => {
+                                    addShift();
+                                  }}
+                                >
+                                  {translation('confirm')}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {(manager || (user.permissions.update_brief && user.permissions.handoff_brief)) && (() => {

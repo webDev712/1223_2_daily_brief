@@ -11,6 +11,8 @@ import './page.css'
 import { useDate } from "@/app/src/components/DateContext";
 import { useTranslations } from "next-intl";
 import { safeUUID } from "@/lib/uuid";
+import formatTime12Hour from "@/lib/time";
+import { sortShifts } from "../settings/page";
 
 // 12 AM, 1 AM, ... 11 PM (значения сохраняются в БД как раньше)
 const CHECK_BEFORE_HOURS = Array.from({ length: 24 }, (_, h) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`);
@@ -39,6 +41,10 @@ export default function Reports() {
   const [showAddReport, setShowAddReport] = useState(false);
   const [reportDepartmentId, setReportDepartmentId] = useState<string>();
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
+  const [showAddShift, setShowAddShift] = useState(false);
+  const [shiftFrom, setShiftFrom] = useState('08:00');
+  const [shiftTo, setShiftTo] = useState('16:00');
+
 
   // Названия дней недели берём из lib/config, но переводим, если есть ключ в JSON
   const weekDays = getWeekDays().map((d: { full: string; small: string }) => ({
@@ -141,7 +147,7 @@ export default function Reports() {
           {(part === 'time' || part === 'shift') && (editing ?
             <select className='input' value={s.shift_id ?? ''} onChange={e => update({shift_id: e.target.value ? Number(e.target.value) : null})}>
               <option value=''>{t('any_shift')}</option>
-              {shifts.filter(shift => !shift.archived).map(shift => <option key={shift.id} value={shift.id}>{shift.name}</option>)}
+              {sortShifts(shifts.filter(shift => !shift.archived)).map(shift => <option key={shift.id} value={shift.id}>{shift.name}</option>)}
             </select> : s.shift_id !== null && <div>{shifts.find(shift => Number(shift.id) === s.shift_id)?.name}</div>)}
           {(part === 'time' || part === 'deadline') && (editing ?
             <label className='schedule-deadline'>
@@ -557,8 +563,78 @@ const toggleDepartment = (
     };
   });
 };
+const addShift = async () => {
+  setLoading(true);
+    const shift_res = await fetch('/api/shift', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({name: `${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}`})
+  })
+  if (!shift_res.ok) {
+    console.log("Error while sending shift data.");
+    setLoading(false)
+    return;
+  }
+  setShowAddShift(false);
+  setReload(prev => prev + 1);
+  
+  toast.success(t('shiftAdded', { name: `${formatTime12Hour(shiftFrom)} - ${formatTime12Hour(shiftTo)}` }))
+  
+  setLoading(false);
+}
 return (
     <div className="reports">
+      {showAddShift && (
+        <div className="confirm add-shift">
+          <div>
+            <h1>{t('addTitle')}</h1>
+
+            <div>
+              <div>
+                <span>{t('from')}</span>
+                <input
+                  type="time"
+                  className="input"
+                  value={shiftFrom}
+                  onChange={(e) => setShiftFrom(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <span>{t('to')}</span>
+                <input
+                  type="time"
+                  className="input"
+                  value={shiftTo}
+                  onChange={(e) => setShiftTo(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <div
+                className="button-w-bl"
+                onClick={() => setShowAddShift(false)}
+              >
+                {t('cancel')}
+              </div>
+
+              <div
+                className="button-d-bl"
+                onClick={() => {
+                  addShift();
+                }}
+              >
+                {t('confirm')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showConfirmDelete && (
         <div className='confirm'>
           <div>
@@ -631,7 +707,10 @@ return (
                       {renderScheduleFields(reportToAdd, 'day_time', reportDepartmentId, true, slot.slot_key)}
                     </div>
                     <div>
-                      <span>{t('field_shift')}</span>
+                      <span className="flex justify-content-between">
+                        <span>{t('field_shift')}</span>
+                        <div className="button-w-bl my-auto" style={{fontSize: 9, padding: "1px 5px", borderRadius: 5}} onClick={() => {setShowAddShift(true)}}>{t('add_shift')}</div>
+                      </span>
                       {renderScheduleFields(reportToAdd, 'shift', reportDepartmentId, true, slot.slot_key)}
                     </div>
                     <div>

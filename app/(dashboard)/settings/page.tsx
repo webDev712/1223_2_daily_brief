@@ -14,6 +14,24 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import formatTime12Hour from '@/lib/time';
 
+export function sortShifts (shifts: Shift[]): Shift[] {
+  return [...shifts].sort((a: Shift, b: Shift) => {
+    const toMinutes = (name: string) => {
+      const [time, period] = name.split(" ");
+      let [hours, minutes] = time.split(":").map(Number);
+
+      if (period === "PM" && hours !== 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
+
+      return hours * 60 + minutes;
+    };
+
+    return toMinutes(a.name) - toMinutes(b.name);
+  });
+};
+
+
+
 export default function Settings() {
   const t = useTranslations('settings');
   const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
@@ -154,7 +172,7 @@ export default function Settings() {
       shifts_data = shifts_data.filter((shift: Shift) => shift.archived != true).sort((a: Shift, b: Shift) => a.name.localeCompare(b.name))
       console.log('shifts_data')
       console.log(shifts_data)
-      setShifts(shifts_data);
+      setShifts(sortShifts(shifts_data));
 
       setBillings(billings_data)
       setUsers(users_data)
@@ -324,16 +342,16 @@ export default function Settings() {
     setShowDeleteShift(false);
     toast.info(t('toast.shiftDeleted', { name: shift.name }))
     if (shift.archived === false){
-      setShifts(prev => prev.filter((shift_local: Shift) => 
-        shift.id === shift_local.id ? false : true
-      ))
+      setShifts(prev => sortShifts(
+        prev.filter((shift_local: Shift) => shift.id === shift_local.id ? false : true
+      )))
 
     }
     else{
       setShifts(prev =>
-        prev.map((shift_local: Shift) =>
+        sortShifts(prev.map((shift_local: Shift) =>
           shift_local.id === shift.id ? shift : shift_local
-        )
+        ))
       );
     }
     setReload(prev => prev + 1)
