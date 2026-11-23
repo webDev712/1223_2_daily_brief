@@ -1,3 +1,17 @@
+export interface Handoff {
+  id: number;
+  from_user_id: string;
+  to_user_id: string;
+  from_name: string;
+  to_name: string;
+  from_shift_id?: number | null; 
+  from_shift_name?: string | null;
+  reason: string | null; 
+  notes: string | null;
+  requested_at?: string | null;
+  responded_at?: string | null;
+}
+
 export interface SavedBrief {
   id: number;
   department_id: string;
@@ -8,7 +22,7 @@ export interface SavedBrief {
   duty_count: number;
   shift_id: number | null;
   duties: { user_id: string; name: string; shift_id: number; shift: string; started_at: string; driving: boolean; ended_at: string | null; handed_to: string | null }[];
-  handoffs: { id: number; from_user_id: string; to_user_id: string; from_name: string; to_name: string; from_shift_id?: number | null; from_shift_name?: string | null; reason: string | null; notes: string | null }[];
+  handoffs: Handoff[];
   date: string;
   updated_at: string | null;
   driving: boolean;
@@ -28,6 +42,7 @@ export interface SavedBrief {
   covered: Covered[];
   created_at?: string;
   started_at?: string | null;
+  closed_handoff?: { from_name: string; to_name: string; transferred_by: string | null; transferred_at: string } | null;
 }
 
 type Assignment = {
@@ -92,6 +107,17 @@ export interface Report {
   shift_name?: string | null;
 }
 
+export interface InvenassetSupplyItem {
+  request_id: number;
+  product_id: number;
+  product_name: string;
+  custom_id?: string;
+  qty: number;
+  unit?: string;
+  status: string;
+  ordered_at?: string;
+}
+
 export interface Finding {
   id: string;
   text: string;
@@ -104,8 +130,12 @@ export interface Finding {
   action_tracker_id?: string | null;
   invenasset?: {
     company_id: number;
-    request_id: number;
-    equipment_name: string;
+    request_id?: number;
+    equipment_name?: string;
+    target?: 'equipment' | 'supply';
+    warehouse_id?: number;
+    warehouse_name?: string;
+    requests?: InvenassetSupplyItem[];
     status: string;
     resolved_at?: string;
   };
@@ -134,8 +164,8 @@ export interface User {
   lead_letter: string,
   phone: string,
   archived: boolean,
-  department: string,
-  department_id?: string,
+  department: string | null,
+  department_id?: string | null,
   permissions: DBPermissions,
   selectedAnotherRole: boolean,
   selectedAnotherDepartment: boolean,
@@ -304,6 +334,7 @@ export interface Company {
   stripe_customer_id: string,
   created_at: string,
   // colors: string,
+  invenasset_connected?: boolean,
 }
 
 export interface CompanyToDisplay extends Company {

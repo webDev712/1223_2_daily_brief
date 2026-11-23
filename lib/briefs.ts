@@ -84,6 +84,17 @@ export async function getBriefs(user: User, filters: {
             ) duty), '[]'::json) AS duties,
             COALESCE((SELECT json_agg(h ORDER BY h.id) FROM handoff h
                 WHERE h.saved_brief_id = b.id AND h.company_id = b.company_id AND h.status = 'pending'), '[]'::json) AS handoffs,
+            (SELECT json_build_object(
+                'from_name', h.from_name,
+                'to_name', h.to_name,
+                'transferred_by', NULLIF(substring(h.notes from 'Transferred by Manager ([^\n]+)$'), ''),
+                'transferred_at', h.transferred_at
+            )
+            FROM handoff h
+            WHERE h.saved_brief_id = b.id AND h.company_id = b.company_id
+              AND h.from_user_id = $8 AND h.status = 'accepted'
+              AND EXISTS (SELECT 1 FROM brief_duty bd WHERE bd.saved_brief_id = b.id AND bd.user_id = $8 AND bd.ended_at IS NOT NULL)
+            ORDER BY h.id DESC LIMIT 1) AS closed_handoff,
             COALESCE((
                 SELECT json_agg(row_to_json(r) ORDER BY r.id)
                 FROM (
@@ -200,12 +211,43 @@ export async function syncDepartmentReports(client: any, company_id: string, rep
     if (conflicts.rows.length) throw Object.assign(new Error('metric_conflict'), { status: 409 });
 
     await client.query(`WITH candidates AS (${candidates})
+        UPDATE saved_report sr SET cancelled_at = COALESCE(sr.cancelled_at, now())
+        FROM saved_brief b JOIN company c ON c.id = b.company_id
+        WHERE sr.saved_brief_id = b.id AND sr.company_id = $1 AND b.company_id = $1
+            AND b.is_department_journal AND NOT b.freezed AND b.date = ${SQL_COMPANY_DATE}
+            AND ($2::integer IS NULL OR sr.report_id = $2) AND ($3::integer IS NULL OR b.id = $3)
+            AND sr.checked IS NOT TRUE AND sr.cancelled_at IS NULL AND NOT EXISTS (
+                SELECT 1 FROM candidates r WHERE r.brief_id = b.id AND r.id = sr.report_id AND r.slot_key = sr.slot_key
+            )
+    `, values);
+
+    await client.query(`WITH candidates AS (${candidates}),
+        ranked AS (
+            SELECT r.*,
+                EXISTS (
+                    SELECT 1 FROM saved_report sr
+                    WHERE sr.saved_brief_id = r.brief_id AND sr.report_id = r.id
+                        AND sr.slot_key = r.slot_key AND sr.company_id = $1 AND sr.cancelled_at IS NULL
+                ) AS is_active,
+                count(*) OVER (PARTITION BY r.brief_id, r.id) AS candidate_count,
+                (SELECT count(*) FROM saved_report sr
+                 WHERE sr.saved_brief_id = r.brief_id AND sr.report_id = r.id
+                     AND sr.company_id = $1 AND sr.cancelled_at IS NULL) AS active_count
+            FROM candidates r
+        ),
+        eligible AS (
+            SELECT r.*,
+                row_number() OVER (PARTITION BY r.brief_id, r.id, r.is_active ORDER BY r.slot_position, r.slot_key) AS rn
+            FROM ranked r
+        )
         INSERT INTO saved_report (saved_brief_id, report_id, date, department_id, company_id,
             name, source, text, checked, day_time, metric, metric_range_from, metric_range_to,
             holder_id, planned_holder_id, check_before, slot_key, slot_position, shift_id, shift_name)
         SELECT r.brief_id, r.id, r.date, r.brief_department_id, r.company_id,
             r.name, r.source, '', false, r.day_time, r.metric, r.metric_range_from, r.metric_range_to,
-            r.planned_holder, r.planned_holder, r.check_before, r.slot_key, r.slot_position, r.shift_id, r.shift_name FROM candidates r
+            r.planned_holder, r.planned_holder, r.check_before, r.slot_key, r.slot_position, r.shift_id, r.shift_name
+        FROM eligible r
+        WHERE r.is_active OR r.rn <= GREATEST(0, r.candidate_count - r.active_count)
         ON CONFLICT (company_id, department_id, date, report_id, slot_key) DO UPDATE SET
             name = EXCLUDED.name, source = EXCLUDED.source, day_time = EXCLUDED.day_time,
             metric = EXCLUDED.metric, metric_range_from = EXCLUDED.metric_range_from,
@@ -214,17 +256,6 @@ export async function syncDepartmentReports(client: any, company_id: string, rep
             shift_id = EXCLUDED.shift_id, shift_name = EXCLUDED.shift_name, cancelled_at = NULL,
             holder_id = CASE WHEN saved_report.assignment_overridden THEN saved_report.holder_id ELSE EXCLUDED.holder_id END
         WHERE saved_report.checked IS NOT TRUE
-    `, values);
-
-    await client.query(`WITH candidates AS (${candidates})
-        UPDATE saved_report sr SET cancelled_at = COALESCE(sr.cancelled_at, now())
-        FROM saved_brief b JOIN company c ON c.id = b.company_id
-        WHERE sr.saved_brief_id = b.id AND sr.company_id = $1 AND b.company_id = $1
-            AND b.is_department_journal AND NOT b.freezed AND b.date = ${SQL_COMPANY_DATE}
-            AND ($2::integer IS NULL OR sr.report_id = $2) AND ($3::integer IS NULL OR b.id = $3)
-            AND sr.checked IS NOT TRUE AND NOT EXISTS (
-                SELECT 1 FROM candidates r WHERE r.brief_id = b.id AND r.id = sr.report_id AND r.slot_key = sr.slot_key
-            )
     `, values);
     await client.query(`
         UPDATE saved_brief b SET updated_at = clock_timestamp(),

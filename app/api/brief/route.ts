@@ -3,6 +3,7 @@ import sql, { pool } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { companyDate } from "@/lib/date";
 import { ensureDepartmentBrief, getBriefs, managesBriefs } from "@/lib/briefs";
+import { reconcileInvenassetBriefs } from "@/lib/invenasset";
 
 export async function GET(request: Request) {
     try {
@@ -15,7 +16,14 @@ export async function GET(request: Request) {
             if (date !== companyDate(user.timezone)) return NextResponse.json({ error: "invalid_start" }, { status: 409 });
             const existing = (await getBriefs(user, {department: department_id, from: date, to: date}))
                 .filter((b: any) => b.is_department_journal);
-            if (existing.length) return NextResponse.json(existing);
+            if (existing.length) {
+                if (await reconcileInvenassetBriefs(user.company_id, existing)) {
+                    const refreshed = (await getBriefs(user, {department: department_id, from: date, to: date}))
+                        .filter((b: any) => b.is_department_journal);
+                    return NextResponse.json(refreshed);
+                }
+                return NextResponse.json(existing);
+            }
             const department = await sql(`
                 SELECT d.id, d.name, c.name AS company_name, c.timezone AS company_timezone
                 FROM department d JOIN company c ON c.id = d.company_id
@@ -40,6 +48,9 @@ export async function GET(request: Request) {
             return NextResponse.json(await getBriefs(user, {id}));
         }
         const rows = await getBriefs(user, { id: searchParams.get("id") });
+        if (await reconcileInvenassetBriefs(user.company_id, rows)) {
+            return NextResponse.json(await getBriefs(user, { id: searchParams.get("id") }));
+        }
         return NextResponse.json(rows);
     } catch (error) {
         console.error(error);

@@ -227,7 +227,17 @@ export async function PATCH(request: Request) {
             `, [
                 user.id,
                 h.from_user_id,
-                `INFO: ${user.name} accepted your Handoff request for ${b.department_name ?? 'department'} brief. Shift and reports have been transferred. ${briefUrl}`,
+                `INFO: ${user.name} accepted your Handoff request for ${b.department_name ?? 'department'} brief. Your shift and unfinished reports were transferred to ${user.name}. Your shift has been closed — start a new shift to continue. ${briefUrl}`,
+                user.company_id
+            ]);
+
+            await client.query(`
+                INSERT INTO chat (from_user, to_user, text, read, timestamp, company_id)
+                VALUES ($1, $2, $3, true, clock_timestamp(), $4)
+            `, [
+                h.from_user_id,
+                user.id,
+                `INFO: You accepted ${h.from_name}'s Handoff request for ${b.department_name ?? 'department'} brief. ${h.from_name}'s shift and unfinished reports were transferred to you. ${briefUrl}`,
                 user.company_id
             ]);
 
@@ -316,7 +326,7 @@ export async function PATCH(request: Request) {
                 `, [
                     actualBriefId, user.company_id, b.date, sourceUserId, toUser.id,
                     fromUser.name, toUser.name, fromDuty?.shift_id ?? null, fromDuty?.shift ?? null, toShift.id, toShift.name,
-                    reason || null, notes || `Transferred by Manager ${user.name}`
+                    reason || null, notes ? `${notes}\nTransferred by Manager ${user.name}` : `Transferred by Manager ${user.name}`
                 ]);
 
                 await client.query(`
@@ -342,7 +352,7 @@ export async function PATCH(request: Request) {
             `, [user.id, toUser.id, toMessage, user.company_id]);
 
             if (sourceUserId !== user.id) {
-                const fromMessage = `INFO: Manager ${user.name} transferred your ${reportsOnly ? 'reports' : 'shift and reports'} to ${toName} in ${b.department_name ?? 'department'} brief. ${briefUrl}`;
+                const fromMessage = `INFO: Manager ${user.name} transferred your ${reportsOnly ? 'reports' : 'shift and reports'} to ${toName} in ${b.department_name ?? 'department'} brief.${reportsOnly ? '' : ' Your shift has been closed — start a new shift to continue.'} ${briefUrl}`;
                 await client.query(`
                     INSERT INTO chat (from_user, to_user, text, read, timestamp, company_id)
                     VALUES ($1, $2, $3, false, clock_timestamp(), $4)

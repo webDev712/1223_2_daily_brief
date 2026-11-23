@@ -9,6 +9,7 @@ import { es, enUS } from 'date-fns/locale';
 import { useLocale, useTranslations } from "next-intl";
 import capitalize from '@/lib/text';
 import Loader from '@/app/src/components/Loader';
+import SmallLoader from '@/app/src/components/SmallLoader';
 import getColorsFromName from '@/lib/color';
 import { useUser } from '@/app/src/components/UserProvider';
 import { getActionLogCategories } from '@/lib/config';
@@ -39,11 +40,17 @@ import "react-date-range/dist/theme/default.css";
 import ImageUploader from '@/app/src/components/ImageUploader';
 import Link from 'next/link';
 import MentionsHelper from '@/app/src/components/MentionsHelper';
+import InvenassetSupplyPicker, {
+    InvenassetSupplyDraftItem,
+    InvenassetSupplyProductOption,
+    InvenassetSupplyWarehouseOption,
+} from '@/app/src/components/InvenassetSupplyPicker';
 
 registerLocale('es', es);
 
 export default function ActionTracker () {
     const t = useTranslations('actionTracker');
+    const tBrief = useTranslations('DailyBrief');
     const locale = useLocale();
 
     const isEs = locale.startsWith('es');
@@ -91,6 +98,7 @@ export default function ActionTracker () {
     const [departments, setDepartments] = useState<Department[]>([]);
     const [users, setUsers] = useState<User[]>([])
     const categories = getActionLogCategories().sort((a: IdName, b: IdName) => a.name.localeCompare(b.name));
+    const visibleCategories = categories.filter(c => c.name !== 'Invenasset');
     const [showAdd, setShowAdd] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
     const [showResolve, setShowResolve] = useState(false);
@@ -155,7 +163,7 @@ export default function ActionTracker () {
         user_id: user.id,
         department_id: '',
         shift: '10 AM - 6 PM',
-        category: categories[0]?.name ?? '',
+        category: visibleCategories[0]?.name ?? '',
         severity: 'Low',
         date_resolved: null,
         text: '',
@@ -163,6 +171,37 @@ export default function ActionTracker () {
         actions: null,
     }
     const [auditLogRowToAdd, setAuditLogRowToAdd] = useState<DailyLogRow>(defaultNewAuditLogRow);
+    const [invenassetConnected, setInvenassetConnected] = useState(false);
+    const [invenassetTarget, setInvenassetTarget] = useState<'' | 'equipment' | 'supply'>('');
+    const [invenassetOptions, setInvenassetOptions] = useState<{
+        equipments: {id: number; name: string; custom_id: string; warehouse: string}[];
+        issue_types: {id: number; name: string; name_es: string}[];
+        assignees: {id: number; name: string; daily_brief_user_id?: string | null; matched?: boolean}[];
+    } | null>(null);
+    const [invenassetLoading, setInvenassetLoading] = useState(false);
+    const [invenassetError, setInvenassetError] = useState('');
+    const [invenassetEquipment, setInvenassetEquipment] = useState('');
+    const [invenassetType, setInvenassetType] = useState('11');
+    const [invenassetAssignee, setInvenassetAssignee] = useState('');
+    const [invenassetSupplyOptions, setInvenassetSupplyOptions] = useState<{
+        warehouses: InvenassetSupplyWarehouseOption[];
+        products: InvenassetSupplyProductOption[];
+    } | null>(null);
+    const [invenassetSupplyLoading, setInvenassetSupplyLoading] = useState(false);
+    const [invenassetSupplyError, setInvenassetSupplyError] = useState('');
+    const [invenassetSupplyWarehouse, setInvenassetSupplyWarehouse] = useState('');
+    const [invenassetSupplyItems, setInvenassetSupplyItems] = useState<InvenassetSupplyDraftItem[]>([]);
+    const isInvenassetEquipment = invenassetConnected && !auditLogRowToAdd.id && invenassetTarget === 'equipment';
+    const isInvenassetSupply = invenassetConnected && !auditLogRowToAdd.id && invenassetTarget === 'supply';
+    const resetInvenassetFields = () => {
+        setInvenassetTarget('');
+        setInvenassetEquipment('');
+        setInvenassetType('11');
+        setInvenassetAssignee('');
+        setInvenassetError('');
+        setInvenassetSupplyItems([]);
+        setInvenassetSupplyError('');
+    };
     const [rowShowActions, setRowShowActions] = useState<DailyLogRow | null>(null);
 
     const [actionToAdd, setActionToAdd] = useState('');
@@ -182,9 +221,21 @@ export default function ActionTracker () {
             console.log('sendActionTrackerRow error - newActionTrackerRow is null or undefined');
             return false;
         }
+        const sendInvenasset = !newActionTrackerRow.id && isInvenassetEquipment;
+        const sendInvenassetSupply = !newActionTrackerRow.id && isInvenassetSupply;
+        const selectedInvenassetAssignee = sendInvenasset
+            ? invenassetOptions?.assignees.find(a => String(a.id) === invenassetAssignee)
+            : undefined;
         setLoading(true);
         newActionTrackerRow = {
             ...newActionTrackerRow,
+            ...(sendInvenasset ? {
+                category: 'Invenasset',
+                assigned_to_user_id: selectedInvenassetAssignee?.daily_brief_user_id ?? null,
+            } : (sendInvenassetSupply ? {
+                category: 'Invenasset',
+                assigned_to_user_id: null,
+            } : {})),
             date_resolved: newActionTrackerRow.status === 'Resolved' ? (newActionTrackerRow.date_resolved ?? new Date().toISOString()) : null,
             date: newActionTrackerRow.date.length > 10 ? formatDateWithoutTimezone(newActionTrackerRow.date) : newActionTrackerRow.date
         }
@@ -195,10 +246,29 @@ export default function ActionTracker () {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(newActionTrackerRow)
+            body: JSON.stringify(sendInvenasset ? {
+                ...newActionTrackerRow,
+                invenasset: {
+                    equipment: Number(invenassetEquipment),
+                    type: Number(invenassetType),
+                    assignee: invenassetAssignee,
+                },
+            } : (sendInvenassetSupply ? {
+                ...newActionTrackerRow,
+                invenasset: {
+                    target: 'supply',
+                    warehouse_id: Number(invenassetSupplyWarehouse),
+                    warehouse_name: invenassetSupplyOptions?.warehouses.find(w => String(w.id) === invenassetSupplyWarehouse)?.name || '',
+                    items: invenassetSupplyItems
+                        .map(it => ({ product_id: it.product_id, qty: Number(it.qty) }))
+                        .filter(it => it.product_id > 0 && it.qty > 0),
+                },
+            } : newActionTrackerRow))
         });
         if (!action_tracker_res.ok){
-            console.error('Error while sending Action Tracker Row.');
+            const errData = await action_tracker_res.json().catch(() => null);
+            const key = errData?.error ? `errors.${errData.error}` : '';
+            toast.error(key && tBrief.has(key) ? tBrief(key) : (errData?.error || 'Error while sending Action Tracker Row.'));
             setLoading(false);
             return false;
         }
@@ -236,6 +306,7 @@ export default function ActionTracker () {
         }
         setLoading(false);
         setShowAdd(false);
+        resetInvenassetFields();
         setReload(reload + 1);
         setShowResolve(false);
         toast.success(t('toast.updated'));
@@ -309,10 +380,66 @@ export default function ActionTracker () {
 
             setUsers(users_data);
 
+            const company_res = await fetch('/api/company');
+            if (company_res.ok) {
+                const company_data = await company_res.json();
+                setInvenassetConnected(company_data[0]?.invenasset_connected === true);
+            }
+
             setLoading(false);
         }
         load();
     }, [reload, page])
+
+    useEffect(() => {
+        if (!showAdd || !!auditLogRowToAdd.id || !isInvenassetEquipment) return;
+        const controller = new AbortController();
+        setInvenassetLoading(true);
+        setInvenassetError('');
+        fetch('/api/integrations/invenasset/options', {signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]), cache: 'no-store'})
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+                setInvenassetOptions(data);
+            }).catch(error => {
+                if (!controller.signal.aborted) {
+                    setInvenassetOptions(null);
+                    if (error.message === 'invenasset_not_connected') {
+                        setInvenassetConnected(false);
+                        setInvenassetTarget('');
+                    } else {
+                        setInvenassetError('invenasset_unavailable');
+                    }
+                }
+            }).finally(() => {if (!controller.signal.aborted) setInvenassetLoading(false)});
+        return () => controller.abort();
+    }, [showAdd, auditLogRowToAdd.id, isInvenassetEquipment]);
+    useEffect(() => {
+        if (!showAdd || !!auditLogRowToAdd.id || !isInvenassetSupply) return;
+        const controller = new AbortController();
+        setInvenassetSupplyLoading(true);
+        setInvenassetSupplyError('');
+        fetch('/api/integrations/invenasset/options?target=supply', {signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]), cache: 'no-store'})
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+                setInvenassetSupplyOptions(data);
+                if (Array.isArray(data.warehouses) && data.warehouses.length > 0) {
+                    setInvenassetSupplyWarehouse(prev => prev && data.warehouses.some((w: InvenassetSupplyWarehouseOption) => String(w.id) === prev) ? prev : String(data.warehouses[0].id));
+                }
+            }).catch(error => {
+                if (!controller.signal.aborted) {
+                    setInvenassetSupplyOptions(null);
+                    if (error.message === 'invenasset_not_connected') {
+                        setInvenassetConnected(false);
+                        setInvenassetTarget('');
+                    } else {
+                        setInvenassetSupplyError('invenasset_unavailable');
+                    }
+                }
+            }).finally(() => {if (!controller.signal.aborted) setInvenassetSupplyLoading(false)});
+        return () => controller.abort();
+    }, [showAdd, auditLogRowToAdd.id, isInvenassetSupply]);
     return (
         <div>
             {loading ? (<Loader></Loader>) : (
@@ -488,7 +615,7 @@ export default function ActionTracker () {
                         <div className='button-d-bl-sm' onClick={() => {setReload(reload + 1)}}>{t('filters.filter')}</div>
                     </div>
                     <div>
-                        <div className="button-d-bl" style={{display: user.permissions.edit_action_tracker === true ? 'block' : 'none'}} onClick={() => {if (user.permissions.edit_action_tracker !== true) return; setAuditLogRowToAdd({...defaultNewAuditLogRow, department_id: departments[0].id}); setShowAdd(true);}}>{t('form.add')}</div>
+                        <div className="button-d-bl" style={{display: user.permissions.edit_action_tracker === true ? 'block' : 'none'}} onClick={() => {if (user.permissions.edit_action_tracker !== true) return; resetInvenassetFields(); setAuditLogRowToAdd({...defaultNewAuditLogRow, department_id: departments[0]?.id ?? ''}); setShowAdd(true);}}>{t('form.add')}</div>
                     </div>
                     <div className="a-table-wrapper">
                         <div className="a-table-header">
@@ -563,7 +690,7 @@ export default function ActionTracker () {
                                     </div>
                                     </div>
                                     {user.permissions.edit_action_tracker === true && (<div>
-                                        <div className="button-w-bl" onClick={() => { setAuditLogRowToAdd({...row, date: format(new Date(row.date), 'MM-dd-yyyy')}); setShowAdd(true); }}>{t('table.edit')}</div>
+                                        <div className="button-w-bl" onClick={() => { resetInvenassetFields(); setAuditLogRowToAdd({...row, date: format(new Date(row.date), 'MM-dd-yyyy')}); setShowAdd(true); }}>{t('table.edit')}</div>
                                     </div>)}
                                 </div>)
                             })}
@@ -599,15 +726,28 @@ export default function ActionTracker () {
                                                 ))}
                                             </select>
                                         </label>
-                                        <label>
-                                            <div>{t('form.assignee')}</div>
-                                            <select value={auditLogRowToAdd.assigned_to_user_id ?? ''} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, assigned_to_user_id: e.target.value || null})}}>
-                                                <option value="">-</option>
-                                                {users.map((user: User) => (
-                                                    <option value={user.id} key={`add_io_assignee_${user.id}`}>{user.name}</option>
-                                                ))}
-                                            </select>
-                                        </label>
+                                        {!isInvenassetEquipment && !isInvenassetSupply && (
+                                            <label>
+                                                <div>{t('form.assignee')}</div>
+                                                <select value={auditLogRowToAdd.assigned_to_user_id ?? ''} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, assigned_to_user_id: e.target.value || null})}}>
+                                                    <option value="">-</option>
+                                                    {users.map((user: User) => (
+                                                        <option value={user.id} key={`add_io_assignee_${user.id}`}>{user.name}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
+                                        {isInvenassetEquipment && (
+                                            <label>
+                                                <div>{t('form.assignee')}{invenassetOptions?.assignees.find(a => String(a.id) === invenassetAssignee)?.matched ? ` · ✓ ${tBrief('invenasset_matched_user')}` : ''}</div>
+                                                <select disabled={invenassetLoading || !!invenassetError || !invenassetOptions} value={invenassetAssignee} onChange={(e) => setInvenassetAssignee(e.target.value)}>
+                                                    <option value="">{tBrief('dont_assign')}</option>
+                                                    {invenassetOptions?.assignees.map(a => (
+                                                        <option value={a.id} key={`add_io_ia_assignee_${a.id}`}>{a.matched ? `✓ ${a.name}` : a.name}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
                                         <label>
                                             <div>{t('form.department')}</div>
                                             <select value={auditLogRowToAdd.department_id} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, department_id: e.target.value})}}>
@@ -633,12 +773,24 @@ export default function ActionTracker () {
                                                 <option value="-">-</option>
                                             </select>
                                         </label>
-                                        <label>
-                                            <div>{t('form.category')}</div>
-                                            <select value={auditLogRowToAdd.category} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, category: e.target.value})}}>
-                                                {categories.map((category: IdName) => (<option value={category.name} key={`add_io_category_${category.id}`}>{category.name}</option>))}
-                                            </select>
-                                        </label>
+                                        {!auditLogRowToAdd.id && invenassetConnected && (
+                                            <label>
+                                                <div>{tBrief('invenasset_target')}</div>
+                                                <select value={invenassetTarget} onChange={(e) => setInvenassetTarget(e.target.value as '' | 'equipment' | 'supply')}>
+                                                    <option value="">{tBrief('invenasset_target_none')}</option>
+                                                    <option value="equipment">{tBrief('invenasset_target_equipment')}</option>
+                                                    <option value="supply">{tBrief('invenasset_target_supply')}</option>
+                                                </select>
+                                            </label>
+                                        )}
+                                        {!isInvenassetEquipment && !isInvenassetSupply && (
+                                            <label>
+                                                <div>{t('form.category')}</div>
+                                                <select value={auditLogRowToAdd.category} onChange={(e) => {setAuditLogRowToAdd({...auditLogRowToAdd, category: e.target.value})}}>
+                                                    {(auditLogRowToAdd.id && auditLogRowToAdd.category === 'Invenasset' ? categories : visibleCategories).map((category: IdName) => (<option value={category.name} key={`add_io_category_${category.id}`}>{category.name}</option>))}
+                                                </select>
+                                            </label>
+                                        )}
                                     
                                         <label>
                                             <div>{t('form.status')}</div>
@@ -656,6 +808,49 @@ export default function ActionTracker () {
                                                 <option value="High">{t('severity.high')}</option>
                                             </select>
                                         </label>
+                                        {isInvenassetEquipment && (
+                                            <>
+                                                {invenassetLoading && <div style={{ gridColumn: '1 / -1', position: 'relative', minHeight: 36 }}><SmallLoader /></div>}
+                                                {invenassetError && <div style={{ gridColumn: '1 / -1', color: '#DC2626', fontSize: 13 }}>{tBrief('errors.' + invenassetError)}</div>}
+                                                {!invenassetLoading && invenassetOptions && !invenassetError && (
+                                                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 10 }}>
+                                                        <label style={{ flex: 1, minWidth: 0 }}>
+                                                            <div>{tBrief('invenasset_equipment')}</div>
+                                                            <select value={invenassetEquipment} onChange={(e) => setInvenassetEquipment(e.target.value)}>
+                                                                <option value="">{tBrief('invenasset_choose_equipment')}</option>
+                                                                {invenassetOptions.equipments.map(eq => (
+                                                                    <option value={eq.id} key={`add_io_eq_${eq.id}`}>{[eq.name, eq.custom_id, eq.warehouse].filter(Boolean).join(' · ')}</option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
+                                                        <label style={{ flex: 1, minWidth: 0 }}>
+                                                            <div>{tBrief('invenasset_issue_type')}</div>
+                                                            <select value={invenassetType} onChange={(e) => setInvenassetType(e.target.value)}>
+                                                                {invenassetOptions.issue_types.map(it => (
+                                                                    <option value={it.id} key={`add_io_it_${it.id}`}>{isEs ? it.name_es : it.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                        {isInvenassetSupply && (
+                                            <div style={{ gridColumn: '1 / -1' }}>
+                                                {invenassetSupplyLoading && <div style={{ position: 'relative', minHeight: 36 }}><SmallLoader /></div>}
+                                                {invenassetSupplyError && <div style={{ color: '#DC2626', fontSize: 13 }}>{tBrief('errors.' + invenassetSupplyError)}</div>}
+                                                {!invenassetSupplyLoading && invenassetSupplyOptions && !invenassetSupplyError && (
+                                                    <InvenassetSupplyPicker
+                                                        warehouses={invenassetSupplyOptions.warehouses || []}
+                                                        products={invenassetSupplyOptions.products || []}
+                                                        warehouseId={invenassetSupplyWarehouse}
+                                                        onWarehouseChange={setInvenassetSupplyWarehouse}
+                                                        items={invenassetSupplyItems}
+                                                        onItemsChange={setInvenassetSupplyItems}
+                                                    />
+                                                )}
+                                            </div>
+                                        )}
                                         {auditLogRowToAdd.saved_brief_id && (
                                             <label>
                                                 <div>{t('form.sourceBrief')}</div>
@@ -670,7 +865,7 @@ export default function ActionTracker () {
                                     </form>
                                     </div>
                                     <label className="finding-description-wrapper">
-                                        <div>{t('form.description')}</div>
+                                        <div>{isInvenassetSupply ? tBrief('invenasset_supply_note') : t('form.description')}</div>
                                         <textarea
                                             ref={findingTextareaRef}
                                             placeholder={t('form.descriptionPlaceholder')}
@@ -728,8 +923,14 @@ export default function ActionTracker () {
                                     </label>
                                 <div>
                                     {auditLogRowToAdd.id && (<span className='button-w-r-sm delete' onClick={() => {setShowDelete(true)}}>{t('form.delete')}</span>)}
-                                    <div className='button-w-bl' onClick={() => {setShowAdd(false)}}>{t('form.cancel')}</div>
-                                    <button className='button-d-bl' type='submit' form='add-action-tracker-row'>{!auditLogRowToAdd.id ? t('form.add') : t('form.save')}</button>
+                                    <div className='button-w-bl' onClick={() => {setShowAdd(false); resetInvenassetFields();}}>{t('form.cancel')}</div>
+                                    <button
+                                        className='button-d-bl'
+                                        type='submit'
+                                        form='add-action-tracker-row'
+                                        disabled={(isInvenassetEquipment && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment || !auditLogRowToAdd.text.trim())) || (isInvenassetSupply && (invenassetSupplyLoading || !!invenassetSupplyError || !invenassetSupplyOptions || !invenassetSupplyWarehouse || !invenassetSupplyItems.some(it => it.product_id > 0 && (Number(it.qty) || 0) > 0)))}
+                                        style={((isInvenassetEquipment && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment || !auditLogRowToAdd.text.trim())) || (isInvenassetSupply && (invenassetSupplyLoading || !!invenassetSupplyError || !invenassetSupplyOptions || !invenassetSupplyWarehouse || !invenassetSupplyItems.some(it => it.product_id > 0 && (Number(it.qty) || 0) > 0)))) ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+                                    >{!auditLogRowToAdd.id ? t('form.add') : t('form.save')}</button>
                                 </div>
                             </div>
                         </div>
