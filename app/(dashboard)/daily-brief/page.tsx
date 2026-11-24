@@ -189,8 +189,10 @@ export default function DailyBrief() {
           leads.find((a: User) => a.id === user_id));
         });
       if (mentionedUsers.length > 0) toast.success('Mentioned users was notified!')
+      toast.success('Added new finding!')
       findingDraftId.current = null;
       setShowAddFinding(false);
+      setShowAddReportFinding(false);
       setSendFindingToTracker(false);
       setInvenassetTarget('');
       setFindingCategory(visibleFindingCategories[0]?.name ?? '');
@@ -343,9 +345,12 @@ export default function DailyBrief() {
   const [invenassetSupplyItems, setInvenassetSupplyItems] = useState<InvenassetSupplyDraftItem[]>([]);
   const isInvenassetEquipment = invenassetConnected && invenassetTarget === 'equipment';
   const isInvenassetSupply = invenassetConnected && invenassetTarget === 'supply';
+  const [showAddReportFinding, setShowAddReportFinding] = useState(false);
+  const findingFormOpen = showAddFinding || showAddReportFinding;
+
   useEffect(() => {
-    if (!showAddFinding || !isInvenassetEquipment) return;
-    const controller = new AbortController();
+  if (!findingFormOpen || !isInvenassetEquipment) return;
+  const controller = new AbortController();
     setInvenassetLoading(true);
     setInvenassetError('');
     fetch('/api/integrations/invenasset/options', {signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]), cache: 'no-store'})
@@ -367,7 +372,7 @@ export default function DailyBrief() {
     return () => controller.abort();
   }, [showAddFinding, isInvenassetEquipment]);
   useEffect(() => {
-    if (!showAddFinding || !isInvenassetSupply) return;
+  if (!findingFormOpen || !isInvenassetSupply) return;
     const controller = new AbortController();
     setInvenassetSupplyLoading(true);
     setInvenassetSupplyError('');
@@ -391,7 +396,7 @@ export default function DailyBrief() {
         }
       }).finally(() => {if (!controller.signal.aborted) setInvenassetSupplyLoading(false)});
     return () => controller.abort();
-  }, [showAddFinding, isInvenassetSupply]);
+  }, [findingFormOpen, isInvenassetSupply]);
   const [showAddTask, setShowAddTask] = useState(false)
   const [shifts, setShifts] = useState<Shift[]>([])
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
@@ -414,6 +419,8 @@ export default function DailyBrief() {
   const [showAddShift, setShowAddShift] = useState(false);
   const [shiftFrom, setShiftFrom] = useState('08:00');
   const [shiftTo, setShiftTo] = useState('16:00');
+  const [findingReport, setFindingReport] = useState<Report>();
+  const [findingBrief, setFindingBrief] = useState<SavedBrief>();
   
 
   const addShift = async () => {
@@ -566,11 +573,14 @@ export default function DailyBrief() {
     }, [])
 
   const addReportFinding = (r: Report, b: SavedBrief) => {
-    setShowAddFinding(true);
-    setTimeout(() => {
-      scrollToElement('add-finding');
-      setFindingText(`Finding related to report "${r.name}":`)
-    }, 300)
+    // setShowAddFinding(true);
+    // setTimeout(() => {
+    //   scrollToElement('add-finding');
+    //   setFindingText(`Finding related to report "${r.name}":`)
+    // }, 300)
+    setFindingReport(r);
+    setFindingBrief(b);
+    setShowAddReportFinding(true);
   }
   const departments_to_display = departments.filter(d => manager || user?.permissions.see_all_briefs
     || d.id === user?.department_id || allBriefs.some(b => b.department_id === d.id));
@@ -728,6 +738,226 @@ export default function DailyBrief() {
                     </div>
                   </div>
                 )}
+                {showAddReportFinding && findingBrief && (
+                  <div className='confirm add-report-finding'>
+                    <div>
+                      <h1>{translation('add_finding_modal', {name: findingReport?.name?.trim() || ""})}</h1>
+                      
+
+                        <div className='add-finding' id='add-finding'>
+                            <div>
+                              <span>{translation('choose_status')}</span>
+                              <select disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)} id={`new_f_type_${findingBrief.id}`}>
+                                <option value='high'>{translation('high')}</option>
+                                <option value='moderate'>{translation('moderate')}</option>
+                                <option value='info'>{translation('info')}</option>
+                              </select>
+                            </div>
+                            {invenassetConnected && <div>
+                              <span>{translation('invenasset_target')}</span>
+                              <select
+                                disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)}
+                                value={invenassetTarget}
+                                onChange={e => {
+                                  const next = e.target.value as '' | 'equipment' | 'supply';
+                                  setInvenassetTarget(next);
+                                  if (next === 'equipment' || next === 'supply') setSendFindingToTracker(true);
+                                }}
+                              >
+                                <option value="">{translation('invenasset_target_none')}</option>
+                                <option value="equipment">{translation('invenasset_target_equipment')}</option>
+                                <option value="supply">{translation('invenasset_target_supply')}</option>
+                              </select>
+                            </div>}
+                            <div>
+                              <span>{isInvenassetSupply ? translation('invenasset_supply_note') : translation('write_description')}</span>
+                              <div className="finding-description-wrapper">
+                                <textarea
+                                  ref={findingTextareaRef}
+                                  disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)}
+                                  id={`new_f_name_${findingBrief.id}`}
+                                  placeholder={translation('anything_the_next_lead_needs_to_know')}
+                                  value={findingText}
+                                  onChange={e => {
+                                    const newText = e.target.value;
+
+                                    setFindingText(newText);
+                                    setFindingCursor(e.target.selectionStart);
+
+                                    setMentionedUsers(
+                                      leads
+                                        .filter(u => !u.archived && newText.includes(`@${u.name}`))
+                                        .map(u => u.id)
+                                    );
+                                  }}
+                                  onClick={e => setFindingCursor(e.currentTarget.selectionStart)}
+                                  onKeyUp={e => setFindingCursor(e.currentTarget.selectionStart)}
+                                  onSelect={e => setFindingCursor(e.currentTarget.selectionStart)}
+                                  onFocus={() => setFindingFocused(true)}
+                                  onBlur={() => setFindingFocused(false)}
+                                />
+
+                                <MentionsHelper
+                                  users={leads.filter(u => !u.archived)}
+                                  isFocused={findingFocused}
+                                  value={findingText}
+                                  cursorPosition={findingCursor}
+                                  onSelect={(selectedUser, start, end) => {
+                                    const mention = `@${selectedUser.name} `;
+
+                                    const newText =
+                                      findingText.slice(0, start) +
+                                      mention +
+                                      findingText.slice(end);
+
+                                    const newCursor = start + mention.length;
+
+                                    setFindingText(newText);
+                                    setFindingCursor(newCursor);
+
+                                    setMentionedUsers(prev =>
+                                      prev.includes(selectedUser.id)
+                                        ? prev
+                                        : [...prev, selectedUser.id]
+                                    );
+
+                                    requestAnimationFrame(() => {
+                                      findingTextareaRef.current?.focus();
+                                      findingTextareaRef.current?.setSelectionRange(
+                                        newCursor,
+                                        newCursor
+                                      );
+                                    });
+                                  }}
+                                />
+                              </div>
+                            </div>                            
+                            {sendFindingToTracker && (
+                              <>
+                                {!isInvenassetEquipment && !isInvenassetSupply && <div>
+                                  <span>{translation('category')}</span>
+                                  <select disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)} id={`new_f_category_${findingBrief.id}`} value={findingCategory} onChange={e => setFindingCategory(e.target.value)}>
+                                    {visibleFindingCategories.map((c: IdName) => (
+                                      <option key={c.id} value={c.name}>{c.name}</option>
+                                    ))}
+                                  </select>
+                                </div>}
+                                {isInvenassetSupply && (
+                                  <div>
+                                    {invenassetSupplyLoading && <SmallLoader />}
+                                    {invenassetSupplyError && <div>{translation('errors.' + invenassetSupplyError)}</div>}
+                                    {!invenassetSupplyLoading && invenassetSupplyOptions && !invenassetSupplyError && (
+                                      <InvenassetSupplyPicker
+                                        warehouses={invenassetSupplyOptions.warehouses || []}
+                                        products={invenassetSupplyOptions.products || []}
+                                        warehouseId={invenassetSupplyWarehouse}
+                                        onWarehouseChange={setInvenassetSupplyWarehouse}
+                                        items={invenassetSupplyItems}
+                                        onItemsChange={setInvenassetSupplyItems}
+                                        disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                                {isInvenassetEquipment && <>
+                                  {invenassetLoading && <SmallLoader />}
+                                  {invenassetError && <div>{translation('errors.' + invenassetError)}</div>}
+                                  {!invenassetLoading && invenassetOptions && !invenassetError && <>
+                                    <div style={{ flexDirection: 'row', gap: 10 }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                        <span style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 5 }}>{translation('invenasset_equipment')}</span>
+                                        <select disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)} value={invenassetEquipment} onChange={e => setInvenassetEquipment(e.target.value)}>
+                                          <option value="">{translation('invenasset_choose_equipment')}</option>
+                                          {invenassetOptions.equipments.map(e => <option key={e.id} value={e.id}>{[e.name, e.custom_id, e.warehouse].filter(Boolean).join(' · ')}</option>)}
+                                        </select>
+                                      </div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                        <span style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 5 }}>{translation('invenasset_issue_type')}</span>
+                                        <select disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)} value={invenassetType} onChange={e => setInvenassetType(e.target.value)}>
+                                          {invenassetOptions.issue_types.map(t => <option key={t.id} value={t.id}>{locale === 'es' ? t.name_es : t.name}</option>)}
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <span>{translation('assignee')}{invenassetOptions.assignees.find(a => String(a.id) === invenassetAssignee)?.matched ? ` · ✓ ${translation('invenasset_matched_user')}` : ''}</span>
+                                      <select disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)} value={invenassetAssignee} onChange={e => setInvenassetAssignee(e.target.value)}>
+                                        <option value="">{translation('dont_assign')}</option>
+                                        {invenassetOptions.assignees.map(a => <option key={a.id} value={a.id}>{a.matched ? `✓ ${a.name}` : a.name}</option>)}
+                                      </select>
+                                    </div>
+                                  </>}
+                                </>}
+                                {!isInvenassetEquipment && !isInvenassetSupply && <div>
+                                  <span>{translation('assignee')}</span>
+                                  <select disabled={(!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief)} id={`new_f_assignee_${findingBrief.id}`} defaultValue={user?.id}>
+                                    <option value="">{translation('dont_assign')}</option>
+                                    <optgroup label={translation('department_employees')}>
+                                      {leads.filter(u => !u.archived && u.department_id === findingBrief.department_id).map(u => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                      ))}
+                                    </optgroup>
+                                    <optgroup label={translation('other_employees')}>
+                                      {leads.filter(u => !u.archived && u.department_id !== findingBrief.department_id).map(u => (
+                                        <option key={u.id} value={u.id}>{u.department ? `${u.name} - ${u.department}` : u.name}</option>
+                                      ))}
+                                    </optgroup>
+                                  </select>
+                                </div>}
+                              </>
+                            )}
+                            <div>
+                              <label className='send-to-action-tracker'>
+                                <span>{translation('send_to_action_tracker')}</span>
+                                <input type="checkbox" id="send-to-action-tracker" disabled={savingFinding} checked={sendFindingToTracker} onChange={(e) => { setSendFindingToTracker(e.target.checked); if (!e.target.checked) setInvenassetTarget(''); }} />
+                              </label>
+                              <div className={savingFinding ? 'cancel d' : 'cancel'} onClick={() => {if (savingFinding) return; setShowAddReportFinding(false); setSendFindingToTracker(false); setInvenassetTarget(''); findingDraftId.current = null; setFindingCategory(visibleFindingCategories[0]?.name ?? ''); setInvenassetEquipment(''); setInvenassetType('11'); setInvenassetAssignee(''); setInvenassetSupplyItems([]); setInvenassetSupplyError(''); setFindingText(''); setFindingCursor(0); setMentionedUsers([]); setFindingFocused(false);}}>{translation('cancel')}</div>
+                              {(() => {
+                                const isAddFindingDisabled = savingFinding || (!manager && noAccessEdit(findingBrief)) || readOnly(findingBrief) || (isInvenassetEquipment && (invenassetLoading || !!invenassetError || !invenassetOptions || !invenassetEquipment)) || (isInvenassetSupply && (invenassetSupplyLoading || !!invenassetSupplyError || !invenassetSupplyOptions || !invenassetSupplyWarehouse || !invenassetSupplyItems.some(it => it.product_id > 0 && (Number(it.qty) || 0) > 0)));
+                                return (
+                                  <button
+                                    type="button"
+                                    className={isAddFindingDisabled ? 'button-d-bl-sm d' : 'button-d-bl-sm'}
+                                    disabled={isAddFindingDisabled}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                    onClick={() => {
+                                      if (isAddFindingDisabled) return;
+                                      const selectedInvenassetAssignee = invenassetOptions?.assignees.find(a => String(a.id) === invenassetAssignee);
+                                      addFinding(findingBrief, {
+                                        type: (document.getElementById(`new_f_type_${findingBrief.id}`) as HTMLSelectElement)?.value || '',
+                                        description: `Finding related to report "${findingReport?.name?.trim()}": ${findingText}`,
+                                        send_to_action_tracker: sendFindingToTracker,
+                                        category: sendFindingToTracker ? ((isInvenassetEquipment || isInvenassetSupply) ? 'Invenasset' : findingCategory) : undefined,
+                                        assigned_to_user_id: sendFindingToTracker && !isInvenassetSupply
+                                          ? (isInvenassetEquipment
+                                            ? (selectedInvenassetAssignee?.daily_brief_user_id ?? null)
+                                            : ((document.getElementById(`new_f_assignee_${findingBrief.id}`) as HTMLSelectElement)?.value || null))
+                                          : undefined,
+                                        invenasset: isInvenassetEquipment ? {
+                                          equipment: Number(invenassetEquipment), type: Number(invenassetType), assignee: invenassetAssignee,
+                                          equipment_name: invenassetOptions?.equipments.find(e => e.id === Number(invenassetEquipment))?.name,
+                                        } : (isInvenassetSupply ? {
+                                          target: 'supply',
+                                          warehouse_id: Number(invenassetSupplyWarehouse),
+                                          warehouse_name: invenassetSupplyOptions?.warehouses.find(w => String(w.id) === invenassetSupplyWarehouse)?.name || '',
+                                          items: invenassetSupplyItems
+                                            .map(it => ({ product_id: it.product_id, qty: Number(it.qty) }))
+                                            .filter(it => it.product_id > 0 && it.qty > 0),
+                                        } : undefined),
+                                      });
+                                    }}
+                                  >
+                                    {savingFinding && <span className="spinner-border" role="status" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+                                    {translation('add_finding')}
+                                  </button>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                      <div></div>
+                    </div>
+                  </div>
+                )}
+
             {briefs.length == 0 || !user
               ? (<div></div>) 
               : briefs.map((b: SavedBrief, b_i) => {
@@ -1107,7 +1337,6 @@ export default function DailyBrief() {
                         {reports_sorted.filter((r: Report) => !r.holder_id && (filters.user_id === '') && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={i === 0 ? 'report reports-to-assign' : 'report'} key={r.id}>
-                              {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
                               <div></div>
                               <div>{r.name}</div>
                               <div>
@@ -1118,7 +1347,7 @@ export default function DailyBrief() {
                               <div>{r.source}</div>
                               <div>{translation('assignee')}: <div className=''>{leads.find((lead: User) => lead.id === r.holder_id)?.name ?? '-'}</div></div>
                               <div style={{color: '#000000', fontSize: 14, fontFamily: 'inherit'}}>{r.metric ?? 'No Metric'}</div>
-                              <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) addReportFinding(r, b)}}></div>
+                              <div className={noAccessEdit(b) ? 'button-w-bl d' : 'button-w-bl'} onClick={() => {if (!noAccessEdit(b)) addReportFinding(r, b)}}>Create Finding</div>
                               <span className={r.timestamp ? translation('done') : translation('pending')}>{r.timestamp ? briefTime.format(new Date(r.timestamp)) : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               <div className={r.checked || noAccessEdit(b) || (!manager && user.department_id !== b.department_id) ? 'button-d-bl-sm d' : 'button-d-bl-sm'} onClick={() => {if (!r.checked && !noAccessEdit(b) && (manager || user.department_id === b.department_id)) updateReports(b, {...r, holder_id: user.id}, r.checked)}}>{translation('take')}</div>
 
@@ -1331,7 +1560,7 @@ export default function DailyBrief() {
                                   </div>) }
                                 
                             </div>
-                              <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) addReportFinding(r, b)}}></div>
+                              <div className={noAccessEdit(b) ? 'button-w-bl d' : 'button-w-bl'} onClick={() => {if (!noAccessEdit(b)) addReportFinding(r, b)}}>Create Finding</div>
 
                               <span className={r.timestamp ? translation('done') : translation('pending')}>{r.timestamp ? briefTime.format(new Date(r.timestamp)) : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               <div className={r.checked || noAccessReport(b, r) ? 'button-d-bl-sm d' : 'button-d-bl-sm'}
@@ -1342,7 +1571,6 @@ export default function DailyBrief() {
                         {reports_sorted.filter((r: Report) => r.holder_id && r.holder_id !== user.id && (filters.user_id === '' || filters.user_id === r.holder_id) && (filters.day_time === '' || filters.day_time.toLowerCase() === r.day_time.toLowerCase())).map(
                           (r: Report, i: number) => (
                             <div className={(i === 0 ? 'report border-top reports-other-users-took' : 'report') + (beforeCheckTime(r.check_before, timezone, r.timestamp ? new Date(r.timestamp) : now, b.date) ? '' : ' red-background')} key={r.id}>
-                              {/* <input className={noAccessEdit(b) ? 'd' : ''} disabled={noAccessEdit(b)} type='checkbox' checked={r.checked} onChange={() => {updateReports(b, r, !r.checked)}} /> */}
                               <div></div>
                               <div>{r.name}</div>
                               <div>
@@ -1378,7 +1606,7 @@ export default function DailyBrief() {
                                   </div>) }
                               {r.checked && r.metric !== 'Image' && (<strong>{r.text}</strong>)}
                               </div>
-                              <div className={noAccessEdit(b) ? 'd' : ''} onClick={() => {if (!noAccessEdit(b)) addReportFinding(r, b)}}></div>
+                              <div className={noAccessEdit(b) ? 'button-w-bl d' : 'button-w-bl'} onClick={() => {if (!noAccessEdit(b)) addReportFinding(r, b)}}>Create Finding</div>
                               <span className={r.timestamp ? translation('done') : translation('pending')}>{r.timestamp ? briefTime.format(new Date(r.timestamp)) : b.freezed === true ? 'Not Done' : 'Pending'}</span>
                               {
                                 manager && !readOnly(b) && !r.checked ? (

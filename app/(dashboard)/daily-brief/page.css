@@ -197,30 +197,14 @@
 }
 
 .daily-brief .report > :nth-child(7) {
-    width: 35px;
-    height: 35px;
+    width: auto;
+    /* height: 35px; */
+    padding: 5px 12px !important;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1;
+    text-wrap-mode: nowrap;
     margin: auto 0;
-    background-image: url('../../../public/report-add-finding.png');
-    background-size: 100%;
-    background-position: center;
-    cursor: pointer;
-    position: relative;
-}
-
-.daily-brief .report > :nth-child(7)::before{
-    content: 'Add related finding';
-    position: absolute;
-    left: -20px;
-    top: -15px;
-    font-size: 10px;
-    color: rgb(180, 178, 178);
-    width: max-content;
-    background-color: rgb(245, 245, 245);
-    display: none;
-}
-
-.daily-brief .report > :nth-child(7):hover::before{
-    display: block;
 }
 
 .daily-brief .report > :nth-child(8) {
@@ -254,7 +238,8 @@
     min-width: 97px;
     text-align: center;
     line-height: 1;
-    padding: 10px 0px;
+    padding: 5px 0px !important;
+    font-size: 14px;
 }
 
 .daily-brief .report input[type="checkbox"]{
@@ -842,6 +827,13 @@
     gap: 10px;
 }
 
+.daily-brief .confirm.add-report-finding .add-finding{
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}
+
 .daily-brief .add-finding > div{
     display: flex;
     flex-direction: column;
@@ -1113,6 +1105,18 @@
         min-width: 100%;
         text-align: center;
         padding: 5px;
+    }
+
+    .daily-brief .confirm.add-report-finding .add-finding > div:last-child{
+        flex-wrap: wrap;
+    }
+
+    .daily-brief .confirm.add-report-finding .add-finding > div:last-child > :first-child{
+        flex-basis: 100%;
+    }
+
+    .daily-brief .confirm.add-report-finding .add-finding > div:last-child{
+        justify-content: space-around;
     }
 }
 
