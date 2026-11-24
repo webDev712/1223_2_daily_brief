@@ -10,10 +10,34 @@ type WidgetUser = {
 };
 
 type ApiUserRow = {
+  id?: string | null;
   email?: string | null;
   name?: string | null;
   archived?: boolean;
+  user_role?: string | null;
+  permissions?: Record<string, boolean> | null;
 };
+
+function getWidgetAccess(
+  candidate: {
+    id?: string | null;
+    email?: string | null;
+    role?: string | null;
+    user_role?: string | null;
+    permissions?: Record<string, boolean> | null;
+  },
+  mainAdminId?: string | null
+): "full" | "bugs" | null {
+  if (!candidate?.email || !candidate.email.trim()) return null;
+  const isOwner = Boolean(mainAdminId) && candidate.id === mainAdminId;
+  const roleName = (candidate.role ?? candidate.user_role)?.trim().toLowerCase();
+  const isManager =
+    roleName === "manager" || candidate.permissions?.reasign_reports === true;
+  const isDeveloper = candidate.email.trim().toLowerCase().startsWith("gasdev");
+  if (isOwner || isManager || isDeveloper) return "full";
+  if (roleName === "department lead") return "bugs";
+  return null;
+}
 
 const ALL_SECTIONS = [
   "ideas",
@@ -44,13 +68,9 @@ export default function FeedbackWidget() {
   );
   const [users, setUsers] = useState<WidgetUser[] | null>(null);
 
-  const isOwner = user.id === user.main_admin_id;
-  const isManager =
-    user.role?.trim().toLowerCase() === "manager" ||
-    user.permissions?.reasign_reports === true;
-  const isDeveloper =
-    Boolean(user.email) && user.email.trim().toLowerCase().startsWith("gasdev");
-  const hasWidgetAccess = Boolean(user?.email) && (isOwner || isManager || isDeveloper);
+  const widgetAccess = getWidgetAccess(user, user.main_admin_id);
+  const hasWidgetAccess = widgetAccess !== null;
+  const hasFullAccess = widgetAccess === "full";
 
   useEffect(() => {
     if (!hasWidgetAccess) return;
@@ -69,7 +89,7 @@ export default function FeedbackWidget() {
           return;
         }
         const list = data
-          .filter((u) => !u.archived && typeof u.email === "string" && u.email.trim() !== "")
+          .filter((u) => !u.archived && getWidgetAccess(u, user.main_admin_id) !== null)
           .map((u) => ({
             email: u.email!.trim(),
             name: (u.name || u.email || "").trim(),
@@ -84,17 +104,17 @@ export default function FeedbackWidget() {
     return () => {
       cancelled = true;
     };
-  }, [hasWidgetAccess, user?.company_id]);
+  }, [hasWidgetAccess, user?.company_id, user?.main_admin_id]);
 
   useEffect(() => {
     if (!hasWidgetAccess || !scriptReady || users === null || !user?.email) return;
     window.FeedbackBoard?.init({
       email: user.email,
       name: user.name || "",
-      scopes: ALL_SECTIONS,
+      scopes: hasFullAccess ? ALL_SECTIONS : ["bugs"],
       users,
     });
-  }, [hasWidgetAccess, scriptReady, users, user?.email, user?.name]);
+  }, [hasWidgetAccess, hasFullAccess, scriptReady, users, user?.email, user?.name]);
 
   if (!hasWidgetAccess) return null;
 
