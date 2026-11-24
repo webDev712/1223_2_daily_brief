@@ -43,6 +43,7 @@ const ALL_SECTIONS = [
   "ideas",
   "questions",
   "bugs",
+  "todo",
   "in_progress",
   "current_update",
   "completed",
