@@ -44,7 +44,16 @@ export default function FeedbackWidget() {
   );
   const [users, setUsers] = useState<WidgetUser[] | null>(null);
 
+  const isOwner = user.id === user.main_admin_id;
+  const isManager =
+    user.role?.trim().toLowerCase() === "manager" ||
+    user.permissions?.reasign_reports === true;
+  const isDeveloper =
+    Boolean(user.email) && user.email.trim().toLowerCase().startsWith("gasdev");
+  const hasWidgetAccess = Boolean(user?.email) && (isOwner || isManager || isDeveloper);
+
   useEffect(() => {
+    if (!hasWidgetAccess) return;
     let cancelled = false;
 
     async function loadUsers() {
@@ -75,20 +84,19 @@ export default function FeedbackWidget() {
     return () => {
       cancelled = true;
     };
-  }, [user?.company_id]);
+  }, [hasWidgetAccess, user?.company_id]);
 
   useEffect(() => {
-    if (!scriptReady || users === null || !user?.email) return;
-    const isOwner = user.id === user.main_admin_id;
+    if (!hasWidgetAccess || !scriptReady || users === null || !user?.email) return;
     window.FeedbackBoard?.init({
       email: user.email,
       name: user.name || "",
-      scopes: isOwner ? ALL_SECTIONS : ["bugs"],
+      scopes: ALL_SECTIONS,
       users,
     });
-  }, [scriptReady, users, user?.id, user?.main_admin_id, user?.email, user?.name]);
+  }, [hasWidgetAccess, scriptReady, users, user?.email, user?.name]);
 
-  if (!user?.email) return null;
+  if (!hasWidgetAccess) return null;
 
   return (
     <Script
