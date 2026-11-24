@@ -7,6 +7,7 @@ import Header from "./src/components/Header";
 import DateProvider from "./src/components/DateProvider";
 import { UserProvider } from "./src/components/UserProvider";
 import Chat from "./src/components/Chat";
+import FeedbackWidget from "./src/components/FeedbackWidget";
 
 export default function DashboardClient({
   user,
@@ -36,6 +37,7 @@ export default function DashboardClient({
           />
 
           {children}
+          <FeedbackWidget />
         </div>
       </DateProvider>
     </UserProvider>

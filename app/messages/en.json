@@ -85,6 +85,11 @@
     "send_to_action_tracker": "Send to Action Tracker?",
     "anything_the_next_lead_needs_to_know": "Anything the next Lead needs to know…",
     "cancel": "Cancel",
+    "add_shift": "Add Shift",
+    "shiftAdded": "Added new shift \"{name}\"",
+    "addTitle": "Add New Shift",
+    "from": "From",
+    "to": "To",
     "task_name": "Task Name",
     "task_description": "Task description...",
     "action": "Action",
@@ -181,7 +186,8 @@
       "invalid_action": "This action is not available.",
       "Forbidden": "You do not have permission for this action."
     },
-    "mentionedNotification": "INFO: You were mentioned in a finding in the {department} department on {date}: \"{action}...\" Open Daily Brief to see it."
+    "mentionedNotification": "INFO: You were mentioned in a finding in the {department} department on {date}: \"{action}...\" Open Daily Brief to see it.",
+    "add_finding_modal": "Add finding related to report \"{name}\""
   },
   "Sidebar": {
     "dashboard": "Dashboard",
@@ -429,7 +435,11 @@
     "weekday_small_Wed": "Wed",
     "weekday_small_Thu": "Thu",
     "weekday_small_Fri": "Fri",
-    "weekday_small_Sat": "Sat"
+    "weekday_small_Sat": "Sat",
+    "addTitle": "Add New Shift",
+    "shiftAdded": "Added new shift \"{name}\"",
+    "confirm": "Confirm",
+    "add_shift": "Add Shift"
   },
   "TeamsAndRoles": {
     "toasts": {

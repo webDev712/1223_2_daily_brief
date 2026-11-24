@@ -85,6 +85,11 @@
     "send_to_action_tracker": "¿Enviar al seguimiento de acciones?",
     "anything_the_next_lead_needs_to_know": "Cualquier cosa que el siguiente supervisor deba saber…",
     "cancel": "Cancelar",
+    "add_shift": "Agregar turno",
+    "shiftAdded": "Se agregó el turno \"{name}\"",
+    "addTitle": "Agregar nuevo turno",
+    "from": "De",
+    "to": "A",
     "task_name": "Nombre de la tarea",
     "task_description": "Descripción de la tarea...",
     "action": "Acción",
@@ -181,7 +186,8 @@
       "invalid_action": "Esta acción no está disponible.",
       "Forbidden": "No tienes permiso para realizar esta acción."
     },
-    "mentionedNotification": "INFO: Te mencionaron en un hallazgo del departamento {department} el {date}: \"{action}...\" Abre Daily Brief para verlo."
+    "mentionedNotification": "INFO: Te mencionaron en un hallazgo del departamento {department} el {date}: \"{action}...\" Abre Daily Brief para verlo.",
+    "add_finding_modal": "Agregar hallazgo relacionado con el reporte \"{name}\""
   },
   "Sidebar": {
     "dashboard": "Panel",
@@ -429,7 +435,11 @@
     "weekday_small_Wed": "Mié",
     "weekday_small_Thu": "Jue",
     "weekday_small_Fri": "Vie",
-    "weekday_small_Sat": "Sáb"
+    "weekday_small_Sat": "Sáb",
+    "confirm": "Confirmar",
+    "addTitle": "Agregar nuevo turno",
+    "shiftAdded": "Se agregó el turno \"{name}\"",
+    "add_shift": "Agregar turno"
   },
   "TeamsAndRoles": {
     "toasts": {
