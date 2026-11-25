@@ -11,8 +11,8 @@ type MentionsHelperProps = {
 };
 
 const MentionsHelper = ({ users, value, cursorPosition, onSelect, isFocused }: MentionsHelperProps) => {
-    if (!isFocused) return null;
-
+    if (!isFocused || !value) return null;
+    
     const match = value.slice(0, cursorPosition).match(/(?:^|\s)@([^\s@]*)$/);
 
     if (!match) return null;
