@@ -57,6 +57,7 @@ export default function ProductionDashboard() {
     const [users, setUsers] = useState<User[]>([])
     const [findingCursor, setFindingCursor] = useState(0);
     const findingTextareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+    const initialNotesRef = useRef<Map<string, string>>(new Map());
     const [mentionedUsers, setMentionedUsers] = useState<string[]>([]);
     const syncMentionedUsers = (text: string) => {
         const remainingUsers = users.filter(user => text.includes(`@${user.name}`))
@@ -357,6 +358,13 @@ export default function ProductionDashboard() {
                                                 );
                                             }}
                                             onBlur={(e) => {
+                                                const initialNotes = initialNotesRef.current.get(row.id) ?? (row.notes || "");
+                                                initialNotesRef.current.delete(row.id);
+                                                if (e.target.value === initialNotes) {
+                                                    setMentionedUsers([]);
+                                                    setActiveFindingId(null);
+                                                    return;
+                                                }
                                                 sendNotes(row.id, e.target.value);
                                                 if (mentionedUsers.length > 0) {
                                                     mentionedUsers.map((user_id: string) => {
@@ -386,7 +394,12 @@ export default function ProductionDashboard() {
                                                 }
                                                 setActiveFindingId(null);
                                             }}
-                                            onFocus={() => setActiveFindingId(row.id)}
+                                            onFocus={(e) => {
+                                                if (!initialNotesRef.current.has(row.id)) {
+                                                    initialNotesRef.current.set(row.id, e.target.value);
+                                                }
+                                                setActiveFindingId(row.id);
+                                            }}
                                         />
                                         <MentionsHelper
                                             users={users}
