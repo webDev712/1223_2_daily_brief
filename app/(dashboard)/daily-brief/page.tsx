@@ -174,7 +174,7 @@ export default function DailyBrief() {
         action: finding.description.slice(0, 20),
         date: b.date,
         department: b.department_name
-      });
+      }) + ` /daily-brief?date=${format(parse(b.date, "yyyy-MM-dd", new Date()), 'dd-MM-yyyy')}&department_id=${b.department_id}`;
 
       mentionedUsers
         .filter(user_id => user_id !== user?.id)

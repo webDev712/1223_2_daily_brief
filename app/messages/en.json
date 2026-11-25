@@ -186,7 +186,7 @@
       "invalid_action": "This action is not available.",
       "Forbidden": "You do not have permission for this action."
     },
-    "mentionedNotification": "INFO: You were mentioned in a finding in the {department} department on {date}: \"{action}...\" Open Daily Brief to see it.",
+    "mentionedNotification": "INFO: You were mentioned in a finding in the {department} department on {date}: \"{action}...\"",
     "add_finding_modal": "Add finding related to report \"{name}\""
   },
   "Sidebar": {

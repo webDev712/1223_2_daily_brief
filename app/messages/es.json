@@ -186,7 +186,7 @@
       "invalid_action": "Esta acción no está disponible.",
       "Forbidden": "No tienes permiso para realizar esta acción."
     },
-    "mentionedNotification": "INFO: Te mencionaron en un hallazgo del departamento {department} el {date}: \"{action}...\" Abre Daily Brief para verlo.",
+    "mentionedNotification": "INFO: Te mencionaron en un hallazgo del departamento {department} el {date}: \"{action}...\"",
     "add_finding_modal": "Agregar hallazgo relacionado con el reporte \"{name}\""
   },
   "Sidebar": {
