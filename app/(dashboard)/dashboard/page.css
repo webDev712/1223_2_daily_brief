@@ -560,6 +560,11 @@ h3:has(+ .attention-container){
         width: max-content;
         min-width: 600px
     }
+
+    .dashboard h1{
+        flex-direction: column;
+        gap: 10px;
+    }
 }
 
 @media (max-width: 1200px) {

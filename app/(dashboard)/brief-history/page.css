@@ -7,6 +7,7 @@
 
 .brief-history .table > label{
     display: flex;
+    flex-direction: row;
     padding: 10px 20px;
     background-color: white;
     cursor: pointer;
@@ -258,6 +259,9 @@
 .brief-history .table > label > div:nth-child(3) > div:nth-child(2){
     color: #98a2b3;
     background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .brief-history .table > label > div:nth-child(3) > div:first-child{
@@ -266,8 +270,8 @@
     gap: 10px;
 }
 
-.brief-history .table > label > div:nth-child(3) > div:first-child,
-.brief-history .table > label > div:nth-child(3) > div:nth-child(3){
+.brief-history .table > label > div:nth-child(3) > div:nth-child(2) > div:first-child,
+.brief-history .table > label > div:nth-child(3) > div:nth-child(2) > div:nth-child(3){
     flex-wrap: nowrap;
     display: flex;
     gap: 10px;
@@ -279,7 +283,8 @@
     margin-left: 0;
 }
 
-.brief-history .table > label > div:nth-child(3).duty-employees > .duty-employee-item{
+
+.brief-history .table > label > div:nth-child(3).duty-employees .duty-employee-item{
     flex-wrap: nowrap;
     display: flex;
     align-items: center;
@@ -291,7 +296,7 @@
     background-color: transparent;
 }
 
-.brief-history .table > label > div:nth-child(3).duty-employees > .duty-employee-item > div:nth-child(2){
+.brief-history .table > label > div:nth-child(3).duty-employees .duty-employee-item > div:nth-child(2){
     color: #98a2b3;
     background-color: transparent !important;
 }
@@ -430,6 +435,15 @@
     padding-right: 10px;
 }
 
+.mobile{
+    display: none !important;
+}
+
+
+.brief-history .table > label div {
+    background: transparent;
+}
+
 @media (max-width: 500px) {
     .brief-history .filters{
         flex-direction: column;
@@ -447,6 +461,8 @@
 
     .table {
         width: max-content;
+
+        width: 100%;
     }
 
     .brief-history .table > label > b > div:nth-child(2) > div ,
@@ -458,5 +474,91 @@
     .brief-history .table > label > b > div:nth-child(2) > div > div:last-child ,
     .brief-history .table > label > b > div:nth-child(4) > div > div:last-child {
         flex-basis: 100%;
+    }
+
+    .brief-history .table > label{
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .brief-history .table > label:first-child{
+        display: none;
+    }
+
+    .brief-history .table > label > div{
+        width: 100% !important;
+        display: grid !important;
+        padding: 0 !important;
+        grid-template-columns: 100px 1fr !important;
+        gap: 40px !important;
+    }
+
+    .brief-history .table > label * {
+        font-size: 16px;
+    }
+
+    .brief-history .table > label > div:first-child > :nth-child(2){
+        display: flex;
+        gap: 5px;
+    }
+
+    .brief-history .table > label > div:first-child > :nth-child(2) > :nth-child(2) {
+        margin: auto 0;
+    }
+
+    .brief-history .table > label > div:first-child > :nth-child(2) > :nth-child(2):not(.today){
+        display: none;
+    }
+
+    .mobile {
+        display: block !important;
+        padding: 0 !important;
+        font-weight: 600;
+        width: 100px !important; 
+        position: relative;
+        text-align: left;
+        margin: auto 0 !important;
+    }
+
+    .mobile + * {
+        text-align: left;
+        margin: auto 0;
+    }
+
+    .duty-employees > :nth-child(2){
+        display: flex;
+        gap: 5px;
+        margin: 0 !important;
+    }
+
+    .duty-employees > :nth-child(2) > div{
+        display: flex;
+        gap: 5px;
+    }
+
+    .brief-history .table > label > div:nth-child(3) > div:nth-child(2){
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .brief-history .table > label .progress-bar {
+        width: 100% !important;
+    }
+
+    .brief-history .table > label:has(input[type="checkbox"]:checked) > b{
+        width: 100%;
+    }
+
+    .brief-history .table > label > b > div:nth-child(4) > div{
+        padding-left: 30px;
+    }
+
+    .brief-history .table > label > b > div:nth-child(4) > div > div.do-not-roll-next-brief:not(.d):hover:before, 
+    .brief-history .table > label > b > div:nth-child(4) > div > div.roll-next-brief:not(.d):hover:before {
+        width: 150px;
     }
 }

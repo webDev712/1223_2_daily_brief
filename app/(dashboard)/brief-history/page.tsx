@@ -198,65 +198,103 @@ export default function BriefHistory() {
                       || '-';
                     return (
                       <label key={b.id}>
-                        <div>
-                          <div>{briefDate ? (isToday ? t("today") : format(briefDate, t.raw("date_short"), { locale: dfLocale })) : t("unknown_date")} {timeValue && briefTime.format(new Date(timeValue))}</div>
-                          <span>{briefDate ? format(briefDate, t.raw("date_long"), { locale: dfLocale }) : '-'}</span>
-                        </div>
-                        <div>{departmentName}</div>
-                        <div className={b.is_department_journal && b.duties?.length ? "duty-employees" : undefined}>
-                          {b.is_department_journal && b.duties?.length ? (
-                            b.duties.map(d => (
-                              <div key={d.user_id} className="duty-employee-item">
-                                <UserCircle user_name={d.name} size={25} />
-                                <div>{d.name}{d.handed_to ? ` → ${d.handed_to}` : ''}</div>
-                              </div>
-                            ))
-                          ) : b.is_department_journal ? '-' : (
-                            <>
-                              {b.lead_id !== b.original_lead_id && (
-                                <div>
-                                  <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
-                                  <div>{leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'}</div>
-                                </div>
-                              )}
-                              {b.lead_id !== b.original_lead_id && (<div>{'🢃'}</div>)}
-                              <div>
-                                <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || b.lead_name || 's'} size={25} />
-                                <div>{leads.find((el: User) => el.id === b.lead_id)?.['name'] || b.lead_name || 's'}</div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <div>
-                          {b.is_department_journal && b.duties?.length ? (
-                            b.duties.map(d => <div key={d.user_id}>{d.shift || "-"}</div>)
-                          ) : (
-                            b.shift || "-"
-                          )}
-                        </div>
-                        <div style={!b.is_department_journal ? {color: (b.driving === true ? '#4361EE' : '')} : undefined}>
-                          {b.is_department_journal && b.duties?.length ? (
-                            b.duties.map(d => (
-                              <div key={d.user_id} style={{color: (d.driving === true ? '#4361EE' : '')}}>
-                                {d.driving === true ? t("work_driving") : t("work_floor")}
-                              </div>
-                            ))
-                          ) : (
-                            b.is_department_journal ? '-' : b.driving === true ? t("work_driving") : t("work_floor")
-                          )}
-                        </div>
-                        <div>
-                          <div style={{color: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '')}}>{b.reports.filter(r => r.checked === true).length}/{b.reports.length}</div>
-                          <div className="progress-bar">
-                            <span style={{ width: reportsPercentage + "%", backgroundColor: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '') }}></span>
+                        {/* 1 date */}
+                        <div className="flex">
+                          <div className="mobile">{t("col_date")}</div>
+                          <div>
+                            <div>{briefDate ? (isToday ? t("today") : format(briefDate, t.raw("date_short"), { locale: dfLocale })) : t("unknown_date")} {timeValue && briefTime.format(new Date(timeValue))}</div>
+                            <span className={briefDate && isToday ? 'today' : ''}>{briefDate ? format(briefDate, t.raw("date_long"), { locale: dfLocale }) : '-'}</span>
                           </div>
                         </div>
-                        <div className={b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : ''}>{b.findings ? b.findings.length : t("none")}</div>
-                        <div>{b.tasks.length}</div>
-                        <div style={{color: (b.freezed ? '#12B76A' : notStarted ? '#98A2B3' :
-                                                (isToday ? '#F79009' : '#f70909'))}}>
-                          ● {b.freezed ? t("status_submitted") : notStarted ? t("status_not_started") :
-                                                (isToday ? t("status_in_progress") : t("status_incomplete"))}
+                        {/* 2 department */}
+                        <div className="flex">
+                          <div className="mobile">{t("col_department")}</div>
+                          <div>{departmentName}</div>
+                        </div>
+                        {/* 3 employees */}
+                        <div className={b.is_department_journal && b.duties?.length ? "duty-employees flex" : "flex"}>
+                          <div className="mobile">{t("col_employee")}</div>
+                          <div>
+                            {b.is_department_journal && b.duties?.length ? (
+                              b.duties.map(d => (
+                                <div key={d.user_id} className="duty-employee-item">
+                                  <UserCircle user_name={d.name} size={25} />
+                                  <div>{d.name}{d.handed_to ? ` → ${d.handed_to}` : ''}</div>
+                                </div>
+                              ))
+                            ) : b.is_department_journal ? '-' : (
+                              <>
+                                {b.lead_id !== b.original_lead_id && (
+                                  <div>
+                                    <UserCircle user_name={leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'} size={25} />
+                                    <div>{leads.find((el: User) => el.id === b.original_lead_id)?.['name'] || 's'}</div>
+                                  </div>
+                                )}
+                                {b.lead_id !== b.original_lead_id && (<div>{'🢃'}</div>)}
+                                <div>
+                                  <UserCircle user_name={leads.find((el: User) => el.id === b.lead_id)?.['name'] || b.lead_name || 's'} size={25} />
+                                  <div>{leads.find((el: User) => el.id === b.lead_id)?.['name'] || b.lead_name || 's'}</div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {/* 4 shift */}
+                        <div>
+                          <div className="mobile">{t("col_shift")}</div>
+                          <div>
+                            {b.is_department_journal && b.duties?.length ? (
+                              b.duties.map(d => <div key={d.user_id}>{d.shift || "-"}</div>)
+                            ) : (
+                              b.shift || "-"
+                            )}
+                          </div>
+                        </div>
+                        {/* 5 WORK STATUS */}
+                        <div style={!b.is_department_journal ? {color: (b.driving === true ? '#4361EE' : '')} : undefined} className="flex">
+                          <div className="mobile">{t("col_work_status")}</div>
+                          <div>
+                            {b.is_department_journal && b.duties?.length ? (
+                              b.duties.map(d => (
+                                <div key={d.user_id} style={{color: (d.driving === true ? '#4361EE' : '')}}>
+                                  {d.driving === true ? t("work_driving") : t("work_floor")}
+                                </div>
+                              ))
+                            ) : (
+                              b.is_department_journal ? '-' : b.driving === true ? t("work_driving") : t("work_floor")
+                            )}
+                          </div>
+                        </div>
+                        {/* 6 REPORTS */}
+                        <div className="flex">
+                          <div className="mobile">{t("col_reports")}</div>
+                          <div>
+                            <div style={{color: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '')}}>{b.reports.filter(r => r.checked === true).length}/{b.reports.length}</div>
+                            <div className="progress-bar">
+                              <span style={{ width: reportsPercentage + "%", backgroundColor: (reportsPercentage === 100 || b.reports.length === 0  ? '#12B76A' : '') }}></span>
+                            </div>
+                          </div>
+                        </div>
+                        {/* 7 FINDINGS */}
+                        <div className={'flex'}>
+                            <div className="mobile">{t("col_findings")}</div>
+                            <div className={(b.findings ? (b.findings.length > 1 ? 'red' : 'yellow') : '')}>
+                              {b.findings ? b.findings.length : t("none")}
+                            </div>
+                        </div>
+                        {/* 8 TASKS */}
+                        <div className="flex">
+                          <div className="mobile">{t("col_tasks")}</div>
+                          <div>{b.tasks.length}</div>
+                        </div>
+                        {/* 9 STATUS */}
+                        <div className="flex">
+                          <div className="mobile">{t("col_status")}</div>
+                          <div style={{color: (b.freezed ? '#12B76A' : notStarted ? '#98A2B3' :
+                                                  (isToday ? '#F79009' : '#f70909'))}}>
+                            ● {b.freezed ? t("status_submitted") : notStarted ? t("status_not_started") :
+                                                  (isToday ? t("status_in_progress") : t("status_incomplete"))}
+                          </div>
                         </div>
                         <input type="checkbox" />
                         <b>
