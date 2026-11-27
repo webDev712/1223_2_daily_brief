@@ -646,6 +646,7 @@ a.download-file-link:hover::before{
 
     body:has(#fb-board-widget-root) .mobile_chat.chat:not(:has(> div)),
     body:has(#fb-board-widget-root) .mobile_chat.chat:not(:has(> div)) > span{
+        right: 6px;
         bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 82px);
         z-index: 2147482999;
     }
